@@ -1,8 +1,8 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "OpenAPI Plant Store",
-    "description": "A sample API that uses a plant store as an example to demonstrate features in the OpenAPI specification",
+    "title": "Prava API Reference",
+    "description": "API reference for the Prava platform.",
     "license": {
       "name": "MIT"
     },
@@ -10,7 +10,7 @@
   },
   "servers": [
     {
-      "url": "http://sandbox.mintlify.com"
+      "url": "https://sandbox-api.prava.space/v1"
     }
   ],
   "security": [
@@ -19,134 +19,615 @@
     }
   ],
   "paths": {
-    "/plants": {
-      "get": {
-        "description": "Returns all plants from the system that the user has access to",
+    "/customers/{customer_id}/merchants/{merchant_id}/carts": {
+      "post": {
+        "summary": "Create a Cart",
+        "description": "Creates a new cart for a customer with items from a specific merchant.",
         "parameters": [
           {
-            "name": "limit",
-            "in": "query",
-            "description": "The maximum number of results to return",
+            "name": "customer_id",
+            "in": "path",
+            "required": true,
             "schema": {
-              "type": "integer",
-              "format": "int32"
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "merchant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "Plant response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Plant"
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "description": "Creates a new plant in the store",
         "requestBody": {
-          "description": "Plant to add to the store",
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NewPlant"
+                "$ref": "#/components/schemas/CreateCartBody"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
-            "description": "plant response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Plant"
-                }
-              }
-            }
+            "description": "Cart created successfully."
           },
           "400": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+            "description": "Error creating cart."
           }
         }
       }
     },
-    "/plants/{id}": {
-      "delete": {
-        "description": "Deletes a single plant based on the ID supplied",
+    "/customers/{customer_id}/carts": {
+      "get": {
+        "summary": "Get Customer Carts",
+        "description": "Retrieves all carts for a specific customer.",
         "parameters": [
           {
-            "name": "id",
+            "name": "customer_id",
             "in": "path",
-            "description": "ID of plant to delete",
             "required": true,
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
         "responses": {
-          "204": {
-            "description": "Plant deleted",
-            "content": {}
+          "200": {
+            "description": "A list of carts."
           },
           "400": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+            "description": "Error retrieving carts."
           }
         }
       }
-    }
-  },
-  "webhooks": {
-    "/plant/webhook": {
-      "post": {
-        "description": "Information about a new plant added to the store",
+    },
+    "/customers/{customer_id}/carts/{cart_id}": {
+      "get": {
+        "summary": "Get a Cart",
+        "description": "Retrieves a specific cart for a customer.",
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cart_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The requested cart."
+          },
+          "400": {
+            "description": "Error retrieving the cart."
+          }
+        }
+      }
+    },
+    "/carts/{cart_id}": {
+      "patch": {
+        "summary": "Update a Cart",
+        "description": "Updates a cart by adding or removing items.",
+        "parameters": [
+          {
+            "name": "cart_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
         "requestBody": {
-          "description": "Plant added to the store",
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NewPlant"
+                "$ref": "#/components/schemas/UpdateCartBody"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Return a 200 status to indicate that the data was received successfully"
+            "description": "Cart updated successfully."
+          },
+          "400": {
+            "description": "Error updating the cart."
+          }
+        }
+      }
+    },
+    "/customers/{customer_id}/carts/{cart_id}/order/wallet/{wallet_id}": {
+      "post": {
+        "summary": "Create an Order from a Cart",
+        "description": "Creates an order from a specific cart using a customer's wallet.",
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cart_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "wallet_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Order created successfully."
+          },
+          "400": {
+            "description": "Error creating the order."
+          }
+        }
+      }
+    },
+    "/customers": {
+      "post": {
+        "summary": "Create a Customer",
+        "description": "Creates a new customer.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCustomerBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Customer created successfully."
+          },
+          "400": {
+            "description": "Error creating the customer."
+          }
+        }
+      },
+      "get": {
+        "summary": "Get Customers",
+        "description": "Retrieves a list of customers.",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of customers."
+          },
+          "400": {
+            "description": "Error retrieving customers."
+          }
+        }
+      }
+    },
+    "/customers/{customer_id}/address": {
+      "post": {
+        "summary": "Create a Customer Address",
+        "description": "Creates a new address for a customer.",
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCustomerAddressBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Address created successfully."
+          },
+          "400": {
+            "description": "Error creating the address."
+          }
+        }
+      },
+      "get": {
+        "summary": "Get Customer Addresses",
+        "description": "Retrieves all addresses for a specific customer.",
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of addresses."
+          },
+          "400": {
+            "description": "Error retrieving addresses."
+          }
+        }
+      }
+    },
+    "/customers/{customer_id}/wallets": {
+      "get": {
+        "summary": "Get Customer Wallets",
+        "description": "Retrieves all wallets for a specific customer.",
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of wallets."
+          },
+          "400": {
+            "description": "Error retrieving wallets."
+          }
+        }
+      }
+    },
+    "/customers/{customer_id}/wallets/{wallet_id}": {
+      "get": {
+        "summary": "Get a Wallet",
+        "description": "Retrieves a specific wallet for a customer.",
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "wallet_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The requested wallet."
+          },
+          "400": {
+            "description": "Error retrieving the wallet."
+          }
+        }
+      }
+    },
+    "/customers/{customer_id}/wallets/{wallet_id}/deposit": {
+      "post": {
+        "summary": "Deposit to Wallet",
+        "description": "Deposits funds into a customer's wallet.",
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "wallet_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepositToWalletBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Deposit successful."
+          },
+          "400": {
+            "description": "Error making deposit."
+          }
+        }
+      }
+    },
+    "/merchants/category/{category_code}": {
+      "get": {
+        "summary": "Get Merchants by Category",
+        "description": "Retrieves a list of merchants by category.",
+        "parameters": [
+          {
+            "name": "category_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of merchants."
+          },
+          "400": {
+            "description": "Error retrieving merchants."
+          }
+        }
+      }
+    },
+    "/merchants/{merchant_id}/products/{product_category_id}": {
+      "get": {
+        "summary": "Get Merchant Products",
+        "description": "Retrieves a list of products for a specific merchant and product category.",
+        "parameters": [
+          {
+            "name": "merchant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "product_category_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of products."
+          },
+          "400": {
+            "description": "Error retrieving products."
+          }
+        }
+      }
+    },
+    "/merchants/products/{product_id}": {
+      "get": {
+        "summary": "Get a Product",
+        "description": "Retrieves a specific product.",
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The requested product."
+          },
+          "400": {
+            "description": "Error retrieving the product."
+          }
+        }
+      }
+    },
+    "/merchants/products/search": {
+      "get": {
+        "summary": "Search Products",
+        "description": "Searches for products.",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_price",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_price",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of products."
+          },
+          "400": {
+            "description": "Error searching for products."
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Performs a health check of the service.",
+        "responses": {
+          "200": {
+            "description": "Service is healthy."
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "summary": "Readiness Check",
+        "description": "Performs a readiness check of the service.",
+        "responses": {
+          "200": {
+            "description": "Service is ready."
+          }
+        }
+      }
+    },
+    "/health/live": {
+      "get": {
+        "summary": "Liveness Check",
+        "description": "Performs a liveness check of the service.",
+        "responses": {
+          "200": {
+            "description": "Service is live."
           }
         }
       }
@@ -154,41 +635,167 @@
   },
   "components": {
     "schemas": {
-      "Plant": {
-        "required": [
-          "name"
-        ],
+      "CreateCartBody": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "product_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "qty": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "UpdateCartBody": {
+        "type": "object",
+        "properties": {
+          "add": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "product_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "qty": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "remove": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "CreateOrderBody": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "CreateCustomerBody": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "signed_agreement_id": {
+            "type": "string"
+          },
+          "first_name": {
+            "type": "string"
+          },
+          "last_name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "birth_date": {
+            "type": "string"
+          },
+          "address": {
+            "type": "object",
+            "properties": {
+              "street_line_1": {
+                "type": "string"
+              },
+              "city": {
+                "type": "string"
+              },
+              "subdivision": {
+                "type": "string"
+              },
+              "postal_code": {
+                "type": "string"
+              },
+              "country": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "CreateCustomerAddressBody": {
         "type": "object",
         "properties": {
           "name": {
-            "description": "The name of the plant",
             "type": "string"
           },
-          "tag": {
-            "description": "Tag to specify the type",
+          "address": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "postal_code": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "contact_information": {
+            "type": "object",
+            "properties": {
+              "phone": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "DepositToWalletBody": {
+        "type": "object",
+        "properties": {
+          "amount": {
             "type": "string"
           }
         }
       },
-      "NewPlant": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/Plant"
+      "RotateApiKeyBody": {
+        "type": "object",
+        "properties": {
+          "old_key_id": {
+            "type": "string",
+            "format": "uuid"
           },
-          {
-            "required": [
-              "id"
-            ],
-            "type": "object",
-            "properties": {
-              "id": {
-                "description": "Identification number of the plant",
-                "type": "integer",
-                "format": "int64"
-              }
-            }
+          "grace_hours": {
+            "type": "integer"
           }
-        ]
+        }
+      },
+      "CreateDeveloperBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        }
       },
       "Error": {
         "required": [

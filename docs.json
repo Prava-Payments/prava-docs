@@ -3,9 +3,9 @@
   "theme": "mint",
   "name": "Mint Starter Kit",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#FF7700",
+    "light": "#FF9900",
+    "dark": "#FF5500"
   },
   "favicon": "/favicon.svg",
   "navigation": {
@@ -49,6 +49,7 @@
       },
       {
         "tab": "API reference",
+        "openapi": "api-reference/openapi.json",
         "groups": [
           {
             "group": "API documentation",
@@ -57,12 +58,47 @@
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Customers",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "POST /customers",
+              "GET /customers",
+              "POST /customers/{customer_id}/address",
+              "GET /customers/{customer_id}/address"
+            ]
+          },
+          {
+            "group": "Wallets",
+            "pages": [
+              "GET /customers/{customer_id}/wallets",
+              "GET /customers/{customer_id}/wallets/{wallet_id}",
+              "POST /customers/{customer_id}/wallets/{wallet_id}/deposit"
+            ]
+          },
+          {
+            "group": "Merchants",
+            "pages": [
+              "GET /merchants/category/{category_code}",
+              "GET /merchants/{merchant_id}/products/{product_category_id}",
+              "GET /merchants/products/{product_id}",
+              "GET /merchants/products/search"
+            ]
+          },
+          {
+            "group": "Carts",
+            "pages": [
+              "POST /customers/{customer_id}/merchants/{merchant_id}/carts",
+              "GET /customers/{customer_id}/carts",
+              "GET /customers/{customer_id}/carts/{cart_id}",
+              "PATCH /carts/{cart_id}",
+              "POST /customers/{customer_id}/carts/{cart_id}/order/wallet/{wallet_id}"
+            ]
+          },
+          {
+            "group": "Health",
+            "pages": [
+              "GET /health",
+              "GET /health/ready",
+              "GET /health/live"
             ]
           }
         ]
