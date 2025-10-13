@@ -1,11 +1,11 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "theme": "linden",
+  "name": "Prava Payments Docs",
   "colors": {
     "primary": "#FF7700",
-    "light": "#FF9900",
-    "dark": "#FF5500"
+    "light": "#FF7700",
+    "dark": "#FF7700"
   },
   "favicon": "/favicon.svg",
   "navigation": {
@@ -18,31 +18,20 @@
             "pages": [
               "index",
               "quickstart",
-              "development"
+              "architecture",
+              "authentication"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Key concepts",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "concepts/key-concept"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Integration",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "integration/merchant"
             ]
           }
         ]
@@ -107,13 +96,8 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
           "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
+          "href": "https://www.prava.space/blog",
           "icon": "newspaper"
         }
       ]

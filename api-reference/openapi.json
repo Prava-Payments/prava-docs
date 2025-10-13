@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Prava API Reference",
+    "title": "Prava Payments API Reference",
     "description": "API reference for the Prava platform.",
     "license": {
       "name": "MIT"

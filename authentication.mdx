@@ -1,0 +1,23 @@
+---
+title: 'Authentication & Environments'
+description: 'Learn how to authenticate your requests and use Prava environments.'
+---
+
+## Authentication
+
+Prava uses bearer tokens to authenticate requests.
+
+*   Include the `Authorization: Bearer <YOUR_TOKEN>` header on every request.
+*   Keep your tokens secret and secure.
+*   Rotate tokens if they are compromised.
+
+## Environments
+
+*   **Sandbox** — For development and testing. Use the sandbox base URL and sandbox keys.
+*   **Production** — Provisioned after additional verification. Production keys will be issued separately.
+
+## Webhooks
+
+Prava supports webhooks for asynchronous status updates (e.g., payments, disputes, wallet events).
+
+*   Verify webhook signatures using the SDK helper or the header signature provided on each event to ensure security.

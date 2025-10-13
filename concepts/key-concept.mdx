@@ -1,0 +1,27 @@
+---
+title: 'Key Concepts'
+description: 'An overview of the core components of the Prava platform.'
+icon: 'key'
+---
+
+## Wallets
+
+Isolated containers that hold balance metadata and enforcement rules. Wallets enable:
+
+*   Per-agent permissions
+*   Spending caps and rate limits
+*   Transaction-level approvals
+
+## Guardrails & Evals
+
+*   **Guardrails** are rule-based controls (spending caps, merchant blacklists, currency restrictions).
+*   **Evals** are evaluation prompts/rules that validate natural-language instructions against user settings (for example, checking whether “buy shoes under $100” matches user limits).
+
+## Payments
+
+The payment lifecycle includes creation, authorization, capture, settlement, and refunds. Prava handles tokenization and network routing for agentic flows.
+
+## Merchant Network & Shopify App
+
+Prava integrates with merchant platforms (a Shopify plugin is available by invite-only) and card networks to complete payments while preserving merchant-of-record (MoR) semantics where applicable.
+

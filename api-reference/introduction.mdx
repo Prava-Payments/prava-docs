@@ -1,33 +1,20 @@
 ---
 title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+description: 'An overview of the Prava Payments API'
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
+Prava provides a payments infrastructure purpose-built for AI-driven applications and agents. Many modern AI apps can discover products and make recommendations, but they cannot safely and reliably make payments on behalf of users. Prava enables AI agents to transact- in-chat, in-voice, or via any AI-native interface- while keeping user funds secure, auditable, and under user control.
 
-## Welcome
+## What Prava provides
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
+*   **Payments API** — Native, agent-first payments endpoints for checkout, wallet management, and transaction lifecycle.
+*   **AI Wallets** — Wallet abstractions that isolate funds and permissions per user and per agent.
+*   **Financial Guardrails** — Configurable rules (spending caps, verification triggers, intent validation) that keep agentic payments safe.
+*   **Quick integrations** — SDKs, integrations (Shopify app), and sample apps to speed up time-to-value.
 
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+## Who benefits
 
-## Authentication
-
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
-
-```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
-```
+*   AI shopping/stylist apps (in-chat discovery → buy)
+*   Travel and booking agents (flight/hotel reservations)
+*   Personal assistant apps (scheduling, recurring purchases)
+*   Marketplaces and merchants who want to accept purchases triggered by LLMs or agents
