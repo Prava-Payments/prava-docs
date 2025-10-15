@@ -947,7 +947,7 @@
     "/customers/{customer_id}/wallets/{wallet_id}/deposit": {
       "post": {
         "summary": "Deposit to Wallet (Staging Only)",
-        "description": "Deposits funds into a customer's wallet. This endpoint is only available in the staging environment.",
+        "description": "Deposits funds into a customer's wallet. This endpoint is only available in the sandbox environment.",
         "parameters": [
           {
             "name": "customer_id",
@@ -1047,7 +1047,7 @@
     "/merchants/category/{category_code}": {
       "get": {
         "summary": "Get Merchants by Category",
-        "description": "Retrieves a list of merchants by category.",
+        "description": "Retrieves a list of merchants by category. example codes: `clothing`, `electronics`, `home_goods`, `books`, `gourmet_food`",
         "parameters": [
           {
             "name": "category_code",
@@ -1126,7 +1126,7 @@
     "/merchants/{merchant_id}/products/{product_category_id}": {
       "get": {
         "summary": "Get Merchant Products",
-        "description": "Retrieves a list of products for a specific merchant and product category.",
+        "description": "Retrieves a list of products for a specific merchant and product category. Example product category ids: `televisions`, `audio`, `computers`, `accessories`, `jackets`, `pants`, `shirts` etc",
         "parameters": [
           {
             "name": "merchant_id",
@@ -1291,129 +1291,6 @@
                   "error": {
                     "code": "PRODUCT_NOT_FOUND",
                     "message": "Product not found",
-                    "request_id": "req_12345"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/merchants/products/search": {
-      "get": {
-        "summary": "Search Products",
-        "description": "Searches for products across all merchants.",
-        "parameters": [
-          {
-            "name": "q",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "category",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "min_price",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "max_price",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "default": 1
-            }
-          },
-          {
-            "name": "page_size",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "default": 20
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A list of products.",
-            "content": {
-              "application/json": {
-                "example": {
-                  "data": {
-                    "query": "laptop",
-                    "category": "electronics",
-                    "count": 1,
-                    "products": [
-                      {
-                        "product_id": "p1r2o3d4-u5c6-t7s8-9012-3456789abcde",
-                        "name": "Example Laptop",
-                        "description": "A powerful and lightweight laptop.",
-                        "category": "laptops",
-                        "price": "1200.00",
-                        "currency": "USD",
-                        "inventory": 50,
-                        "merchant": {
-                          "merchant_id": "m1e2r3c4-h5a6-n7t8-9012-3456789abcde",
-                          "name": "Example Merchant",
-                          "category_code": "electronics"
-                        },
-                        "image_url": "https://example.com/laptop.jpg"
-                      }
-                    ]
-                  },
-                  "meta": {
-                    "request_id": "req_12345",
-                    "timestamp": "2025-10-15T05:36:43.000Z",
-                    "pagination": {
-                      "page": 1,
-                      "page_size": 20,
-                      "total_count": 1,
-                      "has_more": false
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Validation error.",
-            "content": {
-              "application/json": {
-                "example": {
-                  "error": {
-                    "code": "VALIDATION_ERROR",
-                    "message": "Search query or category is required",
-                    "request_id": "req_12345"
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Invalid API Key.",
-            "content": {
-              "application/json": {
-                "example": {
-                  "error": {
-                    "code": "UNAUTHORIZED",
-                    "message": "Authentication required",
                     "request_id": "req_12345"
                   }
                 }

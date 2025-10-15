@@ -28,7 +28,9 @@
           {
             "group": "Key concepts",
             "pages": [
-              "concepts/key-concept"
+              "concepts/wallets",
+              "concepts/guardrails",
+              "concepts/payments"
             ]
           },
           {
@@ -74,8 +76,7 @@
             "pages": [
               "GET /merchants/category/{category_code}",
               "GET /merchants/{merchant_id}/products/{product_category_id}",
-              "GET /merchants/products/{product_id}",
-              "GET /merchants/products/search"
+              "GET /merchants/products/{product_id}"
             ]
           },
           {
