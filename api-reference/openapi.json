@@ -41,6 +41,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "A unique key for the request to ensure idempotency."
           }
         ],
         "requestBody": {
@@ -414,6 +424,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "A unique key for the request to ensure idempotency."
           }
         ],
         "requestBody": {
@@ -502,6 +522,18 @@
       "post": {
         "summary": "Create a Customer",
         "description": "Creates a new customer and a wallet for them.",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "A unique key for the request to ensure idempotency."
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -654,6 +686,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "A unique key for the request to ensure idempotency."
           }
         ],
         "requestBody": {
@@ -888,6 +930,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "A unique key for the request to ensure idempotency."
           }
         ],
         "responses": {
@@ -966,6 +1018,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "A unique key for the request to ensure idempotency."
           }
         ],
         "requestBody": {

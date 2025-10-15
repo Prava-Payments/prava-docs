@@ -29,6 +29,7 @@
             "group": "Key concepts",
             "pages": [
               "concepts/wallets",
+              "concepts/cards",
               "concepts/guardrails",
               "concepts/payments"
             ]
