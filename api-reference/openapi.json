@@ -54,11 +54,75 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "Cart created successfully."
+          "201": {
+            "description": "Cart created successfully.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "cart_id": "c1b2a3d4-e5f6-7890-1234-567890abcdef",
+                    "customer_id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
+                    "merchant_id": "m1e2r3c4-h5a6-n7t8-9012-3456789abcde",
+                    "items": [
+                      {
+                        "product_id": "p1r2o3d4-u5c6-t7s8-9012-3456789abcde",
+                        "qty": 1
+                      }
+                    ],
+                    "status": "open",
+                    "created_at": "2025-10-15T05:36:43.000Z",
+                    "updated_at": "2025-10-15T05:36:43.000Z"
+                  },
+                  "meta": {
+                    "request_id": "req_12345",
+                    "timestamp": "2025-10-15T05:36:43.000Z",
+                    "idempotency_key": "ee461e0f-1808-4018-9ee1-2744a8e822f7"
+                  }
+                }
+              }
+            }
           },
           "400": {
-            "description": "Error creating cart."
+            "description": "Invalid quantity.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INVALID_QUANTITY",
+                    "message": "Insufficient inventory for product Example Product",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid API Key.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Authentication required",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer, Merchant, or Product not found.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CUSTOMER_NOT_FOUND",
+                    "message": "Customer not found",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -80,10 +144,57 @@
         ],
         "responses": {
           "200": {
-            "description": "A list of carts."
+            "description": "A list of carts.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "count": 1,
+                    "carts": [
+                      {
+                        "cart_id": "c1b2a3d4-e5f6-7890-1234-567890abcdef",
+                        "merchant_id": "m1e2r3c4-h5a6-n7t8-9012-3456789abcde",
+                        "status": "open",
+                        "created_at": "2025-10-15T05:36:43.000Z",
+                        "updated_at": "2025-10-15T05:36:43.000Z"
+                      }
+                    ]
+                  },
+                  "meta": {
+                    "request_id": "req_12345",
+                    "timestamp": "2025-10-15T05:36:43.000Z"
+                  }
+                }
+              }
+            }
           },
-          "400": {
-            "description": "Error retrieving carts."
+          "401": {
+            "description": "Invalid API Key.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Authentication required",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer not found.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CUSTOMER_NOT_FOUND",
+                    "message": "Customer not found",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -114,10 +225,67 @@
         ],
         "responses": {
           "200": {
-            "description": "The requested cart."
+            "description": "The requested cart.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "cart_id": "c1b2a3d4-e5f6-7890-1234-567890abcdef",
+                    "customer_id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
+                    "merchant_id": "m1e2r3c4-h5a6-n7t8-9012-3456789abcde",
+                    "products": [
+                      {
+                        "product_id": "p1r2o3d4-u5c6-t7s8-9012-3456789abcde",
+                        "name": "Example Product",
+                        "description": "This is an example product.",
+                        "price": "10.00",
+                        "currency": "USD",
+                        "quantity": 1,
+                        "item_total": "10.00",
+                        "image_url": "https://example.com/product.jpg"
+                      }
+                    ],
+                    "total_amount": "10.00",
+                    "currency": "USD",
+                    "status": "open",
+                    "created_at": "2025-10-15T05:36:43.000Z",
+                    "updated_at": "2025-10-15T05:36:43.000Z"
+                  },
+                  "meta": {
+                    "request_id": "req_12345",
+                    "timestamp": "2025-10-15T05:36:43.000Z"
+                  }
+                }
+              }
+            }
           },
-          "400": {
-            "description": "Error retrieving the cart."
+          "401": {
+            "description": "Invalid API Key.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Authentication required",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer or Cart not found.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CUSTOMER_NOT_FOUND",
+                    "message": "Customer not found",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -149,10 +317,68 @@
         },
         "responses": {
           "200": {
-            "description": "Cart updated successfully."
+            "description": "Cart updated successfully.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "cart_id": "c1b2a3d4-e5f6-7890-1234-567890abcdef",
+                    "customer_id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
+                    "merchant_id": "m1e2r3c4-h5a6-n7t8-9012-3456789abcde",
+                    "status": "open",
+                    "created_at": "2025-10-15T05:36:43.000Z",
+                    "updated_at": "2025-10-15T05:38:00.000Z"
+                  },
+                  "meta": {
+                    "request_id": "req_12345",
+                    "timestamp": "2025-10-15T05:38:00.000Z",
+                    "idempotency_key": "ee461e0f-1808-4018-9ee1-2744a8e822f7"
+                  }
+                }
+              }
+            }
           },
           "400": {
-            "description": "Error updating the cart."
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Product p1r2o3d4-u5c6-t7s8-9012-3456789abcde not found",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid API Key.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Authentication required",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cart not found.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CART_NOT_FOUND",
+                    "message": "Cart not found or not accessible",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -201,11 +427,73 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "Order created successfully."
+          "201": {
+            "description": "Order created successfully.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "order_id": "o1r2d3e4-r5d6-e7r8-9012-3456789abcde",
+                    "cart_id": "c1b2a3d4-e5f6-7890-1234-567890abcdef",
+                    "customer_id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
+                    "wallet_id": "f0e1d2c3-b4a5-6789-0123-456789abcdef",
+                    "status": "processing",
+                    "amount": "10.00",
+                    "currency": "USD",
+                    "address_id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+                    "created_at": "2025-10-15T05:40:12.000Z",
+                    "updated_at": "2025-10-15T05:40:12.000Z"
+                  },
+                  "meta": {
+                    "request_id": "req_12345",
+                    "timestamp": "2025-10-15T05:40:12.000Z",
+                    "idempotency_key": "ee461e0f-1808-4018-9ee1-2744a8e822f7"
+                  }
+                }
+              }
+            }
           },
           "400": {
-            "description": "Error creating the order."
+            "description": "Validation error or insufficient funds.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INSUFFICIENT_FUNDS",
+                    "message": "Insufficient funds",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid API Key.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Authentication required",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer not found.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CUSTOMER_NOT_FOUND",
+                    "message": "Customer not found",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -213,7 +501,7 @@
     "/customers": {
       "post": {
         "summary": "Create a Customer",
-        "description": "Creates a new customer.",
+        "description": "Creates a new customer and a wallet for them.",
         "requestBody": {
           "required": true,
           "content": {
@@ -225,17 +513,63 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "Customer created successfully."
+          "201": {
+            "description": "Customer created successfully.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
+                    "type": "individual",
+                    "status": "pending",
+                    "first_name": "John",
+                    "last_name": "Doe",
+                    "email": "john.doe@example.com",
+                    "created_at": "2025-10-15T05:36:43.000Z",
+                    "updated_at": "2025-10-15T05:36:43.000Z"
+                  },
+                  "meta": {
+                    "request_id": "req_12345",
+                    "timestamp": "2025-10-15T05:36:43.000Z",
+                    "idempotency_key": "ee461e0f-1808-4018-9ee1-2744a8e822f7"
+                  }
+                }
+              }
+            }
           },
-          "400": {
-            "description": "Error creating the customer."
+          "401": {
+            "description": "Invalid API Key.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Authentication required",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Customer with this email already exists.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CUSTOMER_EXISTS",
+                    "message": "Customer with this email already exists",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
           }
         }
       },
       "get": {
         "summary": "Get Customers",
-        "description": "Retrieves a list of customers.",
+        "description": "Retrieves a list of customers for the developer.",
         "parameters": [
           {
             "name": "page",
@@ -256,18 +590,61 @@
         ],
         "responses": {
           "200": {
-            "description": "A list of customers."
+            "description": "A list of customers.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "count": 1,
+                    "data": [
+                      {
+                        "id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
+                        "type": "individual",
+                        "status": "verified",
+                        "first_name": "John",
+                        "last_name": "Doe",
+                        "email": "john.doe@example.com",
+                        "has_accepted_terms_of_service": true,
+                        "created_at": "2025-10-15T05:36:43.000Z",
+                        "updated_at": "2025-10-15T05:36:43.000Z"
+                      }
+                    ]
+                  },
+                  "meta": {
+                    "request_id": "req_12345",
+                    "timestamp": "2025-10-15T05:36:43.000Z",
+                    "pagination": {
+                      "page": 1,
+                      "page_size": 20,
+                      "total_count": 1,
+                      "has_more": false
+                    }
+                  }
+                }
+              }
+            }
           },
-          "400": {
-            "description": "Error retrieving customers."
+          "401": {
+            "description": "Invalid API Key.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Authentication required",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
           }
         }
       }
     },
     "/customers/{customer_id}/address": {
       "post": {
-        "summary": "Create a Customer Address",
-        "description": "Creates a new address for a customer.",
+        "summary": "Create or Update a Customer Address",
+        "description": "Creates a new address for a customer, or updates an existing one.",
         "parameters": [
           {
             "name": "customer_id",
@@ -291,10 +668,53 @@
         },
         "responses": {
           "200": {
-            "description": "Address created successfully."
+            "description": "Address created or updated successfully.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "address_id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+                    "customer_id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
+                    "status": "updated",
+                    "created_at": "2025-10-15T05:36:43.000Z",
+                    "updated_at": "2025-10-15T05:36:43.000Z"
+                  },
+                  "meta": {
+                    "request_id": "req_12345",
+                    "timestamp": "2025-10-15T05:36:43.000Z",
+                    "idempotency_key": "ee461e0f-1808-4018-9ee1-2744a8e822f7"
+                  }
+                }
+              }
+            }
           },
-          "400": {
-            "description": "Error creating the address."
+          "401": {
+            "description": "Invalid API Key.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Authentication required",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer not found.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CUSTOMER_NOT_FOUND",
+                    "message": "Customer not found",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
           }
         }
       },
@@ -314,10 +734,60 @@
         ],
         "responses": {
           "200": {
-            "description": "A list of addresses."
+            "description": "A list of addresses.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": [
+                    {
+                      "address_id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+                      "customer_id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
+                      "name": "Home",
+                      "address": "123 Main St",
+                      "city": "Anytown",
+                      "state": "CA",
+                      "postal_code": "12345",
+                      "country": "US",
+                      "contact_information": "555-1234",
+                      "created_at": "2025-10-15T05:36:43.000Z",
+                      "updated_at": "2025-10-15T05:36:43.000Z"
+                    }
+                  ],
+                  "meta": {
+                    "request_id": "req_12345",
+                    "timestamp": "2025-10-15T05:36:43.000Z"
+                  }
+                }
+              }
+            }
           },
-          "400": {
-            "description": "Error retrieving addresses."
+          "401": {
+            "description": "Invalid API Key.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Authentication required",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer not found.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CUSTOMER_NOT_FOUND",
+                    "message": "Customer not found",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -339,10 +809,59 @@
         ],
         "responses": {
           "200": {
-            "description": "A list of wallets."
+            "description": "A list of wallets.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "count": 1,
+                    "data": [
+                      {
+                        "wallet_id": "f0e1d2c3-b4a5-6789-0123-456789abcdef",
+                        "balance": {
+                          "currency": "USD",
+                          "amount": "100.00"
+                        },
+                        "created_at": "2025-10-15T05:36:43.000Z",
+                        "updated_at": "2025-10-15T05:36:43.000Z"
+                      }
+                    ]
+                  },
+                  "meta": {
+                    "request_id": "req_12345",
+                    "timestamp": "2025-10-15T05:36:43.000Z"
+                  }
+                }
+              }
+            }
           },
-          "400": {
-            "description": "Error retrieving wallets."
+          "401": {
+            "description": "Invalid API Key.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Authentication required",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer not found.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CUSTOMER_NOT_FOUND",
+                    "message": "Customer not found",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -373,18 +892,62 @@
         ],
         "responses": {
           "200": {
-            "description": "The requested wallet."
+            "description": "The requested wallet.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "wallet_id": "f0e1d2c3-b4a5-6789-0123-456789abcdef",
+                    "customer_id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
+                    "balance": {
+                      "currency": "USD",
+                      "amount": "100.00"
+                    },
+                    "updated_at": "2025-10-15T05:36:43.000Z"
+                  },
+                  "meta": {
+                    "request_id": "req_12345",
+                    "timestamp": "2025-10-15T05:36:43.000Z"
+                  }
+                }
+              }
+            }
           },
-          "400": {
-            "description": "Error retrieving the wallet."
+          "401": {
+            "description": "Invalid API Key.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Authentication required",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer or Wallet not found.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CUSTOMER_NOT_FOUND",
+                    "message": "Customer not found",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
           }
         }
       }
     },
     "/customers/{customer_id}/wallets/{wallet_id}/deposit": {
       "post": {
-        "summary": "Deposit to Wallet",
-        "description": "Deposits funds into a customer's wallet.",
+        "summary": "Deposit to Wallet (Staging Only)",
+        "description": "Deposits funds into a customer's wallet. This endpoint is only available in the staging environment.",
         "parameters": [
           {
             "name": "customer_id",
@@ -417,10 +980,66 @@
         },
         "responses": {
           "200": {
-            "description": "Deposit successful."
+            "description": "Deposit successful.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "wallet_balance": {
+                      "currency": "USD",
+                      "amount": "150.00"
+                    }
+                  },
+                  "meta": {
+                    "request_id": "req_12345",
+                    "timestamp": "2025-10-15T05:36:43.000Z",
+                    "idempotency_key": "ee461e0f-1808-4018-9ee1-2744a8e822f7"
+                  }
+                }
+              }
+            }
           },
-          "400": {
-            "description": "Error making deposit."
+          "401": {
+            "description": "Invalid API Key.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Authentication required",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Operation not allowed in production.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "OPERATION_NOT_ALLOWED",
+                    "message": "Direct deposits not allowed in production",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer or Wallet not found.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CUSTOMER_NOT_FOUND",
+                    "message": "Customer not found",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -457,10 +1076,49 @@
         ],
         "responses": {
           "200": {
-            "description": "A list of merchants."
+            "description": "A list of merchants.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "count": 1,
+                    "merchants": [
+                      {
+                        "merchant_id": "m1e2r3c4-h5a6-n7t8-9012-3456789abcde",
+                        "name": "Example Merchant",
+                        "category_code": "electronics",
+                        "description": "Your one-stop shop for electronics.",
+                        "logo_url": "https://example.com/logo.png"
+                      }
+                    ]
+                  },
+                  "meta": {
+                    "request_id": "req_12345",
+                    "timestamp": "2025-10-15T05:36:43.000Z",
+                    "pagination": {
+                      "page": 1,
+                      "page_size": 20,
+                      "total_count": 1,
+                      "has_more": false
+                    }
+                  }
+                }
+              }
+            }
           },
-          "400": {
-            "description": "Error retrieving merchants."
+          "401": {
+            "description": "Invalid API Key.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Authentication required",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -506,10 +1164,60 @@
         ],
         "responses": {
           "200": {
-            "description": "A list of products."
+            "description": "A list of products.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "merchant_id": "m1e2r3c4-h5a6-n7t8-9012-3456789abcde",
+                    "category_code": "laptops",
+                    "products": [
+                      {
+                        "product_id": "p1r2o3d4-u5c6-t7s8-9012-3456789abcde",
+                        "name": "Example Laptop",
+                        "description": "A powerful and lightweight laptop.",
+                        "price": "1200.00",
+                        "currency": "USD",
+                        "inventory": 50,
+                        "image_url": "https://example.com/laptop.jpg"
+                      }
+                    ]
+                  },
+                  "meta": {
+                    "request_id": "req_12345",
+                    "timestamp": "2025-10-15T05:36:43.000Z"
+                  }
+                }
+              }
+            }
           },
-          "400": {
-            "description": "Error retrieving products."
+          "401": {
+            "description": "Invalid API Key.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Authentication required",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Merchant not found.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "MERCHANT_NOT_FOUND",
+                    "message": "Merchant not found",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -531,10 +1239,63 @@
         ],
         "responses": {
           "200": {
-            "description": "The requested product."
+            "description": "The requested product.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "product_id": "p1r2o3d4-u5c6-t7s8-9012-3456789abcde",
+                    "name": "Example Laptop",
+                    "description": "A powerful and lightweight laptop.",
+                    "category": "laptops",
+                    "price": "1200.00",
+                    "currency": "USD",
+                    "inventory": 50,
+                    "merchant": {
+                      "merchant_id": "m1e2r3c4-h5a6-n7t8-9012-3456789abcde",
+                      "name": "Example Merchant",
+                      "category_code": "electronics"
+                    },
+                    "images": [
+                      "https://example.com/laptop_front.jpg",
+                      "https://example.com/laptop_side.jpg"
+                    ]
+                  },
+                  "meta": {
+                    "request_id": "req_12345",
+                    "timestamp": "2025-10-15T05:36:43.000Z"
+                  }
+                }
+              }
+            }
           },
-          "400": {
-            "description": "Error retrieving the product."
+          "401": {
+            "description": "Invalid API Key.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Authentication required",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product not found.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "PRODUCT_NOT_FOUND",
+                    "message": "Product not found",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -542,7 +1303,7 @@
     "/merchants/products/search": {
       "get": {
         "summary": "Search Products",
-        "description": "Searches for products.",
+        "description": "Searches for products across all merchants.",
         "parameters": [
           {
             "name": "q",
@@ -591,43 +1352,73 @@
         ],
         "responses": {
           "200": {
-            "description": "A list of products."
+            "description": "A list of products.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "query": "laptop",
+                    "category": "electronics",
+                    "count": 1,
+                    "products": [
+                      {
+                        "product_id": "p1r2o3d4-u5c6-t7s8-9012-3456789abcde",
+                        "name": "Example Laptop",
+                        "description": "A powerful and lightweight laptop.",
+                        "category": "laptops",
+                        "price": "1200.00",
+                        "currency": "USD",
+                        "inventory": 50,
+                        "merchant": {
+                          "merchant_id": "m1e2r3c4-h5a6-n7t8-9012-3456789abcde",
+                          "name": "Example Merchant",
+                          "category_code": "electronics"
+                        },
+                        "image_url": "https://example.com/laptop.jpg"
+                      }
+                    ]
+                  },
+                  "meta": {
+                    "request_id": "req_12345",
+                    "timestamp": "2025-10-15T05:36:43.000Z",
+                    "pagination": {
+                      "page": 1,
+                      "page_size": 20,
+                      "total_count": 1,
+                      "has_more": false
+                    }
+                  }
+                }
+              }
+            }
           },
           "400": {
-            "description": "Error searching for products."
-          }
-        }
-      }
-    },
-    "/health": {
-      "get": {
-        "summary": "Health Check",
-        "description": "Performs a health check of the service.",
-        "responses": {
-          "200": {
-            "description": "Service is healthy."
-          }
-        }
-      }
-    },
-    "/health/ready": {
-      "get": {
-        "summary": "Readiness Check",
-        "description": "Performs a readiness check of the service.",
-        "responses": {
-          "200": {
-            "description": "Service is ready."
-          }
-        }
-      }
-    },
-    "/health/live": {
-      "get": {
-        "summary": "Liveness Check",
-        "description": "Performs a liveness check of the service.",
-        "responses": {
-          "200": {
-            "description": "Service is live."
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Search query or category is required",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid API Key.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Authentication required",
+                    "request_id": "req_12345"
+                  }
+                }
+              }
+            }
           }
         }
       }

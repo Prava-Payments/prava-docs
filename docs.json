@@ -1,6 +1,6 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "linden",
+  "theme": "mint",
   "name": "Prava Payments Docs",
   "colors": {
     "primary": "#FF7700",
@@ -8,6 +8,9 @@
     "dark": "#FF7700"
   },
   "favicon": "/favicon.svg",
+  "thumbnails": {
+    "background": "images/cover-light.png"
+  },
   "navigation": {
     "tabs": [
       {
@@ -29,9 +32,11 @@
             ]
           },
           {
-            "group": "Integration",
+            "group": "Merchant Integration",
             "pages": [
-              "integration/merchant"
+              "integration/shopify_app_SDK",
+              "integration/faqs",
+              "integration/for_custom_stores"
             ]
           }
         ]
@@ -43,7 +48,8 @@
           {
             "group": "API documentation",
             "pages": [
-              "api-reference/introduction"
+              "api-reference/introduction",
+              "api-reference/postman"
             ]
           },
           {
@@ -81,14 +87,6 @@
               "PATCH /carts/{cart_id}",
               "POST /customers/{customer_id}/carts/{cart_id}/order/wallet/{wallet_id}"
             ]
-          },
-          {
-            "group": "Health",
-            "pages": [
-              "GET /health",
-              "GET /health/ready",
-              "GET /health/live"
-            ]
           }
         ]
       }
@@ -99,6 +97,16 @@
           "anchor": "Blog",
           "href": "https://www.prava.space/blog",
           "icon": "newspaper"
+        },
+        {
+          "anchor": "X",
+          "href": "https://x.com/PravaPayments",
+          "icon": "x"
+        },
+        {
+          "anchor": "Linkedin",
+          "href": "https://www.linkedin.com/company/prava-payments/",
+          "icon": "linkedin"
         }
       ]
     }
@@ -113,12 +121,7 @@
         "label": "Support",
         "href": "mailto:developers@prava.space"
       }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://www.prava.space"
-    }
+    ]
   },
   "contextual": {
     "options": [
@@ -131,6 +134,10 @@
      "cursor",
      "vscode"
    ]
+  },
+  "banner": {
+    "content": "Prava sandbox is live! [Join here](https://www.prava.space/join)",
+    "dismissible": true
   },
   "footer": {
     "socials": {
