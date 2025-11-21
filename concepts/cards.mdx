@@ -1,8 +1,150 @@
 ---
-title: 'Cards (coming soon...)'
+title: 'Cards'
 description: 'Agentic card payments with secure, global network integration'
 icon: 'credit-card'
 ---
 
+## What Prava Solves
 
-We enable agentic card payments end to end, integrating with partners across major global payment networks for secure authentication, tokenization, and seamless authorization. This makes shopping possible from global merchants seamless.
+Traditional online checkout requires manual user input. AI apps can help with search and recommendation, but they can’t complete payments without:
+
+- Secure access to card credentials
+- Verified user intent
+- Trust between agents and merchants
+- A standard way to deliver payment payloads
+
+Prava provides these foundations so AI agents can pay on behalf of users safely.
+
+## 2. Core Concepts
+
+These are the major pieces developers should understand:
+
+### 1. Agent Identity
+
+Every AI agent interacting with merchants must be identifiable and trusted.
+Prava issues the agent a secure identity, enabling merchants to validate who is making the request.
+
+### 2. Tokenized Card Credentials
+
+Users never expose real card numbers to the agent.
+Prava converts every card into a one time use card that is:
+
+- Bound to the user
+- Bound to the agent
+- Bound to the particular merchant & product
+- Controlled with user authentication
+- Protected against misuse
+
+### 3. User Intent
+
+Before an agent can pay, the user must define what the agent is allowed to buy — e.g.:
+
+- Item details
+- Budget
+- Quantity
+- When the purchase can occur (immediately or automated later)
+
+Prava bundles this into a structured Intent Object.
+
+### 4. Merchant Verification
+
+Agents must ensure they are transacting with legitimate merchants.
+Prava provides merchant validation so payments aren’t made to spoofed or unsafe sites.
+
+### 5. Checkout Payloads
+
+Prava generates a secure, one-time payment payload that the agent sends to the merchant.
+This works across:
+
+- Regular merchant checkout pages (form-fill) 
+    - These merchants don't need integration with Prava
+- Merchant APIs (agent-friendly checkout)
+
+## 3. How It Works — High-Level Flow
+
+1. **User Adds a Card**
+   The app collects card details → sends to Prava → Prava returns a secure token.
+
+2. **User Verifies Identity**
+   The user authenticates once (passkey or MFA).
+   After this, the card can be used safely by the agent.
+
+3. **Agent Builds Intent**
+   The app/agent browses, compares, and builds a final order.
+
+4. **User Confirms (or Pre-Approves Automation)**
+   The Intent Object is finalized.
+
+5. **Prava Registers Intent + Generates Checkout Payload**
+   Includes all necessary security checks.
+
+6. **Agent Completes Checkout**
+   - For simple merchants → agent fills the payment fields securely
+   - For advanced merchants → agent sends a checkout API call
+
+7. **Transaction Processes Normally**
+   Merchant → Acquirer → Card Network → Issuer → Response returned
+
+8. **Agent + App Receive Final Status**
+
+This entire flow is handled through Prava’s SDK.
+
+## 4. Integration Options
+
+### A. Full Prava Agentic SDK (Recommended)
+
+Handles tokenization, authentication, intent, merchant validation, checkout payloads, and form-fill.
+
+You only need simple calls like:
+
+```javascript
+const intent = await prava.intent.create(order);
+const result = await prava.checkout.execute(intent);
+```
+
+### B. API-Only Integration
+
+For teams who want to build flows manually and call individual endpoints (tokenization, intent, checkout generation, etc.).
+
+## 5. Getting Access — Onboarding Process
+
+Prava is currently in restricted rollout due to the compliance & security requirements of agentic payments.
+
+To get access:
+
+1. **Fill the onboarding form**
+   - Whether you're an AI app or a merchant, provide basic details
+   - Choose your integration mode (SDK / API / Merchant)
+
+2. **Prava reviews your request**
+   This includes trust verification & intended use checks.
+
+3. **Access within 24 hours**
+   - API keys
+   - Sandbox environment
+   - Developer dashboard
+   - Integration instructions
+   - Support channel
+
+4. **Go live once your flows pass automated validation checks**
+
+This ensures developers can build confidently while protecting users and merchants.
+
+## 6. Where This Works
+
+Prava supports:
+
+- Any AI application (shopping agent, personal assistant, travel planner, automation bot, etc.)
+- Any merchant (no-code, low-code, or agentic-first)
+- Any standard online card checkout flow
+
+Agents can seamlessly complete purchases without breaking existing merchant experiences.
+
+## 7. Why Developers Use Prava
+
+- No payments expertise needed
+- No sensitive card data exposure
+- Works across all merchants
+- Fast integration via a single SDK
+- Future-proof infrastructure aligned with global payment standards
+- Great user experience (instant, secure agentic checkout)
