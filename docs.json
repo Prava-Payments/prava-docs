@@ -137,10 +137,6 @@
      "vscode"
    ]
   },
-  "banner": {
-    "content": "Prava sandbox is live! [Join here](https://www.prava.space/join)",
-    "dismissible": true
-  },
   "footer": {
     "socials": {
       "x": "https://x.com/PravaPayments",
