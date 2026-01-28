@@ -3,9 +3,9 @@
   "theme": "mint",
   "name": "Prava Payments Docs",
   "colors": {
-    "primary": "#FF7700",
-    "light": "#FF7700",
-    "dark": "#FF7700"
+    "primary": "#0D9488",
+    "light": "#0D9488",
+    "dark": "#0D9488"
   },
   "favicon": "/favicon.svg",
   "thumbnails": {
