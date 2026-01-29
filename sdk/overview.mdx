@@ -1,0 +1,145 @@
+---
+title: 'SDK Overview'
+description: 'Get started with the Prava SDK for agentic payments'
+icon: 'code'
+---
+
+## What is the Prava SDK?
+
+The Prava SDK provides a simple, secure interface for AI agents and applications to handle payments on behalf of users. It abstracts the complexity of card tokenization, intent management, FIDO authentication, and checkout execution.
+
+## Key Features
+
+- **Zero PCI Scope**: Card data never touches your servers
+- **Intent-Based Permissions**: Users authorize specific purchases via Passkey
+- **Network-Level Security**: Merchant-specific, amount-scoped credentials
+- **Browser Automation Ready**: Built-in checkout execution helpers
+
+## Installation
+
+<CodeGroup>
+```bash npm
+npm install @prava/sdk-core
+```
+
+```bash yarn
+yarn add @prava/sdk-core
+```
+
+```bash pnpm
+pnpm add @prava/sdk-core
+```
+</CodeGroup>
+
+## Quick Start
+
+<Steps>
+<Step title="Initialize the SDK">
+Import and configure the SDK with your publishable key:
+
+```typescript
+import { PravaSDK } from '@prava/sdk-core';
+
+const prava = new PravaSDK({
+  publishableKey: 'pk_sandbox_your_key_here',
+  environment: 'sandbox' // or 'production'
+});
+```
+</Step>
+
+<Step title="Create a session on your backend">
+Sessions are created server-side with your secret key:
+
+```typescript
+// Your backend
+const response = await fetch('https://api.prava.space/v1/sessions', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer sk_sandbox_your_secret_key',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    user_id: 'user_123',
+    user_email: 'user@example.com',
+    flow_type: 'onboarding'
+  })
+});
+
+const { session_token } = await response.json();
+```
+</Step>
+
+<Step title="Collect card details">
+Use the SDK to securely collect and tokenize card data:
+
+```typescript
+const result = await prava.collectPAN({
+  sessionToken: session_token,
+  container: '#card-form',
+  onSuccess: (data) => {
+    console.log('Card enrolled:', data.last4);
+  },
+  onError: (error) => {
+    console.error('Enrollment failed:', error);
+  }
+});
+```
+</Step>
+</Steps>
+
+## SDK Architecture
+
+```mermaid
+flowchart LR
+    A[Your App] --> B[Prava SDK<br/>@prava/sdk-core]
+    B --> C[Secure Iframe<br/>sandbox.collect.prava.space]
+    C --> D[Data Vault<br/>PCI Compliant]
+    D --> E[Prava Backend<br/>sandbox.api.prava.space]
+    E --> F[Card Network<br/>Tokenization]
+    
+    style A fill:#fff,stroke:#333,stroke-width:2px
+    style B fill:#fff,stroke:#333,stroke-width:2px
+    style C fill:#fff,stroke:#333,stroke-width:2px
+    style D fill:#fff,stroke:#333,stroke-width:2px
+    style E fill:#fff,stroke:#333,stroke-width:2px
+    style F fill:#fff,stroke:#333,stroke-width:2px
+```
+
+## Authentication
+
+The SDK uses a dual-key system:
+
+| Key Type | Usage | Location |
+|----------|-------|----------|
+| **Publishable Key** (`pk_*`) | Initialize SDK, client-side operations | Frontend |
+| **Secret Key** (`sk_*`) | Create sessions, server operations | Backend only |
+
+<Warning>
+Never expose your secret key in client-side code or version control.
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+<Card title="Card Management" icon="credit-card" href="/sdk/cards/collect-pan">
+  Learn how to collect and manage user cards
+</Card>
+
+<Card title="Intent Management" icon="bolt" href="/sdk/intents/register">
+  Create and manage payment intents
+</Card>
+
+<Card title="Browser Automation" icon="robot" href="/sdk/execution/browser-automation">
+  Execute payments at merchant checkouts
+</Card>
+
+<Card title="API Reference" icon="book" href="/api-reference/introduction">
+  Explore all available endpoints
+</Card>
+</CardGroup>
+
+## Support
+
+- **Documentation**: [docs.prava.space](https://docs.prava.space)
+- **Email**: developers@prava.space
+- **Discord**: [Join our community](https://discord.gg/prava)

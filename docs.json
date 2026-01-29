@@ -14,32 +14,43 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Developer Guide",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Getting Started",
             "pages": [
               "index",
               "quickstart",
-              "architecture",
               "authentication"
             ]
           },
           {
-            "group": "Key concepts",
+            "group": "SDK Reference",
             "pages": [
-              "concepts/wallets",
-              "concepts/cards",
-              "concepts/guardrails",
-              "concepts/payments"
+              "sdk/overview"
             ]
           },
           {
-            "group": "Merchant Integration",
+            "group": "Card Management",
             "pages": [
-              "integration/shopify_app_SDK",
-              "integration/faqs",
-              "integration/for_custom_stores"
+              "sdk/cards/collect-pan",
+              "sdk/cards/list-cards",
+              "sdk/cards/remove-card"
+            ]
+          },
+          {
+            "group": "Intent Management",
+            "pages": [
+              "sdk/intents/register",
+              "sdk/intents/invoke",
+              "sdk/intents/update",
+              "sdk/intents/delete"
+            ]
+          },
+          {
+            "group": "Payment Execution",
+            "pages": [
+              "sdk/execution/browser-automation"
             ]
           }
         ]

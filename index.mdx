@@ -5,16 +5,38 @@ description: 'An overview of the Prava Payments API'
 
 Prava provides a payments infrastructure purpose-built for AI-driven applications and agents. Many modern AI apps can discover products and make recommendations, but they cannot safely and reliably make payments on behalf of users. Prava enables AI agents to transact- in-chat, in-voice, or via any AI-native interface- while keeping user funds secure, auditable, and under user control.
 
-## What Prava provides
+## Developer Mental Model
 
-*   **Payments API** — Native, agent-first payments endpoints for checkout, wallet management, and transaction lifecycle.
-*   **AI Wallets** — Wallet abstractions that isolate funds and permissions per user and per agent.
-*   **Financial Guardrails** — Configurable rules (spending caps, verification triggers, intent validation) that keep agentic payments safe.
-*   **Quick integrations** — SDKs, integrations (Shopify app), and sample apps to speed up time-to-value.
+Think of Prava as a **programmable payment proxy**.
 
-## Who benefits
+Instead of your AI agent handling raw credit card numbers (which creates massive compliance and security risks), it handles **Intents**—permissions to spend.
+
+1. **The Agent** requests permission to buy a specific thing.
+2. **The User** grants permission via their device (Passkey).
+3. **Prava** exchanges that permission with the **Card Network** for a one-time, merchant-specific credential.
+4. **The Agent** uses that ephemeral credential to complete the checkout.
+
+This decouples the *agent's ability to buy* from the *user's sensitive data*.
+
+## What Prava Provides
+
+*   **Zero PCI Scope** — No sensitive card data exposure. Your agent never sees real card numbers.
+*   **Intent-Based Permissions** — Users authorize specific purchases via Passkey authentication.
+*   **Network-Level Security** — Merchant-specific, amount-scoped credentials enforced at the card network level.
+*   **Universal Compatibility** — Works with any merchant checkout (Stripe, Braintree, Adyen, or custom PSPs).
+*   **Developer Experience** — Single SDK for complex payment orchestration.
+
+## Who Benefits
 
 *   AI shopping/stylist apps (in-chat discovery → buy)
 *   Travel and booking agents (flight/hotel reservations)
 *   Personal assistant apps (scheduling, recurring purchases)
 *   Marketplaces and merchants who want to accept purchases triggered by LLMs or agents
+
+## High-Level Flow
+
+1. User instructs an AI agent to buy an item.
+2. Agent creates a purchase intent via Prava SDK.
+3. User authenticates with Passkey (Touch ID/Face ID).
+4. Prava registers the intent with the card network and returns one-time credentials.
+5. Agent executes checkout at the merchant using the credentials.
