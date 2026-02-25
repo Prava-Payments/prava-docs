@@ -44,7 +44,7 @@ npm install puppeteer
 <CodeGroup>
 ```typescript Playwright
 import { chromium } from 'playwright';
-import { PravaSDK } from '@prava/sdk-core';
+import { PravaSDK } from '@prava-sdk/core';
 
 const prava = new PravaSDK({
   publishableKey: 'pk_sandbox_your_key',
@@ -132,7 +132,7 @@ async function executeCheckout(intentId: string, checkoutInfo: CheckoutInfo) {
 
 ```typescript Puppeteer
 import puppeteer from 'puppeteer';
-import { PravaSDK } from '@prava/sdk-core';
+import { PravaSDK } from '@prava-sdk/core';
 
 const prava = new PravaSDK({
   publishableKey: 'pk_sandbox_your_key',

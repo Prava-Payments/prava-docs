@@ -19,15 +19,15 @@ The Prava SDK provides a simple, secure interface for AI agents and applications
 
 <CodeGroup>
 ```bash npm
-npm install @prava/sdk-core
+npm install @prava-sdk/core
 ```
 
 ```bash yarn
-yarn add @prava/sdk-core
+yarn add @prava-sdk/core
 ```
 
 ```bash pnpm
-pnpm add @prava/sdk-core
+pnpm add @prava-sdk/core
 ```
 </CodeGroup>
 
@@ -38,7 +38,7 @@ pnpm add @prava/sdk-core
 Import and configure the SDK with your publishable key:
 
 ```typescript
-import { PravaSDK } from '@prava/sdk-core';
+import { PravaSDK } from '@prava-sdk/core';
 
 const prava = new PravaSDK({
   publishableKey: 'pk_sandbox_your_key_here',
@@ -91,7 +91,7 @@ const result = await prava.collectPAN({
 
 ```mermaid
 flowchart LR
-    A[Your App] --> B[Prava SDK<br/>@prava/sdk-core]
+    A[Your App] --> B[Prava SDK<br/>@prava-sdk/core]
     B --> C[Secure Iframe<br/>sandbox.collect.prava.space]
     C --> D[Data Vault<br/>PCI Compliant]
     D --> E[Prava Backend<br/>sandbox.api.prava.space]
