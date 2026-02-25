@@ -42,6 +42,7 @@
             "group": "Intent Management",
             "pages": [
               "sdk/intents/register",
+              "sdk/intents/register-and-invoke",
               "sdk/intents/invoke",
               "sdk/intents/update",
               "sdk/intents/delete"

@@ -6,19 +6,13 @@ icon: 'list'
 
 ## Overview
 
-The `listCards()` method retrieves all cards enrolled by a user. It returns card metadata (last 4 digits, brand, expiration) without exposing sensitive PAN data.
+The `listCards()` method retrieves all enrolled cards for the current authenticated user. Returns card metadata for display — no raw PANs.
 
 ## Method Signature
 
 ```typescript
-prava.listCards(sessionToken: string): Promise<Card[]>
+prava.listCards(): Promise<Card[]>
 ```
-
-## Parameters
-
-<ParamField path="sessionToken" type="string" required>
-  Session token for the authenticated user (from `POST /v1/sessions`)
-</ParamField>
 
 ## Return Value
 
@@ -26,8 +20,8 @@ Returns an array of `Card` objects:
 
 <ResponseField name="cards" type="Card[]">
   <Expandable title="Card properties">
-    <ResponseField name="id" type="string">
-      Unique card identifier
+    <ResponseField name="cardId" type="string">
+      Unique card identifier (use this for intents)
     </ResponseField>
 
     <ResponseField name="last4" type="string">
@@ -35,27 +29,19 @@ Returns an array of `Card` objects:
     </ResponseField>
 
     <ResponseField name="brand" type="string">
-      Card brand (`visa`, `mastercard`, `amex`, `discover`)
+      Card brand (`visa`, etc.)
     </ResponseField>
 
-    <ResponseField name="exp_month" type="number">
+    <ResponseField name="expMonth" type="number">
       Expiration month (1-12)
     </ResponseField>
 
-    <ResponseField name="exp_year" type="number">
+    <ResponseField name="expYear" type="number">
       Expiration year (4 digits)
     </ResponseField>
 
-    <ResponseField name="cardholder_name" type="string">
-      Name on the card (if provided during enrollment)
-    </ResponseField>
-
-    <ResponseField name="created_at" type="string">
-      ISO 8601 timestamp of when the card was enrolled
-    </ResponseField>
-
-    <ResponseField name="is_default" type="boolean">
-      Whether this is the user's default card
+    <ResponseField name="status" type="string">
+      Card status: `active`, `expired`, or `removed`
     </ResponseField>
   </Expandable>
 </ResponseField>
@@ -66,35 +52,21 @@ Returns an array of `Card` objects:
 ```typescript React
 import { useEffect, useState } from 'react';
 import { PravaSDK } from '@prava-sdk/core';
+import type { Card } from '@prava-sdk/core';
 
 function CardList() {
-  const [cards, setCards] = useState([]);
+  const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const prava = new PravaSDK({
-    publishableKey: 'pk_sandbox_your_key',
-    environment: 'sandbox'
-  });
+  const prava = new PravaSDK({ publishableKey: 'pk_live_xxx' });
 
   useEffect(() => {
-    async function fetchCards() {
-      try {
-        // Get session token from your backend
-        const { session_token } = await fetch('/api/create-session', {
-          method: 'POST'
-        }).then(r => r.json());
+    prava.listCards()
+      .then(setCards)
+      .catch(err => console.error('Failed to load cards:', err))
+      .finally(() => setLoading(false));
 
-        // Fetch cards
-        const cards = await prava.listCards(session_token);
-        setCards(cards);
-      } catch (error) {
-        console.error('Failed to load cards:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchCards();
+    return () => prava.destroy();
   }, []);
 
   if (loading) return <div>Loading cards...</div>;
@@ -107,11 +79,9 @@ function CardList() {
     <div>
       <h2>Your Cards</h2>
       {cards.map(card => (
-        <div key={card.id} className="card-item">
-          <img src={`/logos/${card.brand}.svg`} alt={card.brand} />
-          <span>{card.brand.toUpperCase()} •••• {card.last4}</span>
-          <span>Expires {card.exp_month}/{card.exp_year}</span>
-          {card.is_default && <span className="badge">Default</span>}
+        <div key={card.cardId}>
+          {card.brand} •••• {card.last4} — exp {card.expMonth}/{card.expYear}
+          <button onClick={() => handleBuy(card.cardId)}>Buy Now</button>
         </div>
       ))}
     </div>
@@ -119,22 +89,18 @@ function CardList() {
 }
 ```
 
-```typescript Node.js
-const prava = new PravaSDK({
-  publishableKey: 'pk_sandbox_your_key',
-  environment: 'sandbox'
-});
+```typescript Vanilla JavaScript
+import { PravaSDK } from '@prava-sdk/core';
 
-// Get session token
-const sessionToken = await getSessionToken(userId);
+const prava = new PravaSDK({ publishableKey: 'pk_live_xxx' });
 
-// List cards
-const cards = await prava.listCards(sessionToken);
+const cards = await prava.listCards();
 
-console.log(`User has ${cards.length} card(s):`);
 cards.forEach(card => {
-  console.log(`- ${card.brand} ending in ${card.last4}`);
+  console.log(`${card.brand} •••• ${card.last4}  exp ${card.expMonth}/${card.expYear}`);
 });
+// → "visa •••• 4242  exp 12/27"
+// → "visa •••• 1234  exp 03/26"
 ```
 </CodeGroup>
 
@@ -145,7 +111,7 @@ cards.forEach(card => {
 Allow users to choose which card to use for a payment:
 
 ```typescript
-const cards = await prava.listCards(sessionToken);
+const cards = await prava.listCards();
 
 // Present cards to user
 const selectedCardId = await showCardSelector(cards);
@@ -153,96 +119,34 @@ const selectedCardId = await showCardSelector(cards);
 // Use selected card for intent
 const intent = await prava.registerIntent({
   cardId: selectedCardId,
+  merchant: 'Amazon',
   amount: 99.99,
-  merchant: 'Acme Store'
+  currency: 'USD',
 });
 ```
 
-### Card Management Dashboard
+### Card Expiration Handling
 
-Build a card management interface:
-
-```typescript
-function CardManagement() {
-  const [cards, setCards] = useState([]);
-
-  async function handleAddCard() {
-    const result = await prava.collectPAN({...});
-    setCards([...cards, result]);
-  }
-
-  async function handleRemoveCard(cardId) {
-    await prava.removeCard(cardId);
-    setCards(cards.filter(c => c.id !== cardId));
-  }
-
-  async function handleSetDefault(cardId) {
-    await prava.setDefaultCard(cardId);
-    setCards(cards.map(c => ({
-      ...c,
-      is_default: c.id === cardId
-    })));
-  }
-
-  return (
-    <div>
-      {cards.map(card => (
-        <CardItem
-          key={card.id}
-          card={card}
-          onRemove={() => handleRemoveCard(card.id)}
-          onSetDefault={() => handleSetDefault(card.id)}
-        />
-      ))}
-      <button onClick={handleAddCard}>+ Add Card</button>
-    </div>
-  );
-}
-```
-
-## Card Expiration Handling
-
-Check for expired cards and prompt users to update:
+Check for expired cards and prompt users to re-enroll:
 
 ```typescript
-const cards = await prava.listCards(sessionToken);
-const now = new Date();
-const currentYear = now.getFullYear();
-const currentMonth = now.getMonth() + 1;
+const cards = await prava.listCards();
 
-const expiredCards = cards.filter(card => {
-  if (card.exp_year < currentYear) return true;
-  if (card.exp_year === currentYear && card.exp_month < currentMonth) return true;
-  return false;
-});
+const expiredCards = cards.filter(card => card.status === 'expired');
 
 if (expiredCards.length > 0) {
   console.warn(`${expiredCards.length} card(s) expired`);
-  // Show update card flow
+  // Prompt user to enroll a new card
 }
 ```
 
 ## Error Handling
 
-<ResponseField name="error" type="PravaError">
-  <Expandable title="properties">
-    <ResponseField name="code" type="string">
-      Error code
-    </ResponseField>
-
-    <ResponseField name="message" type="string">
-      Error description
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
 ### Common Errors
 
 | Code | Cause | Resolution |
 |------|-------|------------|
-| `SESSION_EXPIRED` | Session token expired | Create new session |
-| `SESSION_INVALID` | Invalid session token | Verify session creation |
-| `USER_NOT_FOUND` | User has no enrollments | Prompt to add first card |
+| `CARD_NOT_FOUND` | No cards enrolled | Prompt user to add first card via `collectPAN()` |
 
 ## Security Considerations
 
@@ -250,42 +154,11 @@ if (expiredCards.length > 0) {
 **Card metadata is safe to display**: The `listCards()` response contains only non-sensitive data (last 4, brand, expiry). Full PANs are never returned by the API.
 </Note>
 
-<Warning>
-**Session tokens authenticate the user**: Never expose session tokens in client-side logs or error messages, as they grant access to user card metadata.
-</Warning>
-
-## Caching Recommendations
-
-For better UX, consider caching the card list:
-
-```typescript
-// Cache cards for 5 minutes
-const CACHE_TTL = 5 * 60 * 1000;
-let cardCache = null;
-let cacheTime = 0;
-
-async function getCards(sessionToken) {
-  if (cardCache && Date.now() - cacheTime < CACHE_TTL) {
-    return cardCache;
-  }
-
-  cardCache = await prava.listCards(sessionToken);
-  cacheTime = Date.now();
-  return cardCache;
-}
-
-// Invalidate cache after adding/removing cards
-function invalidateCardCache() {
-  cardCache = null;
-  cacheTime = 0;
-}
-```
-
 ## Next Steps
 
 <CardGroup cols={2}>
 <Card title="Remove Card" icon="trash" href="/sdk/cards/remove-card">
-  Delete an enrolled card
+  Remove an enrolled card
 </Card>
 
 <Card title="Register Intent" icon="bolt" href="/sdk/intents/register">

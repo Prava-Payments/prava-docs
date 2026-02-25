@@ -6,7 +6,7 @@ icon: 'credit-card'
 
 ## Overview
 
-The `collectPAN()` method securely collects credit card details from users through an isolated iframe. The card data is tokenized via PCI Data Vault and provisioned with card network, ensuring PCI compliance without card data ever touching your servers.
+The `collectPAN()` method securely collects credit card details from users through an isolated iframe. The card data is tokenized via Prava's PCI DSS vault and returns only safe metadata — your servers never see the raw PAN.
 
 ## Method Signature
 
@@ -21,31 +21,35 @@ prava.collectPAN(options: CollectPANOptions): Promise<CollectPANResult>
 
   <Expandable title="properties">
     <ParamField path="sessionToken" type="string" required>
-      Session token obtained from your backend via `POST /v1/sessions`
+      Session token obtained from your backend
     </ParamField>
 
-    <ParamField path="container" type="string" required>
-      CSS selector for the iframe container element (e.g., `#card-form`)
+    <ParamField path="iframeUrl" type="string" required>
+      Iframe URL from your backend session response
+    </ParamField>
+
+    <ParamField path="container" type="string | HTMLElement" required>
+      CSS selector or DOM element to mount the card form (e.g., `#card-form`)
     </ParamField>
 
     <ParamField path="onReady" type="() => void">
-      Callback fired when the iframe is loaded and ready for input
+      Called when the iframe is loaded and ready for input
     </ParamField>
 
     <ParamField path="onChange" type="(state: CardValidationState) => void">
-      Callback fired when card input validation state changes
+      Real-time validation state on every keystroke
     </ParamField>
 
     <ParamField path="onSuccess" type="(result: CollectPANResult) => void">
-      Callback fired when card collection completes successfully
+      Called on successful card enrollment
     </ParamField>
 
     <ParamField path="onError" type="(error: PravaError) => void">
-      Callback fired when an error occurs
+      Called on error
     </ParamField>
 
-    <ParamField path="styles" type="object">
-      Custom CSS styles for the iframe form fields
+    <ParamField path="styles" type="CardFormStyles">
+      Custom styles for the card form
     </ParamField>
   </Expandable>
 </ParamField>
@@ -54,28 +58,24 @@ prava.collectPAN(options: CollectPANOptions): Promise<CollectPANResult>
 
 <ResponseField name="result" type="CollectPANResult">
   <Expandable title="properties">
-    <ResponseField name="enrollment_id" type="string">
-      Unique identifier for this card enrollment
+    <ResponseField name="enrollmentId" type="string">
+      Unique card identifier (use this for intents)
     </ResponseField>
 
-    <ResponseField name="card_last4" type="string">
+    <ResponseField name="last4" type="string">
       Last 4 digits of the card number
     </ResponseField>
 
-    <ResponseField name="card_brand" type="string">
-      Card brand (visa, mastercard, amex, discover)
+    <ResponseField name="brand" type="string">
+      Card brand (`visa`, etc.)
     </ResponseField>
 
-    <ResponseField name="card_exp_month" type="number">
+    <ResponseField name="expMonth" type="number">
       Card expiration month (1-12)
     </ResponseField>
 
-    <ResponseField name="card_exp_year" type="number">
+    <ResponseField name="expYear" type="number">
       Card expiration year (4 digits)
-    </ResponseField>
-
-    <ResponseField name="vProvisionedTokenID" type="string">
-      Card network provisioned token identifier
     </ResponseField>
   </Expandable>
 </ResponseField>
@@ -84,96 +84,79 @@ prava.collectPAN(options: CollectPANOptions): Promise<CollectPANResult>
 
 <CodeGroup>
 ```typescript React
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PravaSDK } from '@prava-sdk/core';
+import type { CollectPANResult } from '@prava-sdk/core';
 
-function CardEnrollment() {
-  const [loading, setLoading] = useState(false);
-  const [sessionToken, setSessionToken] = useState<string | null>(null);
+function CardEnrollment({ session }: { session: { session_token: string; iframe_url: string } }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const sdkRef = useRef<PravaSDK | null>(null);
+  const [enrolled, setEnrolled] = useState<CollectPANResult | null>(null);
 
-  const prava = new PravaSDK({
-    publishableKey: 'pk_sandbox_your_key',
-    environment: 'sandbox'
-  });
-
-  // Get session token from your backend
   useEffect(() => {
-    fetch('/api/create-session', { method: 'POST' })
-      .then(r => r.json())
-      .then(data => setSessionToken(data.session_token));
+    const sdk = new PravaSDK({ publishableKey: 'pk_live_xxx' });
+    sdkRef.current = sdk;
+    return () => sdk.destroy();
   }, []);
 
-  const handleCollect = async () => {
-    if (!sessionToken) return;
+  const handleEnroll = async () => {
+    if (!sdkRef.current || !containerRef.current) return;
 
-    setLoading(true);
-    
-    try {
-      const result = await prava.collectPAN({
-        sessionToken,
-        container: '#card-form',
-        onReady: () => {
-          console.log('Form ready');
-        },
-        onChange: (state) => {
-          console.log('Validation:', state);
-        },
-        onSuccess: (data) => {
-          console.log('Card enrolled:', data.card_last4);
-          // Navigate to success page or next step
-        },
-        onError: (error) => {
-          console.error('Error:', error);
-          setLoading(false);
-        }
-      });
-    } catch (error) {
-      console.error('Collection failed:', error);
-      setLoading(false);
-    }
+    const result = await sdkRef.current.collectPAN({
+      sessionToken: session.session_token,
+      iframeUrl: session.iframe_url,
+      container: containerRef.current,
+      onReady: () => console.log('Form loaded'),
+      onChange: (state) => {
+        console.log('Complete:', state.isComplete);
+      },
+      onSuccess: (data) => {
+        console.log(`Enrolled: •••• ${data.last4}`);
+        setEnrolled(data);
+      },
+      onError: (err) => console.error(err.code, err.message),
+    });
   };
 
   return (
     <div>
-      <div id="card-form"></div>
-      <button onClick={handleCollect} disabled={loading || !sessionToken}>
-        {loading ? 'Processing...' : 'Add Card'}
-      </button>
+      <div ref={containerRef} />
+      <button onClick={handleEnroll}>Enroll Card</button>
+      {enrolled && <p>Card enrolled: {enrolled.brand} •••• {enrolled.last4}</p>}
     </div>
   );
 }
 ```
 
 ```typescript Vanilla JavaScript
-const prava = new PravaSDK({
-  publishableKey: 'pk_sandbox_your_key',
-  environment: 'sandbox'
-});
+import { PravaSDK } from '@prava-sdk/core';
 
-// Get session token from backend
-const sessionToken = await fetch('/api/create-session', {
-  method: 'POST'
-}).then(r => r.json()).then(d => d.session_token);
+const prava = new PravaSDK({ publishableKey: 'pk_live_xxx' });
 
-// Collect card
-const result = await prava.collectPAN({
-  sessionToken: sessionToken,
+// Get session from your backend
+const session = await fetch('/api/session').then(r => r.json());
+
+// Collect card via secure iframe
+const card = await prava.collectPAN({
+  sessionToken: session.session_token,
+  iframeUrl: session.iframe_url,
   container: '#card-form',
-  onReady: () => {
-    console.log('Ready for input');
-  },
+  onReady: () => console.log('Form loaded'),
   onChange: (state) => {
-    console.log('Card valid:', state.valid);
+    document.getElementById('submit-btn').disabled = !state.isComplete;
   },
   onSuccess: (data) => {
-    alert(`Card ending in ${data.card_last4} added successfully!`);
+    console.log(data.enrollmentId, data.last4, data.brand);
   },
-  onError: (error) => {
-    alert(`Error: ${error.message}`);
-  }
+  onError: (err) => console.error(err.code, err.message),
 });
 ```
 </CodeGroup>
+
+```html
+<div id="card-form"></div>
+<button id="submit-btn" disabled>Enroll Card</button>
+```
 
 ## Flow Diagram
 
@@ -183,24 +166,21 @@ sequenceDiagram
     participant SDK as Prava SDK
     participant Iframe as Secure Iframe
     participant Backend as Prava Backend
-    participant DataVault as PCI Data Vault
     participant Network as Card Network
 
-    App->>SDK: collectPAN(sessionToken)
+    App->>SDK: collectPAN(sessionToken, iframeUrl)
     SDK->>Iframe: Mount iframe
     Iframe-->>SDK: onReady()
     SDK-->>App: Form ready
 
     Note over Iframe: User enters card details
 
-    Iframe->>DataVault: Vault card data
-    DataVault-->>Iframe: Return token
-    Iframe->>Backend: Complete enrollment
+    Iframe->>Backend: Tokenize via PCI DSS vault
     Backend->>Network: Provision token
-    Network-->>Backend: vProvisionedTokenID
+    Network-->>Backend: Enrollment complete
     Backend-->>Iframe: Success
     Iframe-->>SDK: onSuccess(result)
-    SDK-->>App: Enrollment complete
+    SDK-->>App: CollectPANResult
 ```
 
 ## Under the Hood
@@ -209,7 +189,7 @@ When you call `collectPAN()`, here's what happens:
 
 <Steps>
 <Step title="Iframe Injection">
-The SDK injects a secure, isolated iframe into your specified container. The iframe is served from Prava's domain to ensure zero PCI scope.
+The SDK injects a secure, sandboxed iframe into your specified container. The iframe is served from Prava's domain — card data never touches your DOM or servers.
 </Step>
 
 <Step title="Session Validation">
@@ -217,74 +197,65 @@ The iframe validates the session token with Prava's backend to ensure the reques
 </Step>
 
 <Step title="User Input">
-The user enters their card details (number, expiry, CVV, name) in the iframe form with real-time validation.
+The user enters their card details (number, expiry, CVV) in the iframe form with real-time validation.
 </Step>
 
-<Step title="PCI Data Vault Vaulting">
-When the user submits, the iframe sends the card data directly to PCI Data Vault for tokenization. Your servers never see the raw PAN.
-</Step>
-
-<Step title="Card Network Provisioning">
-Prava's backend retrieves the encrypted payment instrument from PCI Data Vault and provisions a token with card network, binding it to the user's device via FIDO.
+<Step title="PCI DSS Vaulting">
+When the user submits, the iframe tokenizes the PAN via Prava's PCI DSS vault. Your servers never see the raw card number.
 </Step>
 
 <Step title="Result">
-The enrollment result (with `last4`, `brand`, `vProvisionedTokenID`) is returned to your app.
+The enrollment result (with `enrollmentId`, `last4`, `brand`, `expMonth`, `expYear`) is returned to your app.
 </Step>
 </Steps>
 
 ## Validation States
 
-The `onChange` callback receives a `CardValidationState` object:
+The `onChange` callback receives a `CardValidationState` object on every keystroke:
 
 ```typescript
 interface CardValidationState {
-  valid: boolean;
-  errors: {
-    cardNumber?: string;
-    expiry?: string;
-    cvv?: string;
-    name?: string;
-  };
+  cardNumber: FieldState;
+  expiry: FieldState;
+  cvv: FieldState;
+  isComplete: boolean; // true when all fields are valid
+}
+
+interface FieldState {
+  isEmpty: boolean;
+  isValid: boolean;
+  isFocused: boolean;
+  error?: string;
+}
+```
+
+Use `isComplete` to enable/disable your submit button:
+
+```typescript
+onChange: (state) => {
+  submitButton.disabled = !state.isComplete;
 }
 ```
 
 ## Error Handling
 
-<ResponseField name="error" type="PravaError">
-  <Expandable title="properties">
-    <ResponseField name="code" type="string">
-      Error code (e.g., `SESSION_EXPIRED`, `INVALID_CARD`, `NETWORK_ERROR`)
-    </ResponseField>
-
-    <ResponseField name="message" type="string">
-      Human-readable error message
-    </ResponseField>
-
-    <ResponseField name="details" type="object">
-      Additional error context
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
 ### Common Errors
 
 | Code | Cause | Resolution |
 |------|-------|------------|
-| `SESSION_EXPIRED` | Session token expired (15 min) | Create new session |
-| `SESSION_INVALID` | Invalid or tampered session token | Verify backend logic |
-| `INVALID_CARD` | Card failed Luhn check or format | User re-enters card |
-| `CARD_DECLINED` | Issuer declined enrollment | User tries different card |
-| `NETWORK_ERROR` | Connection issue | Retry after delay |
+| `SDK_ALREADY_ACTIVE` | `collectPAN` called while another session is active | Call `destroy()` first |
+| `INVALID_CONFIG` | Missing `iframeUrl` or `publishableKey` | Check your config |
+| `IFRAME_LOAD_ERROR` | Iframe failed to load | Check network, verify `iframeUrl` |
+| `CARD_NOT_FOUND` | Card ID doesn't exist or was removed | Re-enroll or use a different card |
 
 ## Security Notes
 
 <Warning>
-**Never** attempt to bypass the iframe or collect card data directly. This breaks PCI compliance and exposes your infrastructure to liability.
+**Never** attempt to bypass the iframe or collect card data directly. The iframe is sandboxed with `allow-scripts allow-same-origin allow-forms allow-popups` — minimal permissions. Card data never touches your DOM, JS, or servers.
 </Warning>
 
 <Note>
-The iframe uses Content Security Policy (CSP), Subresource Integrity (SRI), and strict origin validation to prevent XSS and data exfiltration.
+PostMessage communication is origin-locked. The iframe resolves its backend from its own hostname — merchants cannot inject a fake backend URL.
 </Note>
 
 ## Next Steps

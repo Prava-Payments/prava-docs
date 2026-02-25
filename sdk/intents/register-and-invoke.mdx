@@ -1,0 +1,165 @@
+---
+title: 'Register & Invoke Intent'
+description: 'One-shot: register and invoke in a single call'
+icon: 'zap'
+---
+
+## Overview
+
+The `registerAndInvokeIntent()` method registers an intent **and** invokes it in a single call. The user approves via passkey once, and you immediately get payment tokens back.
+
+Best for: **instant "Buy Now"** flows where the AI doesn't need to store a mandate for later.
+
+<Note>
+Internally this calls `registerIntent()` then `invokeIntent()` in sequence. The passkey prompt fires once.
+</Note>
+
+## Method Signature
+
+```typescript
+prava.registerAndInvokeIntent(params: RegisterAndInvokeParams): Promise<PaymentTokens>
+```
+
+## Parameters
+
+<ParamField path="params" type="RegisterAndInvokeParams" required>
+  <Expandable title="properties">
+    <ParamField path="cardId" type="string" required>
+      Card to charge
+    </ParamField>
+
+    <ParamField path="merchant" type="string" required>
+      Merchant name
+    </ParamField>
+
+    <ParamField path="amount" type="number" required>
+      Transaction amount
+    </ParamField>
+
+    <ParamField path="currency" type="string" required>
+      ISO 4217 currency code
+    </ParamField>
+
+    <ParamField path="itemCount" type="number">
+      Number of items
+    </ParamField>
+
+    <ParamField path="productUrl" type="string">
+      Product URL
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Return Value
+
+<ResponseField name="tokens" type="PaymentTokens">
+  <Expandable title="properties">
+    <ResponseField name="pan" type="string">
+      Virtual card number
+    </ResponseField>
+
+    <ResponseField name="expMonth" type="number">
+      Expiration month
+    </ResponseField>
+
+    <ResponseField name="expYear" type="number">
+      Expiration year
+    </ResponseField>
+
+    <ResponseField name="cvv" type="string">
+      Single-use CVV
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example
+
+<CodeGroup>
+```typescript AI Agent — Instant Buy
+import { PravaSDK } from '@prava-sdk/core';
+
+const prava = new PravaSDK({ publishableKey: 'pk_live_xxx' });
+
+// User says "Buy this" → one call → done
+const tokens = await prava.registerAndInvokeIntent({
+  cardId: 'enr_abc123',
+  merchant: 'Amazon',
+  amount: 29.99,
+  currency: 'USD',
+  itemCount: 1,
+  productUrl: 'https://amazon.com/dp/B0EXAMPLE',
+});
+
+// tokens.pan, tokens.expMonth, tokens.expYear, tokens.cvv
+// → Hand these to the checkout flow
+console.log('Virtual PAN:', tokens.pan);
+```
+
+```typescript React — Buy Now Button
+function BuyNowButton({ product, cardId }) {
+  const [loading, setLoading] = useState(false);
+  const prava = new PravaSDK({ publishableKey: 'pk_live_xxx' });
+
+  async function handleBuy() {
+    setLoading(true);
+    try {
+      const tokens = await prava.registerAndInvokeIntent({
+        cardId,
+        merchant: product.merchant,
+        amount: product.price,
+        currency: 'USD',
+        itemCount: 1,
+        productUrl: product.url,
+      });
+
+      // Pass tokens to your checkout automation
+      await executeCheckout(tokens, product);
+    } catch (error) {
+      if (error.code === 'PASSKEY_REJECTED') {
+        alert('Purchase cancelled');
+      } else {
+        alert(`Purchase failed: ${error.message}`);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <button onClick={handleBuy} disabled={loading}>
+      {loading ? 'Authorizing...' : `Buy Now — $${product.price}`}
+    </button>
+  );
+}
+```
+</CodeGroup>
+
+## When to Use
+
+| Scenario | Use |
+|----------|-----|
+| One-time instant purchase | ✅ `registerAndInvokeIntent()` |
+| Recurring / scheduled purchases | ❌ Use `registerIntent()` + `invokeIntent()` separately |
+| Need to store mandate for later | ❌ Use `registerIntent()` separately |
+| "Buy Now" button | ✅ `registerAndInvokeIntent()` |
+
+## Error Handling
+
+| Code | Cause | Resolution |
+|------|-------|------------|
+| `PASSKEY_REJECTED` | User declined the passkey prompt | Allow retry |
+| `PASSKEY_UNAVAILABLE` | Device doesn't support WebAuthn | Inform user |
+| `CARD_NOT_FOUND` | Card ID is invalid or removed | Refresh card list |
+| `MANDATE_VIOLATION` | Invalid params | Check amount/merchant |
+
+## Next Steps
+
+<CardGroup cols={2}>
+<Card title="Browser Automation" icon="robot" href="/sdk/execution/browser-automation">
+  Execute checkout with payment tokens
+</Card>
+
+<Card title="Register Intent" icon="bolt" href="/sdk/intents/register">
+  For recurring / deferred purchases
+</Card>
+</CardGroup>
