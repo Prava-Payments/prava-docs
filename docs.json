@@ -55,54 +55,6 @@
             ]
           }
         ]
-      },
-      {
-        "tab": "API reference",
-        "openapi": "api-reference/openapi.json",
-        "groups": [
-          {
-            "group": "API documentation",
-            "pages": [
-              "api-reference/introduction",
-              "api-reference/postman"
-            ]
-          },
-          {
-            "group": "Customers",
-            "pages": [
-              "POST /customers",
-              "GET /customers",
-              "POST /customers/{customer_id}/address",
-              "GET /customers/{customer_id}/address"
-            ]
-          },
-          {
-            "group": "Wallets",
-            "pages": [
-              "GET /customers/{customer_id}/wallets",
-              "GET /customers/{customer_id}/wallets/{wallet_id}",
-              "POST /customers/{customer_id}/wallets/{wallet_id}/deposit"
-            ]
-          },
-          {
-            "group": "Merchants",
-            "pages": [
-              "GET /merchants/category/{category_code}",
-              "GET /merchants/{merchant_id}/products/{product_category_id}",
-              "GET /merchants/products/{product_id}"
-            ]
-          },
-          {
-            "group": "Carts",
-            "pages": [
-              "POST /customers/{customer_id}/merchants/{merchant_id}/carts",
-              "GET /customers/{customer_id}/carts",
-              "GET /customers/{customer_id}/carts/{cart_id}",
-              "PATCH /carts/{cart_id}",
-              "POST /customers/{customer_id}/carts/{cart_id}/order/wallet/{wallet_id}"
-            ]
-          }
-        ]
       }
     ],
     "global": {

@@ -127,18 +127,11 @@ Your AI App uses these tokens at checkout. Done.
 
 ## SDK Architecture
 
-```mermaid
-flowchart LR
-    A[Your App] --> B[Prava SDK<br/>@prava-sdk/core]
-    B --> C[Secure Iframe<br/>PCI Compliant]
-    C --> D[Prava Backend]
-    D --> E[Card Network<br/>Tokenization]
-    
-    style A fill:#fff,stroke:#333,stroke-width:2px
-    style B fill:#fff,stroke:#333,stroke-width:2px
-    style C fill:#fff,stroke:#333,stroke-width:2px
-    style D fill:#fff,stroke:#333,stroke-width:2px
-    style E fill:#fff,stroke:#333,stroke-width:2px
+```
+┌─────────────┐     ┌──────────────┐     ┌───────────────┐     ┌──────────┐
+│   AI App /   │     │  Prava SDK   │     │    Prava      │     │   Card   │
+│  Merchant    │────▶│  (client)    │────▶│   Backend     │────▶│ Network  │
+└─────────────┘     └──────────────┘     └───────────────┘     └──────────┘
 ```
 
 ## Authentication
