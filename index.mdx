@@ -3,7 +3,32 @@ title: 'Introduction'
 description: 'An overview of the Prava Payments API'
 ---
 
-Prava provides a payments infrastructure purpose-built for AI-driven applications and agents. Many modern AI apps can discover products and make recommendations, but they cannot safely and reliably make payments on behalf of users. Prava enables AI agents to transact- in-chat, in-voice, or via any AI-native interface- while keeping user funds secure, auditable, and under user control.
+Prava provides a payments infrastructure purpose-built for AI-driven applications and agents. Many modern AI apps can discover products and make recommendations, but they cannot safely and reliably make payments on behalf of users. Prava enables AI applications or agents to transact- in-chat, in-voice, or via any AI-native interface- while keeping user funds secure, auditable, and under user control.
+
+<Card title="Try the Interactive Playground" icon="play" href="https://playground.prava.space/">
+  See how Prava works in a live demo — no setup required.
+</Card>
+
+## Choose your integration
+
+There are three ways to build on Prava, depending on **who owns the interface** and how you want to
+present card entry:
+
+<CardGroup cols={3}>
+<Card title="Embedded (SDK + API)" icon="window-maximize" href="/sdk/integration-modes">
+  Card UI inside **your own page**. Use when you want a native-feeling checkout in your app.
+</Card>
+<Card title="Hosted (Full API)" icon="up-right-from-square" href="/sdk/integration-modes#hosted-mode-default">
+  Redirect to a Prava-hosted page — no SDK. Use when you want to ship fast with minimal frontend.
+</Card>
+<Card title="Agent (Prava Pay)" icon="terminal" href="/prava-pay/overview">
+  For **AI-agent-owned interfaces** (OpenClaw, Hermes, ChatGPT). Use the CLI today — or an
+  **MCP connector (coming soon)** in any AI app.
+</Card>
+</CardGroup>
+
+Not sure which fits? Read the full **[Choosing Your Integration](/choosing-your-integration)** guide —
+or start with [How Prava Works](/concepts/how-it-works).
 
 ## Developer Mental Model
 
@@ -23,10 +48,13 @@ This decouples the *agent's ability to buy* from the *user's sensitive data*.
 *   **Zero PCI Scope** — No sensitive card data exposure. Your agent never sees real card numbers.
 *   **Intent-Based Permissions** — Users authorize specific purchases via Passkey authentication.
 *   **Network-Level Security** — Merchant-specific, amount-scoped credentials enforced at the card network level.
+*   **Agentic Commerce** — Cards can be enrolled for AI-agent-initiated transactions with network-level enforcement.
 *   **Universal Compatibility** — Works with any merchant checkout (Stripe, Braintree, Adyen, or custom PSPs).
 *   **Developer Experience** — Single SDK for complex payment orchestration.
 
 ## Who Benefits
+
+This documentation is for **developers building AI-powered applications** that need to make purchases on behalf of users. For the commerce capabilities behind that — discovery, quoting, and checkout — see [Agentic Commerce](/integration/overview).
 
 *   AI shopping/stylist apps (in-chat discovery → buy)
 *   Travel and booking agents (flight/hotel reservations)
@@ -35,8 +63,9 @@ This decouples the *agent's ability to buy* from the *user's sensitive data*.
 
 ## High-Level Flow
 
-1. User instructs an AI agent to buy an item.
-2. Agent creates a purchase intent via Prava SDK.
-3. User authenticates with Passkey (Touch ID/Face ID).
-4. Prava registers the intent with the card network and returns one-time credentials.
-5. Agent executes checkout at the merchant using the credentials.
+1. Merchant creates a **session** server-side with order details and customer identity.
+2. User enrolls a card (or selects a saved card) via the Prava SDK.
+3. Agent creates a purchase **intent** — specifying merchant, amount, and constraints.
+4. User authenticates with **Passkey** (Touch ID/Face ID).
+5. Prava registers a **mandate** with the card network and returns one-time payment credentials.
+6. Agent executes checkout at the merchant using the credentials.

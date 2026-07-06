@@ -1,9 +1,111 @@
 ---
 title: 'Payments'
-description: 'The payment lifecycle includes creation, authorization, capture, settlement, and refunds. Prava handles tokenization and network routing for agentic flows.'
+description: 'Understand the payment lifecycle — from session creation to settlement.'
 icon: 'money-bill'
 ---
 
+## Payment Lifecycle
+
+Every Prava payment follows a structured lifecycle. The system ensures that each step is authenticated, auditable, and scoped to the user's explicit authorization.
+
+```mermaid
+flowchart LR
+    A[Session] -->|contains| B[Transaction]
+    B -->|requires| C[Passkey Auth]
+    C -->|creates| D[Mandate]
+    D -->|generates| E[Payment Token]
+    E -->|used at| F[Checkout]
+```
+
+| Step | What it is | Who creates it |
+|------|-----------|----------------|
+| **Session** | Container for a customer + order | Your backend (secret key) |
+| **Transaction** | A single payment attempt within a session | Created automatically |
+| **Passkey Auth** | User approval via biometric/device | User's device (WebAuthn) |
+| **Mandate** | Card-network-level spending permission | Prava + card network |
+| **Payment Token** | One-time virtual card credentials | Card network via Prava |
+| **Checkout** | Using the token at a merchant | Your AI agent |
+
+### 1. Session
+
+A **session** is the starting point. Created server-to-server by the merchant using a secret key (`POST /v1/sessions`), it bundles:
+
+*   **Customer identity** — `user_id`, `user_email`
+*   **Order details** — `total_amount`, `currency`, product line items
+*   **Merchant context** — merchant name, URL, country code
+*   **Purchase context** — product descriptions, unit prices, quantities
+
+The session returns a `session_token` and `iframe_url` used to initialize the SDK on the frontend.
+
+### 2. Transaction
+
+A **transaction** represents a single payment attempt within a session. It can be one of two flow types:
+
+| Flow Type | Description |
+|-----------|-------------|
+| `addCard` | User enrolls a new card and pays in one flow |
+| `savedCard` | User pays with a previously enrolled card |
+
+Each transaction is deduplicated using a deterministic idempotency key derived from the order, flow type, and card fingerprint — preventing double charges.
+
+**Transaction Statuses:**
+
+| Status | Meaning |
+|--------|---------|
+| `initiated` | Transaction created, awaiting authentication |
+| `completed` | Payment authorized and completed |
+| `failed` | Payment failed (declined, timeout, or error) |
+
+### 3. Authentication (FIDO / Passkey)
+
+Before a payment can be authorized, the user must authenticate via **Passkey** (WebAuthn). This involves:
+
+1.  **FIDO Start** — The backend generates a challenge for the user's device.
+2.  **Device Binding** — The user confirms via biometric (Touch ID, Face ID) or security key.
+
+The signed assertion from the passkey prompt proves the user explicitly approved the transaction.
+
+### 4. Mandate
+
+A **mandate** is a card-network-level spending permission. Once the user authenticates, Prava registers a mandate with the card network that specifies:
+
+*   **Merchant** — who can charge the card
+*   **Amount threshold** — maximum per-transaction amount
+*   **Frequency** — currently `one_time` (recurring frequencies are planned)
+*   **Effective duration** — how long the mandate remains active
+
+**Mandate Statuses:**
+
+| Status | Meaning |
+|--------|---------|
+| `pending` | Created, awaiting network confirmation |
+| `active` | Live and usable for payment token generation |
+| `consumed` | Fully used (all allowed invocations exhausted) |
+| `cancelled` | Revoked by user or system |
+| `expired` | Past its effective date |
+
+### 5. Mandate Line Items
+
+Each mandate carries an overall **amount threshold** and **max quantity**, plus **line items** that break down the purchase at a product level:
+
+*   Product IDs, descriptions, unit prices, quantities
+
+The amount threshold and quantity limit apply at the **mandate level** (not per line item).
+
+### 6. Payment Tokens
+
+When an intent is invoked, Prava generates **payment tokens** — a virtual card number (PAN), expiry, and CVV — scoped to the mandate constraints. These are:
+
+*   **Single-use** — each token can only be used once
+*   **Amount-scoped** — transactions exceeding the mandate amount are declined
+*   **Short-lived** — use tokens promptly after they're issued
+
 ## Merchant Network & Shopify App
 
-Prava integrates with merchant platforms (a Shopify plugin is available by invite-only) and card networks to complete payments while preserving merchant-of-record (MoR) semantics where applicable.
+Prava integrates with merchant platforms (a Shopify plugin is available by invite-only) and card networks to complete payments.
+
+## Settlement & Refunds
+
+*   **Settlement** follows standard card network flows. Prava supports multiple settlement models — details are confirmed during merchant onboarding.
+*   **Refunds** follow standard refund flows and can be issued through the API.
+*   **Disputes** are routed to the responsible parties as per the settlement agreement.

@@ -1,0 +1,226 @@
+---
+title: 'Report Status'
+description: 'Report payment execution outcome back to Prava'
+icon: 'flag'
+---
+
+## Endpoint
+
+```
+POST /v1/sessions/:sessionId/report-status
+```
+
+| Environment | Full URL |
+|-------------|----------|
+| **Sandbox** | `https://sandbox.api.prava.space/v1/sessions/:sessionId/report-status` |
+| **Production** | `https://api.prava.space/v1/sessions/:sessionId/report-status` |
+
+## Authentication
+
+Bearer token using your **secret key**:
+
+```
+Authorization: Bearer sk_test_xxx
+```
+
+## Path Parameters
+
+<ParamField path="sessionId" type="string" required>
+  The session ID returned from [Create Session](/api-reference/create-session)
+</ParamField>
+
+## Request Body
+
+<ParamField path="txn_ref_id" type="string" required>
+  The transaction line item reference ID (from [Get Payment Result](/api-reference/get-payment-result))
+</ParamField>
+
+<ParamField path="txn_status" type="string" required>
+  The payment outcome: `APPROVED` or `DECLINED`
+</ParamField>
+
+<ParamField path="txn_type" type="string">
+  Transaction type. Defaults to `PURCHASE`.
+</ParamField>
+
+<ParamField path="authorization_code" type="string">
+  Authorization code from the merchant's payment processor (max 128 characters)
+</ParamField>
+
+<ParamField path="response_code" type="string">
+  Processor response code, e.g., `"00"` for approved (max 2 characters)
+</ParamField>
+
+<ParamField path="amount_paid" type="string">
+  Override the total amount paid (if different from the original amount)
+</ParamField>
+
+<ParamField path="product_statuses" type="array">
+  Optional per-product status overrides
+
+  <Expandable title="Product status object">
+    <ParamField path="product_id" type="string">
+      Your external product ID (max 50 characters). Either `product_id` or `product_ref_id` must be provided.
+    </ParamField>
+
+    <ParamField path="product_ref_id" type="string">
+      Prava's internal product reference ID (max 50 characters). Either `product_id` or `product_ref_id` must be provided.
+    </ParamField>
+
+    <ParamField path="status" type="string" required>
+      Product-level status: `COMPLETED`, `FAILED`, `CANCELED`, `INPROGRESS`, `PENDING`, or `ONHOLD`
+    </ParamField>
+
+    <ParamField path="amount_paid" type="string">
+      Amount paid for this specific product
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Response
+
+<ResponseField name="status" type="string">
+  Always `"confirmed"`
+</ResponseField>
+
+<ResponseField name="txn_ref_id" type="string">
+  The transaction line item reference ID
+</ResponseField>
+
+<ResponseField name="txn_status" type="string">
+  The reported status: `APPROVED` or `DECLINED`
+</ResponseField>
+
+<ResponseField name="visa_confirmation" type="string">
+  Card network confirmation result: `SUCCESS` or `FAILURE`
+</ResponseField>
+
+## Example
+
+<Tip>Swap the host for production: use `https://api.prava.space` instead of `https://sandbox.api.prava.space`.</Tip>
+
+<CodeGroup>
+```bash cURL — Sandbox
+curl -X POST https://sandbox.api.prava.space/v1/sessions/ses_a1b2c3d4/report-status \
+  -H "Authorization: Bearer sk_test_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "txn_ref_id": "tli_abc123",
+    "txn_status": "APPROVED",
+    "authorization_code": "AUTH123",
+    "response_code": "00"
+  }'
+```
+
+```bash cURL — Production
+curl -X POST https://api.prava.space/v1/sessions/ses_a1b2c3d4/report-status \
+  -H "Authorization: Bearer sk_live_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "txn_ref_id": "tli_abc123",
+    "txn_status": "APPROVED",
+    "authorization_code": "AUTH123",
+    "response_code": "00"
+  }'
+```
+
+```typescript Node.js
+const BASE_URL = 'https://sandbox.api.prava.space'; // or https://api.prava.space
+
+const result = await fetch(
+  `${BASE_URL}/v1/sessions/ses_a1b2c3d4/report-status`,
+  {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${SECRET_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      txn_ref_id: 'tli_abc123',
+      txn_status: 'APPROVED',
+      authorization_code: 'AUTH123',
+      response_code: '00',
+    }),
+  }
+).then(res => res.json());
+```
+</CodeGroup>
+
+### Response
+
+```json
+{
+  "status": "confirmed",
+  "txn_ref_id": "tli_abc123",
+  "txn_status": "APPROVED",
+  "visa_confirmation": "SUCCESS"
+}
+```
+
+### Reporting a Failed Payment
+
+```bash
+curl -X POST https://sandbox.api.prava.space/v1/sessions/ses_a1b2c3d4/report-status \
+  -H "Authorization: Bearer sk_test_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "txn_ref_id": "tli_abc123",
+    "txn_status": "DECLINED",
+    "response_code": "51"
+  }'
+```
+
+### Reporting with Per-Product Statuses
+
+```bash
+curl -X POST https://sandbox.api.prava.space/v1/sessions/ses_a1b2c3d4/report-status \
+  -H "Authorization: Bearer sk_test_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "txn_ref_id": "tli_abc123",
+    "txn_status": "APPROVED",
+    "authorization_code": "AUTH123",
+    "product_statuses": [
+      {
+        "product_ref_id": "prd_def456",
+        "status": "COMPLETED",
+        "amount_paid": "49.99"
+      }
+    ]
+  }'
+```
+
+## Error Responses
+
+| Status | Code | Cause | Resolution |
+|--------|------|-------|------------|
+| 401 | `AUTH_1001` | Invalid API key | Check your secret key |
+| 401 | `AUTH_1002` | Missing or invalid Authorization header | Include `Authorization: Bearer sk_xxx` |
+| 404 | `NOT_FOUND` | Session not found | Verify the session ID |
+| 404 | `NOT_FOUND` | No order found for this session | Ensure the session has a completed order |
+| 404 | `NOT_FOUND` | Transaction reference not found | Verify the `txn_ref_id` |
+| 400 | `INVALID_STATE` | No transaction awaiting payment result | The transaction may have already been reported or is not yet ready |
+| 400 | `MANDATE_EXPIRED` | Mandate has expired | The mandate expired before status was reported — register a new intent |
+| 400 | `INVALID_STATE` | Transaction has no mandate | The transaction is missing mandate data |
+| 400 | `PRODUCT_NOT_FOUND` | Product not found by the given ID | Verify `product_id` or `product_ref_id` |
+| 502 | `VISA_CONFIRMATION_FAILED` | Card network confirmation failed | Retry or contact support |
+| 500 | `REPORT_STATUS_ERROR` | Internal error | Contact support with the `X-Response-ID` header |
+
+### Error Response Format
+
+```json
+{
+  "error": {
+    "code": "INVALID_STATE",
+    "message": "No transaction awaiting payment result found for this session"
+  }
+}
+```
+
+## Notes
+
+- **Always report status** after checkout execution — this updates transaction records and relays the outcome to the card network.
+- For **one-time mandates**, an `APPROVED` status automatically consumes the mandate (it cannot be used again).
+- For **recurring mandates**, an `APPROVED` status keeps the mandate active for future invocations.
+- If a payment token was used but checkout failed, reporting `DECLINED` ensures the mandate invocation is logged correctly.
+- The `product_statuses` field is optional and informational — the overall mandate status follows `txn_status`.

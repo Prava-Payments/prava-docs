@@ -1,0 +1,96 @@
+---
+title: 'Revoke Session'
+description: 'Revoke an active payment session'
+icon: 'ban'
+---
+
+## Endpoint
+
+```
+POST /v1/sessions/:id/revoke
+```
+
+| Environment | Full URL |
+|-------------|----------|
+| **Sandbox** | `https://sandbox.api.prava.space/v1/sessions/:id/revoke` |
+| **Production** | `https://api.prava.space/v1/sessions/:id/revoke` |
+
+## Authentication
+
+Bearer token using your **secret key**:
+
+```
+Authorization: Bearer sk_test_xxx
+```
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The `session_id` of the session to revoke
+</ParamField>
+
+## Response (200)
+
+<ResponseField name="success" type="boolean">
+  Always `true` on successful revocation
+</ResponseField>
+
+## Example
+
+<Tip>Swap the host for production: use `https://api.prava.space` instead of `https://sandbox.api.prava.space`.</Tip>
+
+<CodeGroup>
+```bash cURL — Sandbox
+curl -X POST https://sandbox.api.prava.space/v1/sessions/ses_a1b2c3d4/revoke \
+  -H "Authorization: Bearer sk_test_xxx"
+```
+
+```bash cURL — Production
+curl -X POST https://api.prava.space/v1/sessions/ses_a1b2c3d4/revoke \
+  -H "Authorization: Bearer sk_live_xxx"
+```
+
+```typescript Node.js
+const BASE_URL = 'https://sandbox.api.prava.space'; // or https://api.prava.space
+
+const result = await fetch(`${BASE_URL}/v1/sessions/ses_a1b2c3d4/revoke`, {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${SECRET_KEY}`,
+  },
+}).then(res => res.json());
+```
+</CodeGroup>
+
+### Response
+
+```json
+{
+  "success": true
+}
+```
+
+## Error Responses
+
+| Status | Code | Cause |
+|--------|------|-------|
+| 401 | `AUTH_1001` | Invalid API key |
+| 401 | `AUTH_1002` | Missing or invalid Authorization header |
+| 404 | `NOT_FOUND` | Session not found or doesn't belong to your merchant account |
+
+### Error Response Format
+
+```json
+{
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Session not found"
+  }
+}
+```
+
+## Notes
+
+- Once revoked, the session token can no longer be used for any SDK operations.
+- Any in-progress card collection or intent registration within the session will fail.
+- Revocation is immediate and irreversible.

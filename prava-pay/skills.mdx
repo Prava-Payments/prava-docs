@@ -1,0 +1,95 @@
+---
+title: 'Skills'
+description: 'How Prava skills guide an AI agent to call the right CLI command at the right time.'
+icon: 'graduation-cap'
+---
+
+The `prava` CLI does the work; **skills tell the agent _when_ to call _what_.** A skill is a small
+instruction file installed into the agent's runtime that encodes the correct flow, the pacing, and the
+safety stops — so the agent invokes `setup`, `sessions`, and `shop` commands in the right order and
+pauses for the user's approval before spending.
+
+<Note>
+  The CLI works **without** any skill — every `prava` command runs on its own. The skill adds the
+  *guidance*: which command comes next, when to stop and confirm, and how to keep the user in control.
+  If the matching skill is missing, the CLI nudges you (once) to install it.
+</Note>
+
+## Why skills matter
+
+Left to itself, an agent might chain commands or spend without checking. Skills prevent that by encoding:
+
+- **One decision per turn** — after `search`, wait for the user to pick; after `product`, wait for them
+  to confirm the seller/variant; after `quote`, wait for them to approve the total.
+- **Confirmation hard-stops** — the agent must present the merchant, item, and final amount and get an
+  explicit "yes" before `sessions create` / `checkout`. *"Buy me X"* is intent, not price approval.
+- **PII masking** — the agent works with masked address summaries only; full details stay server-side.
+- **Move promptly** — card credentials are single-use and short-lived, so mint → poll → checkout
+  without pausing.
+
+## The skills
+
+| Skill | Version | What it guides |
+|-------|---------|----------------|
+| **`prava-pay`** | 2.3.1 | Completing a payment once merchant, item, and price are known: `setup` → `status` → `sessions create` → `sessions poll` → checkout. |
+| **`prava-shopping`** | 1.5.1 | Discover **and** buy a product: `shop search` → `shop product` → `shop quote` → `shop checkout`, with pacing and confirmation gates. |
+| **`prava-sdk-integration`** | 1.1.0 | For coding agents *integrating the [SDK](/sdk/overview)* into an app (sessions, iframe, polling) — not for CLI payments. |
+| **`swiggy-prava-skill`** | — | Order from Swiggy via its MCP, pay with Prava credentials. |
+| **`zepto-prava-skill`** | — | Order from Zepto via its MCP, pay with Prava credentials. |
+
+<Tip>
+  Most agents want **`prava-pay`** (to pay for a known item) or **`prava-shopping`** (to find *and* buy).
+</Tip>
+
+## Install a skill
+
+Install into the agent's global skills directory (e.g. `~/.claude/skills/<name>/SKILL.md`):
+
+<CodeGroup>
+```bash One skill (recommended)
+npx --yes skills add https://github.com/Prava-Payments/prava-skills \
+  --skill prava-shopping --global --yes --full-depth
+```
+
+```bash All skills
+npx --yes skills add https://github.com/Prava-Payments/prava-skills \
+  --global --yes --full-depth
+```
+</CodeGroup>
+
+<Warning>
+  Pass **`--full-depth`** with `--skill <name>` — otherwise sibling skills are pulled in alongside the
+  one you asked for.
+</Warning>
+
+Valid `--skill` names: `prava-pay`, `prava-shopping`, `prava-sdk-integration`, `swiggy-prava-skill`,
+`zepto-prava-skill`.
+
+## Keeping skills current
+
+The CLI checks your installed skill version on every call. If it's behind the server minimum, it prints:
+
+```
+Skill update required (minimum: 2.3.1).
+Run: npx skills update prava-pay -g
+```
+
+Update, then re-run your command. If the notice repeats, restart the agent session so it reloads the
+skill. See [Troubleshooting](/prava-pay/troubleshooting#keeping-the-cli-up-to-date).
+
+## Platforms
+
+Skills work across coding agents — Claude Code, Cursor, Codex, Gemini CLI, Hermes, and
+[many more](/prava-pay/linking#prava-setup). The agent's platform is set with `--platform` when you run
+[`prava setup`](/prava-pay/linking).
+
+## Next steps
+
+<CardGroup cols={2}>
+<Card title="Link an agent" icon="link" href="/prava-pay/linking">
+  Connect and approve the agent before it can pay.
+</Card>
+<Card title="Agentic shopping" icon="cart-shopping" href="/prava-pay/shopping">
+  The search → quote → checkout flow the shopping skill guides.
+</Card>
+</CardGroup>

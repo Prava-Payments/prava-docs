@@ -1,0 +1,96 @@
+---
+title: 'API Reference'
+description: 'Server-side REST API for Prava Payments'
+icon: 'server'
+---
+
+_Not sure this is the right path? See [Choosing Your Integration](/choosing-your-integration)._
+
+## Overview
+
+The Prava REST API is used for server-side operations — creating sessions, managing cards, retrieving payment results, and reporting status. All server-side requests are authenticated using your **secret key**.
+
+<Warning>
+Never expose your secret key in client-side code, version control, or logs. Use it only in server-to-server requests.
+</Warning>
+
+## Base URLs
+
+| Environment | Base URL | Key Prefix |
+|-------------|----------|------------|
+| **Sandbox** | `https://sandbox.api.prava.space` | `sk_test_*` |
+| **Production** | `https://api.prava.space` | `sk_live_*` |
+
+<Tip>
+Use the **sandbox** URL with your `sk_test_*` key during development. Switch to the **production** URL with `sk_live_*` when you're ready to go live.
+</Tip>
+
+## Authentication
+
+All API requests require a Bearer token using your secret key:
+
+```bash
+Authorization: Bearer sk_test_xxx
+```
+
+## Response Format
+
+All responses are JSON. Every response includes an `X-Response-ID` header for debugging:
+
+```
+X-Response-ID: resp_a1b2c3d4e5f6
+```
+
+Include this ID when contacting support to help trace issues.
+
+## Error Response Format
+
+All errors follow a consistent structure:
+
+```json
+{
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human-readable error message",
+    "details": {}
+  }
+}
+```
+
+The `details` field is optional and included for validation errors to specify which fields failed.
+
+### Common Error Codes
+
+| Status | Code | Description |
+|--------|------|-------------|
+| 401 | `AUTH_1001` | Invalid API key |
+| 401 | `AUTH_1002` | Missing or invalid Authorization header |
+| 401 | `AUTH_1003` | Session has been revoked |
+| 401 | `AUTH_1004` | Invalid or expired session token |
+| 400 | `VAL_2001` | Validation error (check `details` for specifics) |
+| 404 | `NOT_FOUND` | Requested resource not found |
+| 400 | `INVALID_STATE` | Operation not allowed in current state |
+
+## Endpoints
+
+<CardGroup cols={2}>
+<Card title="Create Session" icon="plus" href="/api-reference/create-session">
+  Create a new payment session with order details
+</Card>
+
+<Card title="Revoke Session" icon="ban" href="/api-reference/revoke-session">
+  Revoke an active session
+</Card>
+
+<Card title="List Cards" icon="credit-card" href="/api-reference/list-cards">
+  Retrieve enrolled cards for a customer
+</Card>
+
+<Card title="Get Payment Result" icon="receipt" href="/api-reference/get-payment-result">
+  Retrieve the result of a payment
+</Card>
+
+<Card title="Report Status" icon="flag" href="/api-reference/report-status">
+  Report payment execution status back to Prava
+</Card>
+</CardGroup>

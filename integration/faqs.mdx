@@ -1,23 +1,83 @@
 ---
 title: 'FAQs & Concerns'
-description: 'This section addresses merchant concerns and explains how merchants integrate with Prava.'
+description: 'Common questions about integrating with Prava.'
 icon: 'question'
 ---
-## Merchant FAQs & Concerns
+
+## General
 
 **Q: Do merchants need to change their checkout?**
 
-A: No. Prava tokenizes payments and routes them to the merchant through existing card/acquirer flows. Where applicable, a small webhook integration or plugin (like the Shopify app) will deliver order details for fulfillment.
+A: No. Prava tokenizes payments and routes them to the merchant through existing card/acquirer flows. The merchant's checkout remains unchanged — Prava's payment tokens work like regular card details at any standard checkout.
 
 **Q: Who is the merchant-of-record (MoR)?**
 
-A: This depends on your integration and contract. Prava supports multiple settlement models and will confirm MoR details during merchant onboarding.
+A: The merchant-of-record is the merchant providing goods or services to the user — that is, the merchant where the AI application is performing the transaction. Prava acts as a payment infrastructure layer and does not take on MoR responsibilities.
 
 **Q: What about refunds and disputes?**
 
-A: Refunds follow standard refund flows. Prava exposes refund endpoints, and merchants or platforms can issue refunds through the API. Disputes are routed to the responsible parties as per your settlement agreement.
+A: Refunds follow the same flow as existing payment rails. The merchant can issue refunds directly through their existing systems, or the AI application can initiate refunds on behalf of the user through the merchant. Prava does not expose separate refund endpoints. Disputes are handled through the standard card network dispute process.
 
-## Merchant
+**Q: How does card data stay secure?**
 
-*   **Merchant Onboarding (Shopify Invite)**: Request Merchant Access
-*   **Merchant Support**: developers@prava.space
+A: Card data is collected via a PCI DSS compliant iframe served from Prava's domain. Raw card numbers never touch your servers, DOM, or JavaScript. All tokenization happens in an isolated, sandboxed iframe with origin-locked PostMessage communication.
+
+**Q: What happens if a payment token is used at the wrong merchant?**
+
+A: The card network will decline the transaction. Payment tokens are merchant-locked — they can only be used at the merchant specified in the mandate. This is enforced at the network level, not just by Prava.
+
+**Q: Can AI agents make purchases without user approval?**
+
+A: No. Every intent requires explicit user authentication via Passkey (biometric/device confirmation). The agent cannot bypass this step. Once a mandate is approved, the agent can invoke it within the mandate's constraints (amount, merchant, frequency) — but the user approved those constraints upfront.
+
+**Q: What card networks are supported?**
+
+A: Prava supports major card networks. Contact us at support@prava.space for the latest list of supported networks.
+
+## Technical
+
+**Q: What currencies does Prava support?**
+
+A: Prava supports 47+ currencies including USD, EUR, GBP, INR, CAD, AUD, JPY, SGD, AED, and many more. The full list is validated at session creation — if you pass an unsupported ISO 4217 currency code, you'll receive a validation error.
+
+**Q: How long does a session last?**
+
+A: Sessions expire after **15 minutes** by default. The `expires_at` field in the [Create Session](/api-reference/create-session) response tells you exactly when. Once expired, the session token can no longer be used for any SDK operations. You can also configure mandate duration using the `effective_until_minutes` field in `purchase_context` (also defaults to 15 minutes).
+
+**Q: What happens if the user closes the browser mid-flow?**
+
+A: The session remains valid until it expires. If the user returns within the session window, they can resume. If they need to start over, create a new session. Duplicate transactions are prevented by idempotency — the system generates a deterministic key from the order, flow type, and card, so retries won't create duplicate charges.
+
+**Q: What happens if the user's device doesn't support passkeys (WebAuthn)?**
+
+A: Transactions cannot be performed without WebAuthn support. Passkey authentication is a hard requirement — there is no fallback mechanism. This ensures the highest level of security for user authorization. Supported devices include those with Touch ID, Face ID, Windows Hello, or a FIDO2 security key.
+
+**Q: Are payment tokens single-use?**
+
+A: Yes. Each payment token (virtual card number + CVV) can be used exactly **once**. If checkout fails, you must invoke the intent again to get a fresh token (subject to the mandate's constraints). Tokens are also merchant-locked, amount-scoped, and time-limited.
+
+**Q: How does mandate expiry work?**
+
+A: When a session is created, the `effective_until_minutes` field (default: 15 minutes) sets how long the mandate is valid. Prava checks mandate expiry when you call [Get Payment Result](/api-reference/get-payment-result) or [Report Status](/api-reference/report-status). If the mandate has expired, the status will be reflected in the response and further invocations will be rejected.
+
+**Q: Can I create multiple sessions for the same user at the same time?**
+
+A: Technically yes, but it's not recommended. Each session is independent with its own token and expiry. In practice, create one session per checkout flow and either complete it or revoke it before creating another.
+
+**Q: Is there idempotency protection for transactions?**
+
+A: Yes. Each transaction gets a deterministic idempotency key derived from the order ID, flow type, and card identifier. If a duplicate request is detected, the existing transaction is returned instead of creating a new one. This prevents double charges from network retries or repeated submissions.
+
+**Q: What is the maximum number of products per session?**
+
+A: There is no hard upper limit. You must include at least 1 product in the `product_details` array. However, only 1 `purchase_context` entry (i.e., one merchant) is supported per session — multi-merchant sessions are not currently available.
+
+## Merchants
+
+**Q: Are you a Shopify merchant?**
+
+A: Prava can already reach Shopify stores through [UCP](/integration/ucp) and the [Browser Harness](/integration/browser-harness) — no setup needed on your end. If you'd like a direct integration, the **Prava Shopify app** is available by **invite only**. Contact **developers@prava.space** to request merchant onboarding.
+
+## Support
+
+*   **Developer Support**: support@prava.space
