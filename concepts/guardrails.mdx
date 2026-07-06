@@ -1,8 +1,46 @@
 ---
-title: 'Guardrails & Evals'
-description: 'Rule-based controls'
+title: 'Guardrails'
+description: 'Rule-based controls that constrain what AI agents can spend and where.'
 icon: 'shield'
 ---
 
-*   **Guardrails** are rule-based controls (spending caps, merchant blacklists, currency restrictions).
-*   **Evals** are evaluation prompts/rules that validate natural-language instructions against user settings (for example, checking whether “buy shoes under $100” matches user limits).
+## Guardrails
+
+**Guardrails** are rule-based controls enforced at multiple levels to ensure AI agents cannot exceed their authorized scope. They operate across three enforcement layers:
+
+### 1. Mandate-Level Constraints
+
+Every payment intent creates a **mandate** at the card network level. The mandate itself is a guardrail — it specifies:
+
+| Constraint | What it controls |
+|-----------|-----------------|
+| **Merchant** | The merchant the mandate is scoped to |
+| **Amount threshold** | Maximum amount for the transaction |
+| **Frequency** | Currently `one_time` (recurring frequencies are planned) |
+| **Effective duration** | When the mandate expires (`expiresAt`) |
+| **Product scope** | The products in the purchase (via mandate line items) |
+
+The mandate's **amount** is enforced at the card-network level through the tokenized credential — a transaction outside the mandate amount is declined. The remaining constraints are applied by Prava.
+
+### 2. Session-Level Controls
+
+Each session is scoped to:
+
+*   A specific **merchant** and **order**
+*   A configured set of **allowed domains** (origin validation)
+*   A **time limit** — sessions expire and cannot be reused
+*   **Idempotency** — duplicate transactions within a session are detected and rejected
+
+### 3. Authentication Controls
+
+*   **Passkey (WebAuthn)** — required for every intent mutation (register, update, delete). Prevents unauthorized agents from creating mandates.
+*   **Device binding** — passkeys are registered per browser, so a passkey on one device cannot be used on another.
+*   **WebAuthn required** — if the user's device does not support WebAuthn (passkeys), transactions cannot be performed. There is no fallback mechanism — this ensures the highest level of authentication security.
+
+## Defense in Depth
+
+```
+User approval (Passkey) → Mandate (amount-scoped) → Session (time-scoped) → one-time credential
+```
+
+Every layer must pass for a payment to succeed. An AI agent with a valid mandate but an expired session is blocked; a transaction outside the mandate amount is declined. This layered approach ensures no single point of failure.

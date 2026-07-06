@@ -1,0 +1,126 @@
+---
+title: 'Payment Sessions'
+description: 'Create a payment for a known order and receive one-time card credentials.'
+icon: 'receipt'
+---
+
+A **payment session** is the direct way to pay when you already know the merchant, the items, and the
+total. You create the session, the owner enters their card in Prava's secure page, and you receive
+**one-time credentials** to complete the checkout.
+
+Use this flow when *you* found the product. If you want Prava to help **discover** the product too,
+see [Agentic shopping](/prava-pay/shopping) instead.
+
+<Note>
+  The agent must be [linked](/prava-pay/linking) first. If it isn't, session commands exit with
+  `Agent not linked. Run: prava setup --name "<name>"`.
+</Note>
+
+## `prava sessions create`
+
+```bash
+prava sessions create \
+  --total-amount "8.50" \
+  --currency USD \
+  --merchant-name "Blue Bottle Coffee" \
+  --merchant-url "https://bluebottlecoffee.com" \
+  --merchant-country US \
+  --product '{"description":"Latte","unit_price":"5.00","quantity":1}' \
+  --product '{"description":"Croissant","unit_price":"3.50","quantity":1}'
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--total-amount <amount>` | Yes | Total as a string, e.g. `"8.50"`. Must equal the sum of `unit_price × quantity` across all products. |
+| `--currency <code>` | Yes | ISO 4217 code, e.g. `USD`, `EUR`, `GBP`, `INR`. |
+| `--merchant-name <name>` | Yes | Merchant display name (shown to the owner). |
+| `--merchant-url <url>` | Yes | Full merchant URL **including `https://`**. |
+| `--merchant-country <code>` | Yes | ISO 3166-1 alpha-2 country, e.g. `US`. |
+| `--product <json>` | Yes | A product line item as JSON. **Repeat** the flag for each distinct item. |
+
+Each `--product` is a JSON object:
+
+```json
+{ "description": "Latte", "unit_price": "5.00", "quantity": 1 }
+```
+
+<Tip>
+  For multiple units of the same item, set `"quantity"` — don't repeat `--product` or bake counts
+  into the description. The total must reconcile with the line items.
+</Tip>
+
+On success:
+
+```
+Session created.
+Session ID: ses_abc123
+Payment URL: https://collect.prava.space?session=…
+
+Share this URL to complete card entry.
+Run `prava sessions poll --session-id ses_abc123` to wait for card entry.
+```
+
+Give the **Payment URL** to the owner. They open it and enter their card in Prava's secure page —
+the card details never pass through the agent.
+
+## `prava sessions poll`
+
+Wait for the card to be entered and tokenized:
+
+```bash
+prava sessions poll --session-id ses_abc123
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--session-id <id>` | Yes | The `Session ID` from `sessions create`. |
+
+While waiting it prints dots; once the owner completes card entry:
+
+```
+Waiting for card entry on session ses_abc123...
+....
+
+Card tokenized.
+
+Token:        4323126882557932
+Cryptogram:   957
+Expiry:       12/2028
+```
+
+`poll` waits up to **10 minutes** for the owner to enter the card.
+
+### What you receive
+
+| Field | Format | Use it as |
+|-------|--------|-----------|
+| **Token** | 16-digit number | The card number at checkout. |
+| **Cryptogram** | 3-digit number | The CVV / security code at checkout. |
+| **Expiry** | `MM/YYYY` | The card expiry at checkout. |
+
+<Warning>
+  These credentials are **single-use and expire quickly**. Complete the checkout immediately after
+  polling — don't cache, log, or reuse them. If they expire, create a new session.
+</Warning>
+
+## Exit codes
+
+Session commands use exit codes so an agent can branch reliably:
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success. |
+| `1` | Error or timeout (e.g. session expired, tokenization failed). |
+| `2` | Not linked / no agent configured — run [`prava setup`](/prava-pay/linking). |
+
+## Common outcomes
+
+| Output | What it means | What to do |
+|--------|---------------|------------|
+| `Session expired. Run \`prava sessions create\` again.` | The owner didn't finish card entry within 10 minutes. | Re-create the session; have the card ready. |
+| `Tokenization failed.` | The card couldn't be processed. | Try again, or a different card. See [Troubleshooting](/prava-pay/troubleshooting). |
+| `Invalid product JSON: …` | A `--product` value isn't valid JSON. | Fix the JSON: `'{"description":"…","unit_price":"…","quantity":1}'`. |
+| `Failed to create session: …` | The order was rejected. | Check the amount reconciles with the line items and the URL includes `https://`. |
+
+Next: use the token to [complete a checkout](/prava-pay/shopping#checkout), or drive the
+merchant's checkout directly with the returned credentials.

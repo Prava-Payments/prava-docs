@@ -1,0 +1,299 @@
+---
+title: 'Create Session'
+description: 'Create a new payment session for a customer and order'
+icon: 'plus'
+---
+
+## Endpoint
+
+```
+POST /v1/sessions
+```
+
+| Environment | Full URL |
+|-------------|----------|
+| **Sandbox** | `https://sandbox.api.prava.space/v1/sessions` |
+| **Production** | `https://api.prava.space/v1/sessions` |
+
+## Authentication
+
+Bearer token using your **secret key**:
+
+```
+Authorization: Bearer sk_test_xxx
+```
+
+## Request Body
+
+<Note>
+  `user_id` and `user_email` are **required** for merchant (secret-key) requests. They identify the
+  customer this session belongs to.
+</Note>
+
+### Required Fields
+
+<ParamField path="user_id" type="string" required>
+  Unique identifier for the customer in your system (max 255 characters)
+</ParamField>
+
+<ParamField path="user_email" type="string" required>
+  Customer's email address (must be a valid email)
+</ParamField>
+
+<ParamField path="total_amount" type="string" required>
+  Total order amount in decimal format (e.g., `"49.99"`)
+</ParamField>
+
+<ParamField path="currency" type="string" required>
+  ISO 4217 currency code — exactly 3 uppercase letters (e.g., `"USD"`)
+</ParamField>
+
+<ParamField path="purchase_context" type="array" required>
+  Array containing exactly **1** purchase context object describing the order. Multi-merchant sessions are not currently supported.
+
+  <Expandable title="purchase_context item">
+    <ParamField path="merchant_details" type="object" required>
+      <Expandable title="properties">
+        <ParamField path="name" type="string" required>
+          Merchant display name
+        </ParamField>
+        <ParamField path="url" type="string" required>
+          Merchant website URL (must be a valid URL)
+        </ParamField>
+        <ParamField path="country_code_iso2" type="string" required>
+          Two uppercase letter ISO 3166-1 country code (e.g., `"US"`)
+        </ParamField>
+        <ParamField path="category_code" type="string">
+          Merchant category code (max 10 characters)
+        </ParamField>
+        <ParamField path="category" type="string">
+          Merchant category description (max 100 characters)
+        </ParamField>
+      </Expandable>
+    </ParamField>
+
+    <ParamField path="product_details" type="array" required>
+      Array of products (minimum 1)
+
+      <Expandable title="product item">
+        <ParamField path="description" type="string" required>
+          Product description
+        </ParamField>
+        <ParamField path="unit_price" type="string" required>
+          Unit price as a string (e.g., `"49.99"`)
+        </ParamField>
+        <ParamField path="product_id" type="string">
+          Your external product identifier (max 50 characters)
+        </ParamField>
+        <ParamField path="quantity" type="integer">
+          Quantity of this product. Defaults to `1`.
+        </ParamField>
+      </Expandable>
+    </ParamField>
+
+    <ParamField path="effective_until_minutes" type="integer">
+      How long the mandate remains effective, in minutes. Defaults to `15`.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Optional Fields
+
+<ParamField path="user_phone" type="string">
+  Customer's phone number
+</ParamField>
+
+<ParamField path="user_country_code_iso2" type="string">
+  Customer's country — exactly 2 uppercase letters ISO 3166-1 (e.g., `"US"`)
+</ParamField>
+
+<ParamField path="external_order_ref" type="string">
+  Your external order reference ID (max 255 characters)
+</ParamField>
+
+<ParamField path="description" type="string">
+  Human-readable description of the order
+</ParamField>
+
+<ParamField path="integration_type" type="string" default="full_checkout">
+  How the card is collected. One of:
+
+  *   `"full_checkout"` (default) — **hosted** mode. The `iframe_url` is a full Prava-hosted page you
+      redirect the cardholder to; Prava returns them to your `callback_url` when done. No SDK required.
+  *   `"embedding"` — **embedded** mode. Mount the `iframe_url` inside your own page with the
+      [SDK](/sdk/overview) (`collectPAN`) and handle the result in-app.
+
+  See [Integration Modes](/sdk/integration-modes) for a full comparison.
+</ParamField>
+
+<ParamField path="callback_url" type="string">
+  For **hosted** checkout: the URL Prava redirects the cardholder to after they finish. Must use
+  `https` (max 2048 characters).
+</ParamField>
+
+<ParamField path="card" type="object">
+  Pre-select a card for the session
+
+  <Expandable title="properties">
+    <ParamField path="card_id" type="string">
+      An existing enrolled card ID
+    </ParamField>
+    <ParamField path="vault_ref_id" type="string">
+      A valid UUID referencing a vaulted card
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Response (201)
+
+<ResponseField name="session_id" type="string">
+  Unique session identifier
+</ResponseField>
+
+<ResponseField name="session_token" type="string">
+  JWT token used to authenticate client-side SDK operations within this session
+</ResponseField>
+
+<ResponseField name="iframe_url" type="string">
+  URL for the secure card collection surface. **Embed** it via the SDK's `collectPAN()`, or **open it
+  directly** (append `session_token`) for hosted checkout — see [Integration Modes](/sdk/integration-modes).
+</ResponseField>
+
+<ResponseField name="order_id" type="string">
+  Internal order identifier
+</ResponseField>
+
+<ResponseField name="expires_at" type="string">
+  ISO 8601 timestamp indicating when the session expires
+</ResponseField>
+
+## Example
+
+<Tip>Swap the host for production: use `https://api.prava.space` instead of `https://sandbox.api.prava.space`.</Tip>
+
+<CodeGroup>
+```bash cURL — Sandbox
+curl -X POST https://sandbox.api.prava.space/v1/sessions \
+  -H "Authorization: Bearer sk_test_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "user_123",
+    "user_email": "user@example.com",
+    "total_amount": "49.99",
+    "currency": "USD",
+    "purchase_context": [{
+      "merchant_details": {
+        "name": "Your Store",
+        "url": "https://yourstore.com",
+        "country_code_iso2": "US"
+      },
+      "product_details": [{
+        "description": "Wireless Headphones",
+        "unit_price": "49.99",
+        "quantity": 1
+      }]
+    }]
+  }'
+```
+
+```bash cURL — Production
+curl -X POST https://api.prava.space/v1/sessions \
+  -H "Authorization: Bearer sk_live_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "user_123",
+    "user_email": "user@example.com",
+    "total_amount": "49.99",
+    "currency": "USD",
+    "purchase_context": [{
+      "merchant_details": {
+        "name": "Your Store",
+        "url": "https://yourstore.com",
+        "country_code_iso2": "US"
+      },
+      "product_details": [{
+        "description": "Wireless Headphones",
+        "unit_price": "49.99",
+        "quantity": 1
+      }]
+    }]
+  }'
+```
+
+```typescript Node.js
+const BASE_URL = 'https://sandbox.api.prava.space'; // or https://api.prava.space
+
+const session = await fetch(`${BASE_URL}/v1/sessions`, {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${SECRET_KEY}`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    user_id: 'user_123',
+    user_email: 'user@example.com',
+    total_amount: '49.99',
+    currency: 'USD',
+    purchase_context: [{
+      merchant_details: {
+        name: 'Your Store',
+        url: 'https://yourstore.com',
+        country_code_iso2: 'US',
+      },
+      product_details: [{
+        description: 'Wireless Headphones',
+        unit_price: '49.99',
+        quantity: 1,
+      }],
+    }],
+  }),
+}).then(res => res.json());
+```
+</CodeGroup>
+
+### Response
+
+```json
+{
+  "session_id": "ses_a1b2c3d4",
+  "session_token": "stok_xyz789...",
+  "iframe_url": "https://secure.prava.space/collect/ses_a1b2c3d4",
+  "order_id": "ord_m7kx9...",
+  "expires_at": "2026-04-08T13:00:00Z"
+}
+```
+
+## Error Responses
+
+| Status | Code | Cause |
+|--------|------|-------|
+| 400 | `VAL_2001` | Validation error — missing or invalid fields (details included in response) |
+| 401 | `AUTH_1001` | Invalid API key |
+| 401 | `AUTH_1002` | Missing or invalid Authorization header |
+| 429 | `TRIES_EXHAUSTED` | Sandbox test-transaction limit reached for this merchant |
+| 500 | `MERCHANT_LOOKUP_ERROR` | Failed to load merchant account for the given key |
+| 500 | `CONFIG_ERROR` | Server-side configuration issue (Visa or Skyflow not configured) |
+
+### Error Response Format
+
+```json
+{
+  "error": {
+    "code": "VAL_2001",
+    "message": "Validation error",
+    "details": {
+      "user_email": "Invalid email format"
+    }
+  }
+}
+```
+
+## Notes
+
+- Sessions are **short-lived** and expire after a configured duration.
+- Sessions are **single-use** — tied to a specific merchant, customer, and order.
+- Only **one** `purchase_context` entry is supported per session (multi-merchant not yet available).
+- The `effective_until_minutes` field in `purchase_context` controls how long the mandate is valid (default: 15 minutes).
+- Sessions can be revoked via [`POST /v1/sessions/:id/revoke`](/api-reference/revoke-session).
+- The `session_token` and `iframe_url` are used on the frontend — embedded via the [SDK](/sdk/overview), or opened directly for [hosted checkout](/sdk/integration-modes).
+- Set `integration_type: "embedding"` for the SDK flow; omit it (or use `"full_checkout"`) for hosted, and provide a `callback_url`.

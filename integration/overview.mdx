@@ -1,0 +1,59 @@
+---
+title: 'Agentic Commerce'
+description: 'The commerce capabilities that let an AI application discover, quote, checkout, and pay.'
+icon: 'plug'
+---
+
+Prava is more than a payment token. It provides the **commerce capabilities** an AI application needs to
+turn an intent to buy into a completed order — discovering products, pricing them accurately, and
+completing a real checkout on the merchant's site.
+
+## The capability pipeline
+
+```
+  Discover        →     Quote        →      Checkout           →     Pay
+ ───────────         ───────────         ─────────────────         ───────────
+  UCP search          UCP + live         Browser Harness            one-time
+  & catalog           reconciliation     completes the order        tokenized card
+```
+
+Two capabilities do the heavy lifting, and they work as a pair:
+
+<CardGroup cols={2}>
+<Card title="UCP" icon="magnifying-glass" href="/integration/ucp">
+  Search products, read catalogs, and open quotes across participating Shopify merchants via the
+  Universal Commerce Protocol.
+</Card>
+<Card title="Browser Harness" icon="robot" href="/integration/browser-harness">
+  Prava's checkout automation confirms the true total from a UCP quote and completes the real merchant
+  checkout.
+</Card>
+</CardGroup>
+
+## Who this is for
+
+AI applications and agents that want to **find and buy** on a user's behalf — not just process a
+payment. These same capabilities power [Prava Pay's agentic shopping](/prava-pay/shopping)
+(`prava shop search → product → quote → checkout`); this section explains what's behind those commands.
+
+<Note>
+  Whichever surface you use, the card is always collected on Prava's secure surface and turned into a
+  one-time, merchant-scoped credential — the AI application never handles a raw card.
+</Note>
+
+## How the pieces fit
+
+<Steps>
+<Step title="Discover with UCP">
+  Search across participating Shopify merchants and read product/variant details. See
+  [UCP](/integration/ucp).
+</Step>
+<Step title="Quote the real price">
+  UCP opens a checkout for an initial price; the [Browser Harness](/integration/browser-harness)
+  reconciles it against the live checkout so the amount is correct before anyone commits.
+</Step>
+<Step title="Complete checkout">
+  The Browser Harness fills the checkout, confirms the final total, pays with the one-time token, and
+  returns a verifiable order.
+</Step>
+</Steps>

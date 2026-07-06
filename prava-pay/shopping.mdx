@@ -1,0 +1,228 @@
+---
+title: 'Agentic Shopping'
+description: 'Discover a product, compare offers, get a live quote, and pay — all from the CLI.'
+icon: 'cart-shopping'
+---
+
+When the agent needs to **find** the product too, Prava Pay adds a discovery flow on top of payments:
+**search → product → quote → checkout**. Each step hands you exactly what you need to run the next.
+
+<Info>
+  For the richest guided experience (pacing, confirmations, masked previews), install the
+  `prava-shopping` skill alongside the CLI. The `shop` commands work without it, but the skill adds
+  the guardrails that keep the agent honest with the user.
+
+  ```bash
+  npx --yes skills add https://github.com/Prava-Payments/prava-skills \
+    --skill prava-shopping --global --yes --full-depth
+  ```
+</Info>
+
+<Note>The agent must be [linked](/prava-pay/linking) before any `shop` command works.</Note>
+
+## Delivery addresses
+
+Physical goods need a delivery address and a contact phone. These are stored on the **owner's
+account** and hydrated server-side at purchase time — the agent only ever sees **masked summaries**,
+never full street addresses or phone numbers.
+
+<Warning>
+  The agent never handles the buyer's full address or phone. It selects *which* saved address by id;
+  Prava fills in the real details privately. See [Guardrails](/concepts/guardrails).
+</Warning>
+
+### List addresses
+
+```bash
+prava shop address list
+```
+
+```
+2 saved addresses (masked):
+
+  1. Home  [default]
+     San Francisco, CA 94103, US
+     address-id: addr_home1
+  2. Work
+     Oakland, CA 94612, US
+     address-id: addr_work2
+```
+
+### Add an address
+
+The primary place to add addresses is the Prava dashboard; this is the CLI fallback.
+
+```bash
+prava shop address add \
+  --first-name John --last-name Doe \
+  --line1 "123 Main St" --city "San Francisco" \
+  --region CA --postal 94103 --country US \
+  --phone "+1 415 555 0100" --label "Home" --default
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--first-name`, `--last-name` | Yes | Recipient name. |
+| `--line1` | Yes | Street address. `--line2` optional. |
+| `--city`, `--region`, `--postal`, `--country` | Yes | City, state/province, ZIP, ISO country. |
+| `--phone` | No | Contact phone **with country code**. Stored on the account, not per-address. |
+| `--label` | No | e.g. `"Home"`. |
+| `--default` | No | Make this the default delivery address. |
+
+### Set the default
+
+```bash
+prava shop address set-default --address-id addr_work2
+```
+
+## Search
+
+```bash
+prava shop search --query "dark roast coffee" --intent "gift for a coffee lover" --limit 10 --ships-to US
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--query <text>` | Yes | Tight keyword query. |
+| `--intent <text>` | No | The user's full natural-language request (occasion, budget) — improves ranking. |
+| `--limit <n>` | No | Max results (default 10). |
+| `--cursor <cursor>` | No | Next-page cursor from a previous search. |
+| `--merchant <domain>` | No | Restrict to one merchant domain. |
+| `--ships-to <country>` | No | ISO destination country, e.g. `US`. |
+| `--json` | No | Raw JSON output for chaining. |
+
+```
+3 results for "dark roast coffee":
+
+  1. Hair Bender Whole Bean
+     $17.00 USD  ·  stumptowncoffee.com
+     product-id: prod_abc
+
+Next: prava shop product --product-id <id> --merchant <merchant>
+```
+
+## Product
+
+Show a product's variants and offers across sellers:
+
+```bash
+prava shop product --product-id prod_abc --merchant stumptowncoffee.com
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--product-id <id>` | Yes | `product-id` from search results. |
+| `--merchant <domain>` | No | Merchant domain from the search result. |
+| `--json` | No | Raw JSON output. |
+
+Offers are listed **orderable first, then cheapest**. Prices shown are item-only — **shipping and tax
+are added at the quote step**.
+
+```
+2 offers from 2 sellers, 2 orderable (orderable first, then cheapest) — prices are item-only; shipping is added at quote:
+
+  1. 12 oz  —  $17.00 USD  [whole bean]  ·  stumptowncoffee.com
+     variant-id: var_123
+
+Next: prava shop quote --variant-id <id> --merchant <that offer's merchant above>
+```
+
+## Quote
+
+Pricing a variant opens a **checkout session** with the *final*, binding total — subtotal + shipping
++ tax. This is a spend-adjacent step, so it asks for confirmation.
+
+```bash
+prava shop quote --variant-id var_123 --merchant stumptowncoffee.com --quantity 1 --address-id addr_home1 --yes
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--variant-id <id>` | Yes | `variant-id` from product details. |
+| `--merchant <domain>` | Yes | Merchant domain. |
+| `--quantity <n>` | No | Quantity (default 1). |
+| `--email <email>` | No | Buyer email (optional if on file). |
+| `--address-id <id>` | No | Which saved address to ship to (default: the owner's default address). |
+| `--retries <n>` | No | Retry on timeout / server error (default 1; `0` to disable). |
+| `-y, --yes` | No | Confirm. Pass **only** after the user has approved the seller, variant, and price. |
+| `--json` | No | Raw JSON output. |
+
+```
+Quote for stumptowncoffee.com
+  Total: $22.45 USD
+  (subtotal $17.00 + shipping $4.50 + tax $0.95)
+  Shipping: Standard (5–7 days)
+  Expires: in ~15m
+  checkout-session-id: ches_xxx
+
+Next: mint a card session for $22.45 USD (prava sessions create … → approve → prava sessions poll), then:
+  prava shop checkout --checkout-session-id ches_xxx --token <t> --cryptogram <c> --expiry-month <mm> --expiry-year <yyyy>
+```
+
+<Warning>
+  A quote **expires** (about 15 minutes) and locks the price. Get the card credentials and check out
+  promptly. If it lapses, quote again.
+</Warning>
+
+Between the quote and the checkout, mint the card credentials with a [payment
+session](/prava-pay/sessions): `prava sessions create` for the quoted total → owner enters the card →
+`prava sessions poll` to get the token and cryptogram.
+
+## Checkout
+
+Pay the quoted total with the card credentials. This is the actual charge, so it also confirms.
+
+```bash
+prava shop checkout \
+  --checkout-session-id ches_xxx \
+  --token 4323126882557932 --cryptogram 957 \
+  --expiry-month 12 --expiry-year 2028 \
+  --cardholder-name "John Doe" --yes
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--checkout-session-id <id>` | Yes | From `shop quote`. |
+| `--token <token>` | Yes | Network token from `prava sessions poll`. |
+| `--cryptogram <crypt>` | Yes | Dynamic CVV from `prava sessions poll`. |
+| `--expiry-month <mm>`, `--expiry-year <yyyy>` | No | Card expiry (defaults from the session if omitted). |
+| `--cardholder-name <name>` | No | Cardholder name. |
+| `-y, --yes` | No | Confirm the charge. Pass **only** after the user approves the final total. |
+| `--json` | No | Raw JSON output. |
+
+On success:
+
+```
+✓ Paid.
+  Amount: $22.45 USD
+  Order:  ord_abc123
+```
+
+<Note>
+  The total charged is **bound to the quote** — it can't drift between quote and payment. Prava pays
+  exactly the amount you saw, at exactly the merchant you quoted.
+</Note>
+
+## Confirmation & safety
+
+Both `quote` and `checkout` are gated by a confirmation:
+
+- At an interactive terminal, they prompt `[y/N]`.
+- For an agent (non-interactive), they **refuse** unless `--yes` is passed — making a skipped
+  confirmation a deliberate, visible act.
+
+<Warning>
+  Pass `--yes` **only after the user has actually approved** the seller, item, and total. It exists to
+  record the user's approval, not to bypass it.
+</Warning>
+
+## Exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success. |
+| `1` | Error, declined, or not confirmed. |
+| `2` | Not linked / confirmation refused without `--yes`. |
+
+For the full list of failure messages and how to recover, see
+[Troubleshooting](/prava-pay/troubleshooting).

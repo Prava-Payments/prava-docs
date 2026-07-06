@@ -1,0 +1,158 @@
+---
+title: 'Troubleshooting'
+description: 'What each message means and exactly how to recover.'
+icon: 'life-ring'
+---
+
+Prava Pay is designed to fail **loudly and safely**: every error tells you what happened and what to
+do next, and no failure ever leaves you double-charged. This page maps the messages you'll see to a
+recovery step.
+
+<Info>
+  **Exit codes** let an agent branch without parsing text: `0` = success · `1` = error/declined ·
+  `2` = not linked or confirmation refused.
+</Info>
+
+## Linking problems
+
+<AccordionGroup>
+<Accordion title="No agent configured. Run: prava setup --name &quot;<name>&quot;">
+  Nothing is linked on this machine yet. Run [`prava setup`](/prava-pay/linking) and approve in the
+  browser.
+</Accordion>
+<Accordion title="Link expired. Run `prava setup` again.">
+  The approval window (15 minutes) passed. Start over with `prava setup`, open the new URL, and
+  approve promptly.
+</Accordion>
+<Accordion title="Setup denied by user.">
+  The owner rejected the agent on the approval screen. If that was a mistake, run `prava setup` again
+  and approve it.
+</Accordion>
+<Accordion title="Your system clock appears to be incorrect. Please sync your clock and retry.">
+  Linking is time-sensitive. Sync the machine's clock (enable automatic network time) and re-run
+  `prava setup`.
+</Accordion>
+<Accordion title="Could not reach the Prava server to create a link.">
+  A network issue. Check connectivity and retry. If you're behind a proxy or firewall, make sure
+  outbound HTTPS to `prava.space` is allowed.
+</Accordion>
+<Accordion title="Agent not linked. Run: prava setup --name &quot;<name>&quot;">
+  A session or shop command ran before the agent was approved. Complete linking first
+  (`prava setup` → approve → `prava setup poll`), then retry.
+</Accordion>
+</AccordionGroup>
+
+## Card entry & payment sessions
+
+<AccordionGroup>
+<Accordion title="Session expired. Run `prava sessions create` again.">
+  The owner didn't finish card entry within the 10-minute window. Re-create the session and have the
+  card ready before opening the payment URL.
+</Accordion>
+<Accordion title="Tokenization failed.">
+  The card couldn't be processed. Try the payment session again, or use a different card. If it keeps
+  failing, contact [support](mailto:developers@prava.space).
+</Accordion>
+<Accordion title="Invalid product JSON: …">
+  A `--product` value isn't valid JSON. Use the exact shape, quoted for your shell:
+  `'{"description":"…","unit_price":"…","quantity":1}'`.
+</Accordion>
+<Accordion title="Failed to create session: …">
+  The order was rejected. Check that `--total-amount` equals the sum of `unit_price × quantity` and
+  that `--merchant-url` includes `https://`.
+</Accordion>
+</AccordionGroup>
+
+<Warning>
+  The token and cryptogram from `sessions poll` are **single-use and short-lived**. If you wait too
+  long to check out, mint a fresh session — don't try to reuse old credentials.
+</Warning>
+
+## Shopping: quotes & checkout
+
+<AccordionGroup>
+<Accordion title="request failed: timed out — the merchant checkout can be slow; try again">
+  Quotes and checkouts drive a live merchant checkout and can take 20–40 seconds. For **quotes**,
+  simply retry (the CLI retries once by default; raise it with `--retries`). For **checkout**, see the
+  note on unknown outcomes below before retrying.
+</Accordion>
+<Accordion title="This checkout has expired">
+  A quote is valid for about 15 minutes and locks the price. Once it lapses, run `prava shop quote`
+  again to get a fresh `checkout-session-id` and total.
+</Accordion>
+<Accordion title="Too many open checkouts">
+  You've hit the limit on concurrent open quotes. Wait for existing quotes to be paid or to expire
+  (~15 min), then quote again.
+</Accordion>
+<Accordion title="Checkout quota exceeded">
+  The account's purchase limit has been reached. This is an owner-level guardrail — the owner needs to
+  raise the limit or contact [support](mailto:developers@prava.space). See [Guardrails](/concepts/guardrails).
+</Accordion>
+<Accordion title="No delivery addresses on file / No contact phone on file">
+  Physical goods need a delivery address and a contact phone. Add them in the Prava dashboard, or via
+  `prava shop address add … --phone "+1 …"`. See [Agentic shopping](/prava-pay/shopping#delivery-addresses).
+</Accordion>
+<Accordion title="Refusing without confirmation: … / Aborted — not confirmed.">
+  `quote` and `checkout` require confirmation. At a terminal, answer `y`. For an agent, pass `--yes`
+  **only after the user has approved** the seller, item, and total.
+</Accordion>
+</AccordionGroup>
+
+## Payment outcomes
+
+The result of a checkout is read from the payment itself, not just the network response — so the
+status you see is the real one.
+
+<AccordionGroup>
+<Accordion title="✓ Paid.">
+  Success. The charge went through; an order id is shown when the merchant provides one.
+</Accordion>
+<Accordion title="✗ Checkout failed: <reason>">
+  The payment was declined or the merchant rejected it. This checkout is done — start a new
+  [quote](/prava-pay/shopping#quote) to try again.
+</Accordion>
+<Accordion title="✗ Checkout … (already processed — no new charge)">
+  This checkout was already completed earlier. Prava recognized the repeat and did **not** charge
+  again. Treat the earlier success as authoritative.
+</Accordion>
+</AccordionGroup>
+
+<Note>
+**Unknown outcome (rare).** If a checkout times out or the merchant response is lost, Prava does **not**
+guess — it leaves the payment un-finalized rather than risk a double charge, and asks you to wait
+rather than blindly retry. Do **not** immediately re-run checkout with the same credentials; re-quote
+if you need to try again, and reconcile the earlier attempt first if in doubt.
+</Note>
+
+## Keeping the CLI up to date
+
+Prava tells you when a version is behind:
+
+<AccordionGroup>
+<Accordion title="Critical update required. Current: X, Required: Y">
+  The CLI is too old to talk to the server. Update it, then retry the command (you do **not** need to
+  re-link):
+  ```bash
+  npm update -g @prava-sdk/cli
+  ```
+</Accordion>
+<Accordion title="Update available: npm update -g @prava-sdk/cli">
+  An optional bug-fix update is available. Not required, but recommended:
+  ```bash
+  npm update -g @prava-sdk/cli
+  ```
+</Accordion>
+<Accordion title="Skill update required (minimum: X)">
+  A Prava skill (e.g. `prava-pay`, `prava-shopping`) is behind. Update it, then retry. If the notice
+  repeats, restart the agent session so it reloads the skill:
+  ```bash
+  npx skills update prava-shopping -g
+  ```
+</Accordion>
+</AccordionGroup>
+
+## Still stuck?
+
+Run `prava status` to confirm the agent is linked and active, and re-check the command flags against
+the [Payment sessions](/prava-pay/sessions) and [Agentic shopping](/prava-pay/shopping) references.
+For anything else, reach us at [developers@prava.space](mailto:developers@prava.space).

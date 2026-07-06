@@ -1,0 +1,142 @@
+---
+title: 'Quickstart'
+description: 'From zero to a completed purchase in one sitting.'
+icon: 'rocket'
+---
+
+This walks through the **happy path** end to end: link an agent, create a payment session, enter a
+card, and complete a purchase. Every command and output below is exactly what the CLI prints.
+
+<Info>
+  Steps marked **You** are done by the account owner (a human, in a browser). Everything else is run
+  by the agent (or you, at a terminal).
+</Info>
+
+## Prerequisites
+
+- The CLI installed: `npm install -g @prava-sdk/cli` (see [Overview](/prava-pay/overview)).
+- A Prava account at [pay.prava.space](https://pay.prava.space).
+
+## 1. Link the agent
+
+```bash
+prava setup --name "Claude Code" --platform claude-code
+```
+
+The CLI prints a link and exits immediately:
+
+```
+To link this agent, open this URL and approve:
+
+https://pay.prava.space/link-agent?lid=lk_xxxxxxxx
+
+Link expires in 15 minutes.
+Run `prava setup poll` to wait for approval.
+```
+
+**You:** open that URL, sign in, and click **Approve**.
+
+Then wait for the approval to land:
+
+```bash
+prava setup poll
+```
+
+```
+Waiting for approval of "Claude Code"...
+..
+
+Linked! Agent ID: aa_7kMnP2
+Ready to create sessions.
+```
+
+<Check>Run `prava status` any time to confirm the agent is linked and active.</Check>
+
+## 2. Create a payment session
+
+You know the merchant and items, so create a session for the exact order:
+
+```bash
+prava sessions create \
+  --total-amount "8.50" \
+  --currency USD \
+  --merchant-name "Blue Bottle Coffee" \
+  --merchant-url "https://bluebottlecoffee.com" \
+  --merchant-country US \
+  --product '{"description":"Latte","unit_price":"5.00","quantity":1}' \
+  --product '{"description":"Croissant","unit_price":"3.50","quantity":1}'
+```
+
+```
+Session created.
+Session ID: ses_abc123
+Payment URL: https://collect.prava.space?session=…
+
+Share this URL to complete card entry.
+Run `prava sessions poll --session-id ses_abc123` to wait for card entry.
+```
+
+## 3. Enter the card
+
+**You:** open the **Payment URL**, enter your card in Prava's secure page, and confirm.
+
+Meanwhile, the agent waits for the card to be tokenized:
+
+```bash
+prava sessions poll --session-id ses_abc123
+```
+
+```
+Waiting for card entry on session ses_abc123...
+....
+
+Card tokenized.
+
+Token:        4323126882557932
+Cryptogram:   957
+Expiry:       12/2028
+```
+
+<Warning>
+  These credentials are **single-use and short-lived** — use them right away to complete the
+  checkout. Don't store or reuse them.
+</Warning>
+
+## 4. Complete the checkout
+
+Use the token and cryptogram at the merchant's checkout to finish the purchase. If you're using
+**agentic shopping** (Prava discovered the product), the last step is a single command:
+
+```bash
+prava shop checkout \
+  --checkout-session-id ches_xxx \
+  --token 4323126882557932 \
+  --cryptogram 957 \
+  --expiry-month 12 --expiry-year 2028 \
+  --yes
+```
+
+```
+✓ Paid.
+  Amount: $8.50 USD
+  Order:  ord_abc123
+```
+
+That's the whole loop. 🎉
+
+## Where to go next
+
+<CardGroup cols={2}>
+<Card title="Linking an agent" icon="link" href="/prava-pay/linking">
+  The full linking lifecycle, platforms, and status states.
+</Card>
+<Card title="Payment sessions" icon="receipt" href="/prava-pay/sessions">
+  Every flag for `sessions create` and `sessions poll`.
+</Card>
+<Card title="Agentic shopping" icon="cart-shopping" href="/prava-pay/shopping">
+  Search, compare, quote, and pay — the discovery flow.
+</Card>
+<Card title="Troubleshooting" icon="life-ring" href="/prava-pay/troubleshooting">
+  What each message means and how to recover.
+</Card>
+</CardGroup>

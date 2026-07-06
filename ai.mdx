@@ -1,0 +1,88 @@
+---
+title: 'Use Prava Docs with AI'
+description: 'Connect these docs to your AI coding tool so it can answer Prava questions with the real, current documentation.'
+icon: 'robot'
+---
+
+These docs are built to be read by **AI tools**, not just people. Point your coding agent at them and it
+can answer Prava questions — and write your integration — using the real, up-to-date documentation
+instead of guessing.
+
+<Note>
+  This connects an AI to the **documentation**. It is **not** the Prava Pay **payments** connector that
+  lets an agent actually *pay* — that's a separate, upcoming capability. See
+  [Prava Pay](/prava-pay/overview).
+</Note>
+
+## Connect the docs MCP server
+
+We host a standard **Model Context Protocol (MCP)** server for these docs. MCP is an open protocol, so
+**any MCP-compatible AI tool** can connect to the same endpoint and gain a "search the Prava docs"
+capability — Claude Code, Cursor, VS Code / Copilot, Windsurf, Cline, Continue, Goose, Zed, and others.
+
+Add this to your client's MCP settings:
+
+```json
+{
+  "mcpServers": {
+    "prava-docs": {
+      "url": "https://docs.prava.space/mcp"
+    }
+  }
+}
+```
+
+### Quick-add by tool
+
+<CodeGroup>
+```bash Claude Code
+claude mcp add --transport http prava-docs https://docs.prava.space/mcp
+```
+
+```text Cursor / Windsurf / VS Code
+MCP settings → "Add server" → paste the URL:
+  https://docs.prava.space/mcp
+```
+
+```text Claude (web / desktop)
+Settings → Connectors → "Add custom connector" →
+  Name: Prava Docs
+  URL:  https://docs.prava.space/mcp
+```
+</CodeGroup>
+
+### Older / stdio-only clients
+
+If a client only supports local (stdio) MCP servers, bridge to the hosted endpoint with `mcp-remote`:
+
+```bash
+npx -y mcp-remote https://docs.prava.space/mcp
+```
+
+Once connected, ask your agent things like *"Using the Prava docs, how do I create a payment session?"*
+and it will pull the answer straight from these pages.
+
+## Feed the docs to any LLM (llms.txt)
+
+Prefer to paste context into a model directly? These docs publish machine-readable indexes:
+
+| File | What it is |
+|------|-----------|
+| [`https://docs.prava.space/llms.txt`](https://docs.prava.space/llms.txt) | A concise index of every page — good for navigation. |
+| [`https://docs.prava.space/llms-full.txt`](https://docs.prava.space/llms-full.txt) | The full docs as one text file — paste it in for complete context. |
+
+Drop either URL (or its contents) into ChatGPT, Claude, or any LLM to ground it in Prava's documentation.
+
+## Per-page AI actions
+
+Every page has an AI menu in the top-right:
+
+- **Copy page** — copy the page as clean Markdown.
+- **Open in ChatGPT / Claude** — start a chat pre-loaded with this page.
+- **View as Markdown** — see the raw Markdown a model would read.
+
+## Why this matters for Prava
+
+Prava is built for AI agents. Making the docs first-class for the tools your developers already use —
+Cursor, Claude Code, and others — means less guesswork, fewer hallucinated API calls, and a faster path
+from "what's Prava?" to a working integration.

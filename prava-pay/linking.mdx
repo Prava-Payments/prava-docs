@@ -1,0 +1,153 @@
+---
+title: 'Linking an Agent'
+description: 'Connect an agent to a Prava account with a one-time, owner-approved link.'
+icon: 'link'
+---
+
+Before an agent can pay, its owner has to **link and approve** it. Linking establishes a secure
+identity for the agent on this machine, and approval happens in the owner's browser — so nothing can
+spend money without a human explicitly allowing it.
+
+## The linking lifecycle
+
+<Steps>
+<Step title="Start the link (agent / terminal)">
+  `prava setup` creates the agent's identity locally and prints a one-time approval URL.
+</Step>
+<Step title="Approve (owner / browser)">
+  The owner opens the URL, signs in to Prava, and approves the agent.
+</Step>
+<Step title="Confirm (agent / terminal)">
+  `prava setup poll` waits for the approval and finalizes the link.
+</Step>
+</Steps>
+
+## `prava setup`
+
+```bash
+prava setup --name "Claude Code" --platform claude-code --description "Anthropic's coding agent"
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--name <name>` | Yes | Human-friendly agent name shown on the approval screen (e.g. `"Claude Code"`). |
+| `--platform <id>` | Recommended | The agent's platform identifier (see below). |
+| `--description <desc>` | No | Short description shown to the owner when approving. |
+
+It prints the approval URL and **exits immediately** — it does not block:
+
+```
+To link this agent, open this URL and approve:
+
+https://pay.prava.space/link-agent?lid=lk_xxxxxxxx
+
+Link expires in 15 minutes.
+Run `prava setup poll` to wait for approval.
+```
+
+<Tip>
+  Give the agent a **specific** name and platform (`"Claude Code"`, `claude-code`) rather than a
+  generic `"My Agent"`. The owner sees this when deciding whether to approve.
+</Tip>
+
+<Accordion title="Supported platform identifiers">
+Use the identifier that matches the agent's runtime. If none fits, use `custom`.
+
+`claude-code` · `codex` · `cursor` · `gemini-cli` · `hermes` · `aider` · `goose` ·
+`copilot-cli` · `github-copilot` · `windsurf` · `cline` · `continue` · `amazon-q` ·
+`roo-code` · `kilo-code` · `sourcegraph-cody` · `tabnine` · `augment-code` · `amp` · `zed` ·
+`kiro` · `blackbox` · `opencode` · `qwen-code` · `kimi-cli` · `mistral-vibe` · `warp` ·
+`coro-code` · `devin` · `openhands` · `jules` · `swe-agent` · `manus` · `openai-operator` ·
+`claude-computer-use` · `replit-agent` · `bolt` · `v0` · `lovable` · `custom`
+</Accordion>
+
+## Approve in the browser
+
+The owner opens the printed URL, signs in at [pay.prava.space](https://pay.prava.space), and clicks
+**Approve**. The link is valid for **15 minutes**. If it lapses, just run `prava setup` again.
+
+## `prava setup poll`
+
+After the owner approves, confirm the link:
+
+```bash
+prava setup poll
+```
+
+```
+Waiting for approval of "Claude Code"...
+...
+
+Linked! Agent ID: aa_7kMnP2
+Ready to create sessions.
+```
+
+`poll` waits up to 15 minutes. Other outcomes:
+
+| Output | Meaning |
+|--------|---------|
+| `Setup denied by user.` | The owner rejected the agent in the browser. |
+| `Link expired. Run \`prava setup\` again.` | The 15-minute window passed before approval. |
+| `No agent configured. Run: prava setup …` | No link was started on this machine yet. |
+
+## `prava status`
+
+Check the current link state at any time:
+
+```bash
+prava status
+```
+
+A linked, active agent prints:
+
+```
+Agent:   Claude Code (aa_7kMnP2)
+Status:  active
+Linked:  2026-07-06
+```
+
+Other states:
+
+<AccordionGroup>
+<Accordion title="Pending — waiting for approval">
+```
+Agent:   Claude Code
+Status:  pending
+Link:    https://pay.prava.space/link-agent?lid=lk_xxxxxxxx
+```
+Open the link and approve, then run `prava setup poll`.
+</Accordion>
+<Accordion title="Link expired">
+```
+Link expired. Run `prava setup` again.
+```
+Start over with `prava setup`.
+</Accordion>
+<Accordion title="No agent configured">
+```
+No agent configured. Run: prava setup --name "<name>"
+```
+Nothing is linked on this machine yet — run `prava setup`.
+</Accordion>
+</AccordionGroup>
+
+## One agent per machine
+
+Each machine holds a **single** linked agent identity. That identity is stored locally in your home
+directory and is what proves requests come from *this* approved agent.
+
+- To **switch** to a different agent, remove the local identity and run `prava setup` again.
+- Keep the identity private — anyone who can read it can act as this agent (within the owner's
+  guardrails).
+
+<Note>
+  Prefer a non-default location for the identity file? Set `PRAVA_STATE_DIR` to a directory you
+  control before running `prava setup`.
+</Note>
+
+## Owner controls
+
+Approval isn't the end of the owner's control. From the Prava dashboard, an owner can **revoke** any
+agent — after which its requests stop working immediately — or suspend their whole account. Spending
+limits and saved addresses are configured there too, and Prava enforces them on every purchase. See
+[Guardrails](/concepts/guardrails).

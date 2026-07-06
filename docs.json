@@ -20,62 +20,94 @@
             "group": "Getting Started",
             "pages": [
               "index",
+              "choosing-your-integration",
               "quickstart",
-              "authentication"
+              "authentication",
+              "ai"
             ]
           },
           {
-            "group": "SDK Reference",
+            "group": "Prava SDK",
             "pages": [
-              "sdk/overview"
+              "sdk/overview",
+              "sdk/integration-modes",
+              "sdk/cards/collect-pan"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Prava Pay",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "prava-pay/overview",
+              "prava-pay/quickstart",
+              "prava-pay/skills"
             ]
           },
           {
-            "group": "Card Management",
+            "group": "Using the CLI",
             "pages": [
-              "sdk/cards/collect-pan",
-              "sdk/cards/list-cards",
-              "sdk/cards/remove-card"
+              "prava-pay/linking",
+              "prava-pay/sessions",
+              "prava-pay/shopping"
             ]
           },
           {
-            "group": "Intent Management",
+            "group": "Reference",
             "pages": [
-              "sdk/intents/register",
-              "sdk/intents/register-and-invoke",
-              "sdk/intents/invoke",
-              "sdk/intents/update",
-              "sdk/intents/delete"
+              "prava-pay/troubleshooting"
             ]
-          },
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
           {
-            "group": "Payment Execution",
+            "group": "Server-Side API",
             "pages": [
-              "sdk/execution/browser-automation"
+              "api-reference/overview",
+              "api-reference/create-session",
+              "api-reference/revoke-session",
+              "api-reference/list-cards",
+              "api-reference/get-payment-result",
+              "api-reference/report-status"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Concepts",
+        "groups": [
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/how-it-works",
+              "concepts/payments",
+              "concepts/accounts",
+              "concepts/guardrails"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Agentic Commerce",
+        "groups": [
+          {
+            "group": "Capabilities",
+            "pages": [
+              "integration/overview",
+              "integration/ucp",
+              "integration/browser-harness",
+              "integration/faqs"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Blog",
-          "href": "https://www.prava.space/blog",
-          "icon": "newspaper"
-        },
-        {
-          "anchor": "X",
-          "href": "https://x.com/PravaPayments",
-          "icon": "x"
-        },
-        {
-          "anchor": "Linkedin",
-          "href": "https://www.linkedin.com/company/prava-payments/",
-          "icon": "linkedin"
-        }
-      ]
-    }
+    ]
   },
   "logo": {
     "light": "/logo/light.svg",
@@ -83,6 +115,10 @@
   },
   "navbar": {
     "links": [
+      {
+        "label": "Blog",
+        "href": "https://www.prava.space/blog"
+      },
       {
         "label": "Support",
         "href": "mailto:developers@prava.space"

@@ -48,8 +48,12 @@ prava.collectPAN(options: CollectPANOptions): Promise<CollectPANResult>
       Called on error
     </ParamField>
 
+    <ParamField path="onDismiss" type="(payload: { reason: string }) => void">
+      Called when the user dismisses the payment flow
+    </ParamField>
+
     <ParamField path="styles" type="CardFormStyles">
-      Custom styles for the card form
+      Custom styles for the card form. Supports `base`, `invalid`, and `focus` states as CSS property maps.
     </ParamField>
   </Expandable>
 </ParamField>
@@ -59,7 +63,7 @@ prava.collectPAN(options: CollectPANOptions): Promise<CollectPANResult>
 <ResponseField name="result" type="CollectPANResult">
   <Expandable title="properties">
     <ResponseField name="enrollmentId" type="string">
-      Unique card identifier (use this for intents)
+      Unique identifier for the collected card
     </ResponseField>
 
     <ResponseField name="last4" type="string">
@@ -79,6 +83,11 @@ prava.collectPAN(options: CollectPANOptions): Promise<CollectPANResult>
     </ResponseField>
   </Expandable>
 </ResponseField>
+
+<Note>
+The `enrollmentId` identifies the collected card on the server side. Use your backend and the
+[API Reference](/api-reference/overview) to read payment results and report status for that card.
+</Note>
 
 ## Example
 
@@ -243,15 +252,15 @@ onChange: (state) => {
 
 | Code | Cause | Resolution |
 |------|-------|------------|
-| `SDK_ALREADY_ACTIVE` | `collectPAN` called while another session is active | Call `destroy()` first |
-| `INVALID_CONFIG` | Missing `iframeUrl` or `publishableKey` | Check your config |
+| `SDK_ALREADY_ACTIVE` | `collectPAN` called while another collection is in progress | Call `destroy()` first |
+| `INVALID_CONFIG` | Missing `iframeUrl` (or a bad `publishableKey`) | Pass the `iframe_url` from your backend session response |
 | `IFRAME_LOAD_ERROR` | Iframe failed to load | Check network, verify `iframeUrl` |
-| `CARD_NOT_FOUND` | Card ID doesn't exist or was removed | Re-enroll or use a different card |
+| `SDK_INIT_ERROR` | SDK initialization failed | Verify browser compatibility and config |
 
 ## Security Notes
 
 <Warning>
-**Never** attempt to bypass the iframe or collect card data directly. The iframe is sandboxed with `allow-scripts allow-same-origin allow-forms allow-popups` — minimal permissions. Card data never touches your DOM, JS, or servers.
+**Never** attempt to bypass the iframe or collect card data directly. The iframe is sandboxed with `allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox` and a permissions policy of `payment; publickey-credentials-get; publickey-credentials-create`. Card data never touches your DOM, JS, or servers.
 </Warning>
 
 <Note>
@@ -261,11 +270,11 @@ PostMessage communication is origin-locked. The iframe resolves its backend from
 ## Next Steps
 
 <CardGroup cols={2}>
-<Card title="List Cards" icon="list" href="/sdk/cards/list-cards">
-  Retrieve enrolled cards for a user
+<Card title="List Cards (API)" icon="list" href="/api-reference/list-cards">
+  Retrieve a customer's enrolled cards server-side
 </Card>
 
-<Card title="Register Intent" icon="bolt" href="/sdk/intents/register">
-  Create payment intents with enrolled cards
+<Card title="Get Payment Result" icon="receipt" href="/api-reference/get-payment-result">
+  Read the outcome after the card is collected
 </Card>
 </CardGroup>

@@ -1,43 +1,46 @@
 ---
 title: 'SDK Overview'
-description: 'Get started with the Prava SDK for agentic payments'
+description: 'Embed secure, PCI-safe card collection into your web app with the Prava SDK.'
 icon: 'code'
 ---
 
+_Not sure this is the right path? See [Choosing Your Integration](/choosing-your-integration)._
+
 ## What is the Prava SDK?
 
-The Prava SDK provides a simple, secure interface for AI agents and applications to handle payments on behalf of users. It abstracts the complexity of card tokenization, intent management, passkey authentication, and checkout execution.
+The **Prava SDK** (`@prava-sdk/core`) is a lightweight browser library for **securely collecting a
+card** in your web app. It mounts a PCI-compliant iframe, handles the card entry and authentication
+inside it, and hands you back a safe result — the raw card number never touches your page, your
+JavaScript, or your servers.
 
-## Concepts
+<Note>
+  The SDK is the **client-side** piece of a session-based integration. Your **backend** creates the
+  session (see the [API Reference](/api-reference/overview)); the SDK renders the secure card form for
+  that session. If instead you want an **AI agent** to pay from the command line, use
+  [Prava Pay](/prava-pay/overview).
+</Note>
 
-There are four primitives you need to understand:
+<Info>
+  The SDK powers the **embedded** integration mode — Prava's card UI inside your own page. Don't want
+  to embed? Use **hosted** mode (a redirect, no SDK). See
+  [Integration Modes](/sdk/integration-modes) to choose.
+</Info>
 
-| Primitive | What it is | One-liner |
-|-----------|-----------|-----------|
-| **Card** | A tokenized card enrolled via PCI-compliant iframe | Your servers never see the raw PAN. Ever. |
-| **Intent** | A mandate that describes _what_ the AI can buy | Merchant, price, category, frequency — scoped and user-approved. |
-| **Payment Token** | The transactable output (virtual PAN + expiry + CVV) | What your AI App actually uses to make a purchase. |
-| **Passkey** | WebAuthn-based user approval | No passwords. Biometric/device confirmation for intents. |
+## What it does (and doesn't)
 
-### The Flow
+The SDK's job is deliberately small — one secure operation, done well:
 
-```
-1. User enrolls a card         →  collectPAN()
-2. AI App registers an intent  →  registerIntent()           →  user approves via passkey
-3. AI App invokes the intent   →  invokeIntent()             →  receives payment tokens
-4. AI App transacts            →  uses tokens at checkout
-```
+| The SDK handles | Your backend handles |
+|-----------------|----------------------|
+| Rendering the secure card iframe | Creating the session (`POST /v1/sessions`) |
+| Card entry, validation, and in-iframe authentication | Reading the payment result |
+| Returning a safe, tokenized result | Reporting the final transaction status |
 
-For instant purchases, steps 2–3 collapse into a single call: `registerAndInvokeIntent()`.
+Everything money-related — mandates, one-time payment credentials, spending limits — is enforced by
+Prava and the card network, not by code running in your page. See [Payments](/concepts/payments) and
+[Guardrails](/concepts/guardrails) for how that works.
 
-## Key Features
-
-- **Zero PCI Scope**: Card data never touches your servers
-- **Intent-Based Permissions**: Users authorize specific purchases via Passkey
-- **Network-Level Security**: Merchant-specific, amount-scoped credentials
-- **Browser Automation Ready**: Built-in checkout execution helpers
-
-## Installation
+## Install
 
 <CodeGroup>
 ```bash npm
@@ -53,206 +56,108 @@ pnpm add @prava-sdk/core
 ```
 </CodeGroup>
 
-## Quick Start
+## Quick start
 
 <Steps>
-<Step title="Initialize the SDK">
-Import and configure the SDK with your publishable key:
-
+<Step title="Initialize with your publishable key">
 ```typescript
 import { PravaSDK } from '@prava-sdk/core';
 
 const prava = new PravaSDK({
-  publishableKey: 'pk_live_xxx', // from Prava Dashboard
+  publishableKey: 'pk_live_xxx', // from the Prava Dashboard
 });
 ```
+
+The publishable key is safe to ship to the browser. Your **secret key** stays on your server and is
+never used here.
 </Step>
 
-<Step title="Create a session and enroll a card">
-Create a session server-side, then collect card data client-side:
+<Step title="Create a session on your backend">
+Your server creates a session with your secret key and returns the `session_token` and `iframe_url`
+to your frontend:
 
 ```typescript
-// Server-side: create a session
-const session = await fetch('/api/create-session', {
+// Server-side (never expose your secret key to the browser)
+const session = await fetch('https://api.prava.space/v1/sessions', {
   method: 'POST',
-  headers: { 'Authorization': `Bearer ${SECRET_KEY}` },
-  body: JSON.stringify({ user_id: 'user_123', user_email: 'user@example.com' }),
-}).then(res => res.json());
+  headers: {
+    Authorization: `Bearer ${SECRET_KEY}`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    user_id: 'user_123',
+    user_email: 'user@example.com',
+    total_amount: '49.99',
+    currency: 'USD',
+    purchase_context: [{
+      merchant_details: { name: 'Amazon', url: 'https://amazon.com', country_code_iso2: 'US' },
+      product_details: [{ description: 'Wireless Headphones', unit_price: '49.99', quantity: 1 }],
+    }],
+  }),
+}).then((r) => r.json());
+// → { session_id, session_token, iframe_url, expires_at, order_id }
+```
 
-// Client-side: collect card via secure iframe
-const card = await prava.collectPAN({
+Full request/response details: [Create Session](/api-reference/create-session).
+</Step>
+
+<Step title="Collect the card in the browser">
+```typescript
+const result = await prava.collectPAN({
   sessionToken: session.session_token,
   iframeUrl: session.iframe_url,
   container: '#card-form',
-  onSuccess: (data) => console.log(`Enrolled: •••• ${data.last4}`),
+  onSuccess: (data) => console.log(`Collected •••• ${data.last4}`),
+  onError: (err) => console.error(err.code, err.message),
 });
 ```
 
 ```html
 <div id="card-form"></div>
 ```
+
+See [Collect Card Details](/sdk/cards/collect-pan) for every option and callback.
 </Step>
 
-<Step title="Register a payment intent">
-```typescript
-const intent = await prava.registerIntent({
-  cardId: card.enrollmentId,
-  merchant: 'Amazon',
-  amount: 49.99,
-  currency: 'USD',
-  itemCount: 2,
-  productUrl: 'https://amazon.com/dp/B0EXAMPLE',
-  useLimit: 1,
-});
-// User is prompted to approve via passkey
-```
-</Step>
-
-<Step title="Invoke the intent and get payment tokens">
-```typescript
-const tokens = await prava.invokeIntent({
-  intentId: intent.intentId,
-  merchant: 'Amazon',
-  amount: 49.99,
-  itemCount: 2,
-});
-// tokens.pan      → "4111 2345 6789 0123" (virtual)
-// tokens.expiry   → "02/28"
-// tokens.cvv      → "321"
-```
-
-Your AI App uses these tokens at checkout. Done.
+<Step title="Read the result on your backend">
+After the card is collected and the transaction runs, your backend reads the outcome and reports the
+final status. See [Get Payment Result](/api-reference/get-payment-result) and
+[Report Status](/api-reference/report-status).
 </Step>
 </Steps>
 
-## SDK Architecture
+## API surface
 
-```
-┌─────────────┐     ┌──────────────┐     ┌───────────────┐     ┌──────────┐
-│   AI App /   │     │  Prava SDK   │     │    Prava      │     │   Card   │
-│  Merchant    │────▶│  (client)    │────▶│   Backend     │────▶│ Network  │
-└─────────────┘     └──────────────┘     └───────────────┘     └──────────┘
+The SDK exposes exactly two methods:
+
+| Method | Description |
+|--------|-------------|
+| [`collectPAN(options)`](/sdk/cards/collect-pan) | Mounts the secure iframe, collects the card, resolves with a `CollectPANResult`. |
+| `destroy()` | Tears down the iframe and listeners. Call it on unmount/cleanup. |
+
+```typescript
+// Clean up when your component unmounts
+prava.destroy();
 ```
 
 ## Authentication
 
-The SDK uses a dual-key system:
+| Key | Where it's used | Where it lives |
+|-----|-----------------|----------------|
+| **Publishable key** (`pk_live_*` / `pk_test_*`) | Initialize the SDK in the browser | Frontend |
+| **Secret key** (`sk_*`) | Create sessions, read results | Backend only |
 
-| Key Type | Usage | Location |
-|----------|-------|----------|
-| **Publishable Key** (`pk_live_*` / `pk_test_*`) | Initialize SDK, client-side operations | Frontend |
-| **Secret Key** (`sk_*`) | Create sessions, server operations | Backend only |
+<Warning>Never put your secret key in client-side code or version control.</Warning>
 
-<Warning>
-Never expose your secret key in client-side code or version control.
-</Warning>
-
-## Cleanup
-
-When you're done with the SDK (e.g., component unmount), call `destroy()` to clean up:
-
-```typescript
-prava.destroy();
-```
-
-This removes the iframe, tears down PostMessage listeners, and releases all resources.
-
-## Security Model
-
-| Layer | Protection |
-|-------|-----------|
-| **Card Collection** | PCI DSS compliant iframe. Raw PAN never touches your DOM, JS, or servers. |
-| **Iframe Sandbox** | `allow-scripts allow-same-origin allow-forms allow-popups`. Minimal permissions. |
-| **Session Tokens** | Short-lived, single-use. Created server-side with your secret key. |
-| **Passkeys (WebAuthn)** | All intent mutations (register, update, delete) require biometric/device confirmation. No passwords. |
-| **Payment Tokens** | Virtual card numbers scoped to mandate constraints. Single-use, time-limited, merchant-locked. |
-| **Origin Validation** | PostMessage communication is origin-locked. The iframe resolves its backend from its own hostname — merchants cannot inject a fake backend URL. |
-
-## Requirements
-
-- **Browser:** Chrome 80+, Firefox 80+, Safari 14+, Edge 80+
-- **WebAuthn:** Device must support passkeys (Touch ID, Face ID, Windows Hello, or security key)
-- **Backend:** Your server must implement the Prava session API (create sessions with your secret key)
-- **Keys:** Obtain `publishableKey` and `secretKey` from the [Prava Dashboard](https://dashboard.prava.space)
-
-## Error Codes
-
-| Code | When | What to do |
-|------|------|-----------|
-| `SDK_ALREADY_ACTIVE` | `collectPAN` called while another session is active | Call `destroy()` first |
-| `INVALID_CONFIG` | Missing `iframeUrl` or `publishableKey` | Check your config |
-| `IFRAME_LOAD_ERROR` | Iframe failed to load | Check network, verify `iframeUrl` |
-| `SDK_INIT_ERROR` | SDK initialization failed | Check browser compatibility |
-| `PASSKEY_REJECTED` | User declined the passkey prompt | Prompt user to retry |
-| `PASSKEY_UNAVAILABLE` | Device doesn't support WebAuthn | Fallback or inform user |
-| `INTENT_EXPIRED` | Intent past its `expiresAt` date | Register a new intent |
-| `INTENT_LIMIT_REACHED` | `useLimit` exhausted | Register a new intent |
-| `MANDATE_VIOLATION` | Amount/merchant doesn't match mandate | Check intent constraints |
-| `CARD_NOT_FOUND` | Card ID doesn't exist or was removed | Re-enroll or use a different card |
-
-## Types
+## Result & error types
 
 ```typescript
 interface CollectPANResult {
   enrollmentId: string;
   last4: string;
-  brand: string;
+  brand: string;      // "visa", "mastercard", …
   expMonth: number;
   expYear: number;
-}
-
-interface Card {
-  cardId: string;
-  last4: string;
-  brand: string;
-  expMonth: number;
-  expYear: number;
-  status: 'active' | 'expired' | 'removed';
-}
-
-interface RegisterIntentResult {
-  intentId: string;
-  status: 'approved' | 'rejected';
-  mcc: string;
-  mandateId: string;
-  createdAt: string;
-}
-
-interface PaymentTokens {
-  pan: string;
-  expMonth: number;
-  expYear: number;
-  cvv: string;
-}
-
-interface UpdateIntentResult {
-  intentId: string;
-  status: 'updated';
-  updatedFields: string[];
-}
-
-interface DeleteIntentResult {
-  intentId: string;
-  status: 'cancelled';
-}
-
-interface RemoveCardResult {
-  cardId: string;
-  status: 'removed';
-}
-
-interface CardValidationState {
-  cardNumber: FieldState;
-  expiry: FieldState;
-  cvv: FieldState;
-  isComplete: boolean;
-}
-
-interface FieldState {
-  isEmpty: boolean;
-  isValid: boolean;
-  isFocused: boolean;
-  error?: string;
 }
 
 interface PravaError {
@@ -262,27 +167,34 @@ interface PravaError {
 }
 ```
 
-## Next Steps
+### Error codes
+
+| Code | When | What to do |
+|------|------|-----------|
+| `SDK_ALREADY_ACTIVE` | `collectPAN` called while a collection is already in progress | Call `destroy()` first, then retry |
+| `INVALID_CONFIG` | Missing `iframeUrl` (or a bad `publishableKey`) | Pass the `iframe_url` from your backend session response |
+| `IFRAME_LOAD_ERROR` | The secure iframe failed to load | Check the network and the `iframeUrl` |
+| `SDK_INIT_ERROR` | Initialization failed | Verify browser compatibility and config |
+
+## Requirements
+
+- **Browsers:** Chrome 80+, Firefox 80+, Safari 14+, Edge 80+.
+- **Backend:** Your server implements the session API (`POST /v1/sessions`) with your secret key.
+- **Keys:** Obtain `publishableKey` and `secretKey` from the [Prava Dashboard](https://dashboard.prava.space).
+
+## Next steps
 
 <CardGroup cols={2}>
-<Card title="Card Management" icon="credit-card" href="/sdk/cards/collect-pan">
-  Learn how to collect and manage user cards
+<Card title="Collect Card Details" icon="credit-card" href="/sdk/cards/collect-pan">
+  Every `collectPAN` option, callback, and validation state.
 </Card>
-
-<Card title="Intent Management" icon="bolt" href="/sdk/intents/register">
-  Create and manage payment intents
+<Card title="API Reference" icon="server" href="/api-reference/overview">
+  Create sessions, read payment results, and report status server-side.
 </Card>
-
-<Card title="Register & Invoke" icon="zap" href="/sdk/intents/register-and-invoke">
-  One-shot instant purchases
+<Card title="How Prava Works" icon="diagram-project" href="/concepts/how-it-works">
+  The lifecycle behind a Prava payment.
 </Card>
-
-<Card title="Browser Automation" icon="robot" href="/sdk/execution/browser-automation">
-  Execute payments at merchant checkouts
+<Card title="Prava Pay (CLI)" icon="terminal" href="/prava-pay/overview">
+  Let an AI agent pay from the command line.
 </Card>
 </CardGroup>
-
-## Support
-
-- **Documentation**: [docs.prava.space](https://docs.prava.space)
-- **Email**: developers@prava.space
