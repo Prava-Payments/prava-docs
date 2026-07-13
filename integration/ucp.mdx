@@ -4,7 +4,7 @@ description: 'How Prava discovers and prices products across Shopify merchants w
 icon: 'magnifying-glass'
 ---
 
-**UCP (Universal Commerce Protocol)** is Shopify's agentic-commerce protocol — a standard way for an
+**UCP (Universal Commerce Protocol)** is Shopify's agentic-commerce protocol: a standard way for an
 agent to **search products, read catalogs, and open a checkout** across participating Shopify merchants.
 Prava integrates with UCP so an AI application can discover *what* to buy and get an initial price,
 before the [Browser Harness](/integration/browser-harness) confirms the real total and completes the
@@ -19,7 +19,7 @@ order.
   Query a single merchant, or Shopify's **global catalog** across all participating merchants at once.
 </Card>
 <Card title="Catalog" icon="tags">
-  Full product details — variants, options (size/color), pricing, availability, and images.
+  Full product details: variants, options (size/color), pricing, availability, and images.
 </Card>
 <Card title="Quote" icon="receipt">
   Open a checkout and get an initial price (subtotal, tax estimate, and shipping options where the
@@ -40,12 +40,12 @@ pipeline on top:
 </Step>
 <Step title="Search & catalog">
   Prava runs the search, normalizes the results into a consistent shape (product id, title, price
-  estimate, image, merchant), and fetches a product's **variants** — options, prices, and availability —
+  estimate, image, merchant), and fetches a product's **variants** (options, prices, and availability)
   so the exact item can be chosen.
 </Step>
 <Step title="Open a checkout (quote)">
   For the chosen variant and destination, Prava asks UCP to **open a checkout**. That returns a checkout
-  and an **initial proposal**: subtotal, a tax estimate, and — for merchants that expose it — shipping
+  and an **initial proposal**: subtotal, a tax estimate, and (for merchants that expose it) shipping
   options. This is an *estimate*, not the binding total.
 </Step>
 <Step title="Hand off to the Browser Harness">
@@ -55,21 +55,17 @@ pipeline on top:
 </Step>
 </Steps>
 
-```
-  UCP: search → product → quote (estimate)   →   Browser Harness: confirm true total → checkout → order
-```
-
-This is exactly the chain the CLI exposes as
+This is the first half of the [pipeline](/integration/overview): exactly the chain the CLI exposes as
 [`prava shop search → product → quote → checkout`](/prava-pay/shopping).
 
 ## Supported merchants
 
-UCP reaches **participating Shopify merchants** — for example Fashion Nova, SKIMS, Alo Yoga,
-Steve Madden, Glossier, Everlane, Harry's, and Ridge — plus any Shopify store that advertises UCP.
+UCP reaches **participating Shopify merchants** (for example Fashion Nova, SKIMS, Alo Yoga,
+Steve Madden, Glossier, Everlane, Harry's, and Ridge) plus any Shopify store that advertises UCP.
 
 <Warning>
   **Coverage varies by merchant.** Some merchants expose shipping options and tax through UCP; others
-  don't. Treat UCP prices as an **estimate** — the **binding final total** is always confirmed at
+  don't. Treat UCP prices as an **estimate**: the **binding final total** is always confirmed at
   checkout by the [Browser Harness](/integration/browser-harness) before any charge.
 </Warning>
 

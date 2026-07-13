@@ -8,7 +8,7 @@ _Not sure this is the right path? See [Choosing Your Integration](/choosing-your
 
 ## Overview
 
-The Prava REST API is used for server-side operations — creating sessions, managing cards, retrieving payment results, and reporting status. All server-side requests are authenticated using your **secret key**.
+The Prava REST API is used for server-side operations: creating sessions, managing cards, retrieving payment results, and reporting status. All server-side requests are authenticated using your **secret key**.
 
 <Warning>
 Never expose your secret key in client-side code, version control, or logs. Use it only in server-to-server requests.
@@ -24,6 +24,12 @@ Never expose your secret key in client-side code, version control, or logs. Use 
 <Tip>
 Use the **sandbox** URL with your `sk_test_*` key during development. Switch to the **production** URL with `sk_live_*` when you're ready to go live.
 </Tip>
+
+<Note>
+These are the only **API** hosts. [dashboard.prava.space](https://dashboard.prava.space) (developer
+console) and [pay.prava.space](https://pay.prava.space) (agent-owner wallet) are web UIs; never send
+API requests to them.
+</Note>
 
 ## Authentication
 
@@ -64,33 +70,48 @@ The `details` field is optional and included for validation errors to specify wh
 | Status | Code | Description |
 |--------|------|-------------|
 | 401 | `AUTH_1001` | Invalid API key |
-| 401 | `AUTH_1002` | Missing or invalid Authorization header |
-| 401 | `AUTH_1003` | Session has been revoked |
-| 401 | `AUTH_1004` | Invalid or expired session token |
 | 400 | `VAL_2001` | Validation error (check `details` for specifics) |
 | 404 | `NOT_FOUND` | Requested resource not found |
 | 400 | `INVALID_STATE` | Operation not allowed in current state |
 
-## Endpoints
+The full catalog (every code, per endpoint, with recovery steps) is on the
+[Errors](/api-reference/errors) page.
+
+## The payment journey
+
+A complete payment is **three API calls and one non-API step**. Nothing else is required:
+
+<Steps>
+<Step title="Create a session — POST /v1/sessions">
+  Your backend pins the order: customer, merchant, amount, line items. Returns `session_token` and
+  `iframe_url`. → [Create Session](/api-reference/create-session)
+</Step>
+<Step title="The cardholder enters their card (no API call)">
+  This step happens on Prava's secure surface, not through the API: redirect the cardholder to the
+  `iframe_url` (**hosted**) or mount it in your page with
+  [`collectPAN`](/sdk/cards/collect-pan) (**embedded**). Card entry and passkey approval (a biometric
+  confirmation on the cardholder's device) happen here. Prava handles authentication, mandate
+  registration (the spending permission recorded with the card network), and tokenization (swapping
+  the card number for a secure stand-in) for you.
+</Step>
+<Step title="Poll the result — GET /v1/sessions/{sessionId}/payment-result">
+  Once the cardholder finishes, this returns the one-time credentials: `token` (virtual card number)
+  and `dynamic_cvv`. Use them at the merchant checkout like a normal card.
+  → [Get Payment Result](/api-reference/get-payment-result)
+</Step>
+<Step title="Report the outcome — POST /v1/sessions/{sessionId}/report-status">
+  Tell Prava whether the checkout succeeded (`APPROVED`) or failed (`DECLINED`) so transaction records
+  and the card network stay in sync. → [Report Status](/api-reference/report-status)
+</Step>
+</Steps>
+
+### Supporting endpoints
 
 <CardGroup cols={2}>
-<Card title="Create Session" icon="plus" href="/api-reference/create-session">
-  Create a new payment session with order details
-</Card>
-
 <Card title="Revoke Session" icon="ban" href="/api-reference/revoke-session">
-  Revoke an active session
+  Cancel a session before it's used
 </Card>
-
 <Card title="List Cards" icon="credit-card" href="/api-reference/list-cards">
-  Retrieve enrolled cards for a customer
-</Card>
-
-<Card title="Get Payment Result" icon="receipt" href="/api-reference/get-payment-result">
-  Retrieve the result of a payment
-</Card>
-
-<Card title="Report Status" icon="flag" href="/api-reference/report-status">
-  Report payment execution status back to Prava
+  Retrieve a customer's enrolled cards
 </Card>
 </CardGroup>

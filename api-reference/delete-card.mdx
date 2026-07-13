@@ -1,0 +1,25 @@
+---
+title: 'Delete Card'
+description: "Delete a customer's enrolled card and retire its network token"
+icon: 'trash'
+openapi: 'api-reference/openapi.json POST /v1/deleteCard'
+---
+
+## Notes
+
+- `card_id` is the same identifier as the `enrollmentId` returned by the SDK's
+  [`collectPAN`](/sdk/cards/collect-pan) and the `card_id` in [List Cards](/api-reference/list-cards).
+- Deletion also retires the card's network token (the tokenized stand-in for the card at the card
+  network) where one exists — `network_token_deleted` in the response tells you whether that happened.
+- If the deleted card was the customer's default, `was_default` is `true`; the customer picks a new
+  default on their next payment.
+
+## Error responses
+
+| Status | Code | Cause | Resolution |
+|--------|------|-------|------------|
+| 401 | `AUTH_1001` | Invalid API key | Check your secret key |
+| 400 | `INVALID_REQUEST` | Missing `customer_id` or `card_id` | Include both fields |
+| 404 | `CUSTOMER_NOT_FOUND` | No customer for the given identifier | Verify `customer_id` |
+| 404 | `NOT_FOUND` | Card not found | Verify `card_id` via [List Cards](/api-reference/list-cards) |
+| 502 | `NETWORK_DELETE_FAILED` | Card-network deletion failed | Retry the request |

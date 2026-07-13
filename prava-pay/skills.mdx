@@ -6,11 +6,11 @@ icon: 'graduation-cap'
 
 The `prava` CLI does the work; **skills tell the agent _when_ to call _what_.** A skill is a small
 instruction file installed into the agent's runtime that encodes the correct flow, the pacing, and the
-safety stops — so the agent invokes `setup`, `sessions`, and `shop` commands in the right order and
+safety stops, so the agent invokes `setup`, `sessions`, and `shop` commands in the right order and
 pauses for the user's approval before spending.
 
 <Note>
-  The CLI works **without** any skill — every `prava` command runs on its own. The skill adds the
+  The CLI works **without** any skill: every `prava` command runs on its own. The skill adds the
   *guidance*: which command comes next, when to stop and confirm, and how to keep the user in control.
   If the matching skill is missing, the CLI nudges you (once) to install it.
 </Note>
@@ -19,12 +19,12 @@ pauses for the user's approval before spending.
 
 Left to itself, an agent might chain commands or spend without checking. Skills prevent that by encoding:
 
-- **One decision per turn** — after `search`, wait for the user to pick; after `product`, wait for them
+- **One decision per turn**: after `search`, wait for the user to pick; after `product`, wait for them
   to confirm the seller/variant; after `quote`, wait for them to approve the total.
-- **Confirmation hard-stops** — the agent must present the merchant, item, and final amount and get an
+- **Confirmation hard-stops**: the agent must present the merchant, item, and final amount and get an
   explicit "yes" before `sessions create` / `checkout`. *"Buy me X"* is intent, not price approval.
-- **PII masking** — the agent works with masked address summaries only; full details stay server-side.
-- **Move promptly** — card credentials are single-use and short-lived, so mint → poll → checkout
+- **PII masking**: the agent works with masked address summaries only; full details stay server-side.
+- **Move promptly**: card credentials are single-use and short-lived, so mint → poll → checkout
   without pausing.
 
 ## The skills
@@ -33,8 +33,8 @@ Left to itself, an agent might chain commands or spend without checking. Skills 
 |-------|---------|----------------|
 | **`prava-pay`** | 2.3.1 | Completing a payment once merchant, item, and price are known: `setup` → `status` → `sessions create` → `sessions poll` → checkout. |
 | **`prava-shopping`** | 1.5.1 | Discover **and** buy a product: `shop search` → `shop product` → `shop quote` → `shop checkout`, with pacing and confirmation gates. |
-| **`prava-sdk-integration`** | 1.1.0 | For coding agents *integrating the [SDK](/sdk/overview)* into an app (sessions, iframe, polling) — not for CLI payments. |
-| **`swiggy-prava-skill`** | — | Order from Swiggy via its MCP, pay with Prava credentials. |
+| **`prava-sdk-integration`** | 1.1.0 | For coding agents *integrating the [SDK](/sdk/overview)* into an app (sessions, iframe, polling); not for CLI payments. |
+| **`swiggy-prava-skill`** | — | Order from Swiggy via its MCP (Swiggy's tool server for agents), pay with Prava credentials. |
 | **`zepto-prava-skill`** | — | Order from Zepto via its MCP, pay with Prava credentials. |
 
 <Tip>
@@ -58,7 +58,7 @@ npx --yes skills add https://github.com/Prava-Payments/prava-skills \
 </CodeGroup>
 
 <Warning>
-  Pass **`--full-depth`** with `--skill <name>` — otherwise sibling skills are pulled in alongside the
+  Pass **`--full-depth`** with `--skill <name>`. Otherwise sibling skills are pulled in alongside the
   one you asked for.
 </Warning>
 
@@ -79,7 +79,7 @@ skill. See [Troubleshooting](/prava-pay/troubleshooting#keeping-the-cli-up-to-da
 
 ## Platforms
 
-Skills work across coding agents — Claude Code, Cursor, Codex, Gemini CLI, Hermes, and
+Skills work across coding agents: Claude Code, Cursor, Codex, Gemini CLI, Hermes, and
 [many more](/prava-pay/linking#prava-setup). The agent's platform is set with `--platform` when you run
 [`prava setup`](/prava-pay/linking).
 

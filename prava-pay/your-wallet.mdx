@@ -1,0 +1,88 @@
+---
+title: 'Your Prava Pay Dashboard'
+description: "For agent owners: what your AI agent can and can't do with your card, and how you stay in control. No code required."
+icon: 'wallet'
+---
+
+This page is for the **person whose card gets used**: the agent owner. You don't need to read any
+other page in these docs to use Prava safely.
+
+Your home base is the **Prava Pay dashboard** at [pay.prava.space](https://pay.prava.space). That's
+where you approve agents, add your card, and control spending. (If you're a developer looking for
+API keys, you want [dashboard.prava.space](https://dashboard.prava.space) instead. Different product.)
+
+## What your agent can never do
+
+<CardGroup cols={2}>
+<Card title="See your card" icon="eye-slash">
+  You enter card details only on Prava's secure page. The agent receives a **one-time credential**
+  for a single approved purchase, never your real card number.
+</Card>
+<Card title="Spend without you" icon="hand">
+  Every purchase needs your explicit approval: a **passkey** (Touch ID / Face ID) and/or an in-chat
+  confirmation before any money moves.
+</Card>
+<Card title="Change the deal" icon="lock">
+  The credential is locked to the merchant and amount you approved. It can't be reused, resized, or
+  pointed at another store.
+</Card>
+<Card title="Outlive your trust" icon="ban">
+  Revoke an agent any time from the wallet; its access ends immediately.
+</Card>
+</CardGroup>
+
+## Setting up (once, ~2 minutes)
+
+<Steps>
+<Step title="Approve your agent">
+  Your agent asks to link by showing you a URL (it ran `prava setup`). Open it, sign in at
+  [pay.prava.space](https://pay.prava.space), check the agent's name, and click **Approve**. The link
+  expires after 15 minutes, so approve promptly.
+</Step>
+<Step title="Add your card">
+  When the agent makes its first payment, you'll get a secure Prava page to enter your card;
+  it's saved to your account for future purchases. Your card details go to Prava, never to the agent.
+</Step>
+<Step title="Add a delivery address (for shopping)">
+  If your agent shops for physical goods, add a delivery address and contact phone in the dashboard
+  once. The agent only ever sees a masked summary.
+</Step>
+</Steps>
+
+## Every purchase, from your side
+
+1. The agent finds or is told what to buy, and shows you the **merchant, items, and total**.
+2. You confirm — in the conversation, and with a **passkey** for card actions.
+3. Prava issues the one-time credential and the checkout runs.
+4. The result shows up in your dashboard's transaction history.
+
+If the agent skips the confirmation, the purchase doesn't happen: the confirmation is enforced by
+Prava, not by the agent's goodwill.
+
+## Your controls
+
+| Control | What it does |
+|---------|--------------|
+| **Approve / revoke agents** | An agent is either approved by you or it can do nothing. Revocation is instant. |
+| **Checkout quota** | A cap on how many purchases your agents can make in total. |
+| **Concurrency limit** | How many checkouts can be open at once. |
+| **Per-purchase approval** | Nothing is charged without your confirmation. |
+| **Passkey security** | Card actions require your device's biometrics; there is no password fallback to phish. |
+
+More detail on how these are enforced: [Guardrails](/concepts/guardrails) ·
+[Accounts & Agents](/concepts/accounts).
+
+## Common questions
+
+**What if my agent goes rogue or gets compromised?** Revoke it at
+[pay.prava.space](https://pay.prava.space). Anything already approved is still merchant- and
+amount-locked; anything new requires approvals it can no longer get.
+
+**Can my agent see my address or phone?** No. It sees masked summaries. Full details stay on
+Prava's servers and go only to the merchant fulfilling your order.
+
+**What if a payment looks wrong?** Check the transaction in your dashboard, then contact
+[support@prava.space](mailto:support@prava.space). Refunds follow the standard card-network process.
+
+**Do I need to understand the developer docs?** No. This page plus the dashboard is everything an
+owner needs. The curious can read [How Prava Works](/concepts/how-it-works).

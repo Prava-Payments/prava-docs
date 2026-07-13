@@ -5,7 +5,7 @@ icon: 'link'
 ---
 
 Before an agent can pay, its owner has to **link and approve** it. Linking establishes a secure
-identity for the agent on this machine, and approval happens in the owner's browser — so nothing can
+identity for the agent on this machine, and approval happens in the owner's browser, so nothing can
 spend money without a human explicitly allowing it.
 
 ## The linking lifecycle
@@ -34,7 +34,7 @@ prava setup --name "Claude Code" --platform claude-code --description "Anthropic
 | `--platform <id>` | Recommended | The agent's platform identifier (see below). |
 | `--description <desc>` | No | Short description shown to the owner when approving. |
 
-It prints the approval URL and **exits immediately** — it does not block:
+It prints the approval URL and **exits immediately**; it does not block:
 
 ```
 To link this agent, open this URL and approve:
@@ -64,7 +64,7 @@ Use the identifier that matches the agent's runtime. If none fits, use `custom`.
 ## Approve in the browser
 
 The owner opens the printed URL, signs in at [pay.prava.space](https://pay.prava.space), and clicks
-**Approve**. The link is valid for **15 minutes**. If it lapses, just run `prava setup` again.
+**Approve**. The link is valid for **15 minutes**. If it lapses, run `prava setup` again.
 
 ## `prava setup poll`
 
@@ -127,7 +127,7 @@ Start over with `prava setup`.
 ```
 No agent configured. Run: prava setup --name "<name>"
 ```
-Nothing is linked on this machine yet — run `prava setup`.
+Nothing is linked on this machine yet. Run `prava setup`.
 </Accordion>
 </AccordionGroup>
 
@@ -137,7 +137,7 @@ Each machine holds a **single** linked agent identity. That identity is stored l
 directory and is what proves requests come from *this* approved agent.
 
 - To **switch** to a different agent, remove the local identity and run `prava setup` again.
-- Keep the identity private — anyone who can read it can act as this agent (within the owner's
+- Keep the identity private: anyone who can read it can act as this agent (within the owner's
   guardrails).
 
 <Note>
@@ -148,6 +148,6 @@ directory and is what proves requests come from *this* approved agent.
 ## Owner controls
 
 Approval isn't the end of the owner's control. From the Prava dashboard, an owner can **revoke** any
-agent — after which its requests stop working immediately — or suspend their whole account. Spending
+agent (after which its requests stop working immediately) or suspend their whole account. Spending
 limits and saved addresses are configured there too, and Prava enforces them on every purchase. See
 [Guardrails](/concepts/guardrails).

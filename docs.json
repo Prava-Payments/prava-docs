@@ -4,12 +4,44 @@
   "name": "Prava Payments Docs",
   "colors": {
     "primary": "#0D9488",
-    "light": "#0D9488",
-    "dark": "#0D9488"
+    "light": "#5EEAD4",
+    "dark": "#0F766E"
+  },
+  "appearance": {
+    "default": "light",
+    "strict": false
+  },
+  "fonts": {
+    "heading": {
+      "family": "Neue Haas Display",
+      "weight": 500,
+      "source": "/fonts/NeueHaasDisplayMedium.woff2",
+      "format": "woff2"
+    },
+    "body": {
+      "family": "Inter"
+    }
+  },
+  "background": {
+    "image": {
+      "light": "/images/bg-light.jpg",
+      "dark": "/images/bg-dark.jpg"
+    },
+    "color": {
+      "light": "#F0FDFA",
+      "dark": "#07100E"
+    }
   },
   "favicon": "/favicon.svg",
   "thumbnails": {
-    "background": "images/cover-light.png"
+    "background": "images/brand-banner.png"
+  },
+  "seo": {
+    "metatags": {
+      "og:image": "/images/brand-banner.png",
+      "twitter:image": "/images/brand-banner.png",
+      "twitter:card": "summary_large_image"
+    }
   },
   "navigation": {
     "tabs": [
@@ -20,10 +52,21 @@
             "group": "Getting Started",
             "pages": [
               "index",
+              "use-cases",
+              "concepts/how-it-works",
               "choosing-your-integration",
               "quickstart",
               "authentication",
-              "ai"
+              "dashboard"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/add-payments-to-your-ai-app",
+              "guides/rest-checkout-walkthrough",
+              "guides/go-live-checklist",
+              "guides/compliance"
             ]
           },
           {
@@ -33,32 +76,33 @@
               "sdk/integration-modes",
               "sdk/cards/collect-pan"
             ]
-          }
-        ]
-      },
-      {
-        "tab": "Prava Pay",
-        "groups": [
+          },
           {
-            "group": "Get Started",
+            "group": "Prava MCP",
+            "pages": [
+              "mcp/overview",
+              "mcp/connect",
+              "mcp/tools"
+            ]
+          },
+          {
+            "group": "Prava CLI",
             "pages": [
               "prava-pay/overview",
               "prava-pay/quickstart",
-              "prava-pay/skills"
-            ]
-          },
-          {
-            "group": "Using the CLI",
-            "pages": [
+              "prava-pay/skills",
               "prava-pay/linking",
               "prava-pay/sessions",
-              "prava-pay/shopping"
+              "prava-pay/shopping",
+              "prava-pay/your-wallet",
+              "prava-pay/troubleshooting"
             ]
           },
           {
-            "group": "Reference",
+            "group": "Resources",
             "pages": [
-              "prava-pay/troubleshooting"
+              "changelog",
+              "ai"
             ]
           }
         ]
@@ -73,8 +117,17 @@
               "api-reference/create-session",
               "api-reference/revoke-session",
               "api-reference/list-cards",
+              "api-reference/delete-card",
               "api-reference/get-payment-result",
               "api-reference/report-status"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "api-reference/errors",
+              "api-reference/test-cards",
+              "api-reference/testing"
             ]
           }
         ]
@@ -85,23 +138,42 @@
           {
             "group": "Core Concepts",
             "pages": [
-              "concepts/how-it-works",
               "concepts/payments",
               "concepts/accounts",
-              "concepts/guardrails"
+              "concepts/guardrails",
+              "concepts/glossary"
             ]
           }
         ]
       },
       {
-        "tab": "Agentic Commerce",
+        "tab": "Capabilities",
         "groups": [
           {
-            "group": "Capabilities",
+            "group": "Shopping",
             "pages": [
               "integration/overview",
               "integration/ucp",
               "integration/browser-harness",
+              "integration/merchants"
+            ]
+          },
+          {
+            "group": "Coming Soon",
+            "pages": [
+              "integration/travel",
+              "integration/dining"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "FAQ",
+        "groups": [
+          {
+            "group": "FAQ",
+            "pages": [
+              "developer-faq",
               "integration/faqs"
             ]
           }
@@ -121,7 +193,7 @@
       },
       {
         "label": "Support",
-        "href": "mailto:developers@prava.space"
+        "href": "mailto:support@prava.space"
       }
     ]
   },

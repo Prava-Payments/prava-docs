@@ -1,0 +1,195 @@
+/* ============================================================
+   Prava Docs — brand theme
+   Palette + fonts + background image live in docs.json; this file
+   adds the extra Neue Haas weights, the landing banner/lede, the
+   persona router, and Mermaid theming.
+   Brand tokens (from prava-wallet-dashboard):
+     teal #0d9488 · light-teal #5eead4 · greens #34d399 #6ee7b7
+     airy light: #f0fdfa #ccfbf1 #99f6e4 · deep #0f766e #053530
+   ============================================================ */
+
+/* ---- Neue Haas Display: the weights docs.json can't declare ---- */
+@font-face {
+  font-family: "Neue Haas Display";
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/NeueHaasDisplayLight.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Neue Haas Display";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/NeueHaasDisplayRegular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Neue Haas Display";
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/NeueHaasDisplayMedium.woff2") format("woff2");
+}
+
+:root {
+  --prava-teal: #0d9488;
+  --prava-teal-deep: #0f766e;
+  --prava-mint: #5eead4;
+  --prava-green: #34d399;
+  --prava-green-soft: #6ee7b7;
+  --prava-airy-1: #f0fdfa;
+  --prava-airy-2: #ccfbf1;
+  --prava-airy-3: #99f6e4;
+}
+
+/* ---- Headings: Neue Haas is a display face — tighten tracking,
+        cap weight at 500 (the heaviest cut we ship) to avoid faux-bold ---- */
+h1, h2, h3, h4 {
+  font-family: "Neue Haas Display", "Inter", system-ui, sans-serif;
+  letter-spacing: normal;
+  word-spacing: 0.02em;
+  font-weight: 500;
+}
+h1 { letter-spacing: -0.015em; }
+
+/* ============================================================
+   Landing page — banner hero (Twitter Banner image) + lede.
+   Own classes so they're stable across Mintlify theme updates.
+   ============================================================ */
+/* landing banner — markdown image (Mintlify keeps it responsive),
+   styled by src so it doesn't leak to other images */
+img[src*="brand-banner"] {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  border-radius: 18px;
+  margin: 0.25rem 0 1.75rem;
+  box-shadow: 0 14px 40px rgba(6, 42, 39, 0.22);
+  border: 1px solid rgba(13, 148, 136, 0.18);
+}
+
+/* ============================================================
+   Mermaid — one diagram language: airy teal nodes, teal edges,
+   deep-teal text. Complements the per-diagram conventions
+   (flowchart LR, plain labels, no inline HTML styling).
+   ============================================================ */
+.mermaid .node rect,
+.mermaid .node polygon,
+.mermaid .node circle {
+  fill: var(--prava-airy-1) !important;
+  stroke: var(--prava-teal) !important;
+  stroke-width: 1.25px !important;
+  rx: 8px;
+}
+.mermaid .edgePath .path,
+.mermaid .flowchart-link {
+  stroke: var(--prava-teal) !important;
+}
+.mermaid .marker {
+  fill: var(--prava-teal) !important;
+  stroke: var(--prava-teal) !important;
+}
+.mermaid .node .nodeLabel,
+.mermaid .node text {
+  color: #134e4a !important;
+  fill: #134e4a !important;
+  font-family: "Inter", system-ui, sans-serif !important;
+}
+.mermaid .edgeLabel,
+.mermaid .edgeLabel p {
+  color: var(--prava-teal-deep) !important;
+  background-color: transparent !important;
+}
+.dark .mermaid .node rect,
+.dark .mermaid .node polygon,
+.dark .mermaid .node circle {
+  fill: rgba(13, 148, 136, 0.15) !important;
+  stroke: var(--prava-mint) !important;
+}
+.dark .mermaid .node .nodeLabel,
+.dark .mermaid .node text {
+  color: var(--prava-airy-2) !important;
+  fill: var(--prava-airy-2) !important;
+}
+.dark .mermaid .edgeLabel,
+.dark .mermaid .edgeLabel p {
+  color: var(--prava-mint) !important;
+}
+
+/* ============================================================
+   Callouts — brand-tinted Note/Info/Tip/Warning (replaces the
+   stock blue/yellow). Targets Mintlify's stable callout markup:
+   .callout[data-callout-type] + [data-component-part] children.
+   ============================================================ */
+/* Note — airy teal */
+.callout[data-callout-type="note"] {
+  background: var(--prava-airy-1);
+  border-color: var(--prava-airy-3);
+}
+.callout[data-callout-type="note"] [data-component-part="callout-content"],
+.callout[data-callout-type="note"] [data-component-part="callout-icon"] svg {
+  color: var(--prava-teal-deep);
+}
+/* Info — deeper teal surface, so it reads distinct from Note */
+.callout[data-callout-type="info"] {
+  background: var(--prava-airy-2);
+  border-color: var(--prava-mint);
+}
+.callout[data-callout-type="info"] [data-component-part="callout-content"],
+.callout[data-callout-type="info"] [data-component-part="callout-icon"] svg {
+  color: #115e59;
+}
+/* Tip — brand green */
+.callout[data-callout-type="tip"] {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+.callout[data-callout-type="tip"] [data-component-part="callout-content"],
+.callout[data-callout-type="tip"] [data-component-part="callout-icon"] svg {
+  color: #047857;
+}
+/* Warning — stays warm (it must still read as caution) but tuned
+   to sit with the palette instead of stock yellow */
+.callout[data-callout-type="warning"] {
+  background: #fdf8ef;
+  border-color: #f0dcb4;
+}
+.callout[data-callout-type="warning"] [data-component-part="callout-content"],
+.callout[data-callout-type="warning"] [data-component-part="callout-icon"] svg {
+  color: #8a5a0b;
+}
+
+/* Dark mode */
+.dark .callout[data-callout-type="note"] {
+  background: rgba(13, 148, 136, 0.12);
+  border-color: rgba(94, 234, 212, 0.28);
+}
+.dark .callout[data-callout-type="note"] [data-component-part="callout-content"],
+.dark .callout[data-callout-type="note"] [data-component-part="callout-icon"] svg {
+  color: var(--prava-mint);
+}
+.dark .callout[data-callout-type="info"] {
+  background: rgba(13, 148, 136, 0.2);
+  border-color: rgba(94, 234, 212, 0.4);
+}
+.dark .callout[data-callout-type="info"] [data-component-part="callout-content"],
+.dark .callout[data-callout-type="info"] [data-component-part="callout-icon"] svg {
+  color: var(--prava-airy-2);
+}
+.dark .callout[data-callout-type="tip"] {
+  background: rgba(52, 211, 153, 0.12);
+  border-color: rgba(52, 211, 153, 0.35);
+}
+.dark .callout[data-callout-type="tip"] [data-component-part="callout-content"],
+.dark .callout[data-callout-type="tip"] [data-component-part="callout-icon"] svg {
+  color: var(--prava-green-soft);
+}
+.dark .callout[data-callout-type="warning"] {
+  background: rgba(202, 138, 4, 0.12);
+  border-color: rgba(202, 138, 4, 0.35);
+}
+.dark .callout[data-callout-type="warning"] [data-component-part="callout-content"],
+.dark .callout[data-callout-type="warning"] [data-component-part="callout-icon"] svg {
+  color: #e4b45e;
+}

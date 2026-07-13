@@ -1,0 +1,81 @@
+---
+title: 'Connect Your Agent'
+description: 'Add the Prava MCP to your client, sign in once, and your agent can pay.'
+icon: 'link'
+---
+
+Connecting takes about a minute. You add the server URL to your MCP client, the client opens a
+browser window, and you sign in to approve. No API keys, no manual registration: the server supports
+automatic client registration (OAuth 2.1 dynamic client registration with PKCE), so any standard MCP
+client can connect itself.
+
+## Add the server
+
+<CodeGroup>
+```bash Claude Code
+claude mcp add --transport http prava https://mcp.pay.prava.space/mcp
+```
+
+```json Cursor (mcp.json)
+{
+  "mcpServers": {
+    "prava": {
+      "url": "https://mcp.pay.prava.space/mcp"
+    }
+  }
+}
+```
+
+```text Any MCP client
+Server URL:  https://mcp.pay.prava.space/mcp
+Transport:   Streamable HTTP
+Auth:        OAuth (automatic — the client discovers and registers itself)
+```
+</CodeGroup>
+
+## Sign in and approve
+
+1. Your client opens a browser window to Prava's sign-in.
+2. Sign in with your **Prava Pay account** (the same account as
+   [pay.prava.space](https://pay.prava.space); create one there if you're new).
+3. Review the requested scopes (`payments:read`, `payments:write`, `checkout:run`) and approve.
+4. Done. The connection appears as an agent in your
+   [Prava Pay dashboard](https://pay.prava.space), alongside any CLI-linked agents.
+
+Ask your agent to call the `ping` tool to confirm the connection.
+
+<Tip>
+  First time with Prava? You'll also add a card and a delivery address. Your agent can walk you
+  through both: card entry happens on Prava's secure page (via a `payment_url`), and addresses via
+  the `shop_add_address` tool. The agent never sees the card.
+</Tip>
+
+## Staying connected
+
+- **Tokens refresh automatically.** The client holds a refresh token; you won't re-approve on every
+  session.
+- **Revoking access**: revoke the agent in your [Prava Pay dashboard](https://pay.prava.space).
+  Its tokens stop working immediately.
+- **Reconnecting**: remove and re-add the server in your client, then sign in again.
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| `401` / "Missing or malformed Authorization" | The client isn't sending a bearer token | Re-run the OAuth flow (remove and re-add the server) |
+| `403 insufficient_scope` on a tool call | The token lacks that tool's scope | Reconnect and approve all requested scopes |
+| "This token has no agent context" | The connection wasn't fully approved | Reconnect; finish the sign-in and approval step |
+| Tool calls fail after you revoked in the dashboard | Expected: revocation is immediate | Reconnect if it was a mistake |
+
+Still stuck? [support@prava.space](mailto:support@prava.space).
+
+## Next
+
+<CardGroup cols={2}>
+<Card title="Tools reference" icon="wrench" href="/mcp/tools">
+  What each tool does and the order to call them in.
+</Card>
+<Card title="Your Prava Pay dashboard" icon="wallet" href="/prava-pay/your-wallet">
+  Approvals, cards, spending controls, revocation.
+</Card>
+</CardGroup>

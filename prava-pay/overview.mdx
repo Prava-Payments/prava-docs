@@ -4,36 +4,48 @@ description: 'Give an AI agent the ability to pay at real merchants — safely, 
 icon: 'terminal'
 ---
 
+import Portals from '/snippets/portals.mdx';
+
 _Not sure this is the right path? See [Choosing Your Integration](/choosing-your-integration)._
 
-**Prava Pay** is the fastest way to let an AI agent (Claude Code, Cursor, Codex, or any coding
-agent) make real purchases on a person's behalf. It ships as a single command-line tool —
-`@prava-sdk/cli` — that the agent runs directly. No servers to stand up, no card data to handle.
+**Prava Pay** lets an AI agent (Claude Code, Cursor, Codex, or any coding agent) make real
+purchases on a person's behalf. This section covers the **CLI**: a single command-line tool,
+`@prava-sdk/cli`, that the agent runs directly. No servers to stand up, no card data to handle.
+
+<Note>
+  Agent platform supports MCP? MCP is the standard protocol for giving an agent tools. You may not
+  need the CLI at all: connect via the [Prava MCP](/mcp/overview) instead (one URL, same account
+  and guardrails).
+</Note>
 
 <Card title="Who Prava Pay is for" icon="robot">
-  Builders of autonomous or human-in-the-loop agents that need to **buy something** — order a
-  product, pay a merchant, complete a checkout — without ever touching a raw card number.
+  Builders of autonomous or human-in-the-loop agents that need to **buy something** (order a
+  product, pay a merchant, complete a checkout) without ever touching a raw card number.
 </Card>
 
 ## How it fits together
 
 Prava Pay sits between the agent and the merchant. The agent describes *what* it wants to buy;
-Prava handles the sensitive parts — collecting the card, issuing **one-time, merchant-scoped
+Prava handles the sensitive parts: collecting the card, issuing **one-time, merchant-scoped
 credentials**, and completing the payment.
 
-```
-   Agent (CLI)                Prava                    Merchant
- ─────────────      ───────────────────────      ─────────────────
-  "buy this"  ──▶   collect card securely   ──▶   complete checkout
-                    issue one-time token
-                    enforce the owner's limits
+```mermaid
+flowchart LR
+    A["Agent (CLI)"]
+    P["Prava<br/>secure card entry<br/>owner's limits enforced"]
+    M["Merchant<br/>checkout completes"]
+    A -->|buy this| P -->|one-time token| M
 ```
 
 The person who owns the account (the **agent owner**) stays in control the whole time:
 
 - They **link and approve** an agent once, from their browser. An unapproved agent can do nothing.
-- They **enter card details themselves** in Prava's secure page — the agent never sees the real card.
+- They **enter card details themselves** in Prava's secure page. The agent never sees the real card.
 - They set the **guardrails** (spending limits, saved addresses) that Prava enforces on every purchase.
+
+The owner does all of this from the **Prava Pay dashboard** at [pay.prava.space](https://pay.prava.space):
+
+<Portals />
 
 <Note>
   The agent only ever receives a **one-time payment credential** scoped to a single, already-priced
@@ -51,7 +63,7 @@ Prava Pay supports two flows, depending on how much the agent needs to do:
 </Card>
 
 <Card title="Agentic shopping" icon="cart-shopping" href="/prava-pay/shopping">
-  The agent **discovers** the product too — search across merchants, compare offers, get a live
+  The agent **discovers** the product too: search across merchants, compare offers, get a live
   quote, then pay. See [Agentic shopping](/prava-pay/shopping).
 </Card>
 </CardGroup>
@@ -73,7 +85,7 @@ prava --version
 
 <Warning>
   Always install the CLI **yourself** as the owner. Don't have the agent install or update it
-  silently — installation is a trust action, and keeping it explicit keeps you in the loop.
+  silently: installation is a trust action, and keeping it explicit keeps you in the loop.
 </Warning>
 
 Alongside the CLI, install the matching **skill** so the agent knows which command to run when:
@@ -87,11 +99,11 @@ npx --yes skills add https://github.com/Prava-Payments/prava-skills \
 
 The CLI does the work; **Skills guide the agent on _which_ command to call and _when_.** A skill encodes
 the correct flow, paces the agent (one decision per turn), and forces a confirmation before any
-spend — keeping the human in control. The CLI runs without a skill, but will nudge you to install one
+spend, keeping the human in control. The CLI runs without a skill, but will nudge you to install one
 if it's missing.
 
-- **`prava-pay`** — pay for a known item: `setup` → `sessions create` → `poll` → checkout.
-- **`prava-shopping`** — find *and* buy: `search` → `product` → `quote` → `checkout`.
+- **`prava-pay`** pays for a known item: `setup` → `sessions create` → `poll` → checkout.
+- **`prava-shopping`** finds *and* buys: `search` → `product` → `quote` → `checkout`.
 
 See **[Skills](/prava-pay/skills)** for the full list, install commands, and how they keep the agent
 safe.
@@ -123,4 +135,4 @@ Prava Pay (CLI) and the [Prava SDK](/sdk/overview) solve different problems:
 | Card entry | Owner enters it in Prava's page | Shopper enters it in an embedded iframe |
 | You get | A tool the agent calls | A JS library ([`collectPAN`](/sdk/cards/collect-pan)) |
 
-They share the same secure backbone — pick Prava Pay when the **interface is owned by an AI agent**.
+They share the same secure backbone. Pick Prava Pay when the **interface is owned by an AI agent**.
