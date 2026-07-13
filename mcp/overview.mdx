@@ -1,0 +1,86 @@
+---
+title: 'Prava MCP Overview'
+description: 'Connect any MCP-capable AI agent to Prava payments. No CLI, no SDK, no card data.'
+icon: 'plug'
+---
+
+The **Prava MCP** is a hosted [Model Context Protocol](https://modelcontextprotocol.io) server. MCP
+is the standard way to give an AI agent new abilities: you add a server URL to your agent, and the
+agent gains that server's tools. Adding Prava's server gives your agent the ability to pay and shop
+with your card, under your approval.
+
+```
+https://mcp.pay.prava.space/mcp
+```
+
+Works with any MCP client: Claude Code, Cursor, Poke, or your own app. Setup is one URL and one
+sign-in. See [Connect](/mcp/connect).
+
+<Note>
+  This is the **payments** MCP. It is not the same as the **docs** MCP
+  (`docs.prava.space/mcp`), which only lets an agent read these docs. See
+  [Use Prava Docs with AI](/ai).
+</Note>
+
+## What your agent can do
+
+| Ability | Tools |
+|---------|-------|
+| Pay a known total at a named merchant | `create_payment_session`, `get_payment_status` |
+| Find and buy products | `shop_search`, `shop_product`, `shop_quote`, `shop_checkout` |
+| Manage delivery addresses | `shop_list_addresses`, `shop_add_address`, `shop_set_default_address` |
+| See your cards and agents | `list_cards`, `list_agents` |
+
+Full parameters and flows: [Tools reference](/mcp/tools).
+
+## The credential firewall
+
+The MCP is built so that payment credentials never reach the agent. This is stronger than the CLI
+path, where the agent handles a one-time token itself.
+
+Example: your agent buys you a phone case.
+
+1. The agent finds the case and locks a price (`shop_quote`): $18.50.
+2. It creates a payment session for exactly $18.50 and sends you a `payment_url`.
+3. You open the link and approve with your passkey (a fingerprint or face confirmation on your
+   device). The agent only ever learns the *status*:
+   `get_payment_status` returns `completed`, never the card token.
+4. The agent calls `shop_checkout`. Prava's gateway pulls the one-time credentials server-side,
+   completes the merchant checkout, and returns only the outcome: `{ status: "paid", order_id: … }`.
+
+At no point does the agent, the LLM, or the MCP client see a card number, token, or CVV.
+
+## Scopes
+
+Access is scoped with OAuth. A scope is a named permission: your MCP client requests these when
+you connect, and you approve them once.
+
+| Scope | Grants |
+|-------|--------|
+| `payments:read` | Read cards (masked), agents, payment status, product search, masked addresses |
+| `payments:write` | Lock quotes, add or change delivery addresses |
+| `checkout:run` | Create payment sessions and execute checkouts |
+
+## MCP, CLI, or SDK?
+
+| | **Prava MCP** | **[Prava CLI](/prava-pay/overview)** | **[Prava SDK](/sdk/overview)** |
+|---|---|---|---|
+| You are | An agent owner or agent-platform user | An agent owner on a machine with a terminal | A developer building an AI app |
+| Setup | Add one URL, sign in | Install `@prava-sdk/cli`, link via browser | API keys + backend + frontend |
+| Agent sees credentials | Never (gateway-side) | Yes, one-time scoped token | Your backend handles them |
+| Best when | Your agent platform supports MCP | Your agent runs shell commands | You own the product surface |
+
+All three share the same account, cards, guardrails, and approval model. An agent connected via MCP
+shows up in your [Prava Pay dashboard](https://pay.prava.space) next to CLI-linked agents, and you
+can revoke it the same way.
+
+## Next
+
+<CardGroup cols={2}>
+<Card title="Connect your agent" icon="link" href="/mcp/connect">
+  One URL, one sign-in. Claude Code, Cursor, and generic clients.
+</Card>
+<Card title="Tools reference" icon="wrench" href="/mcp/tools">
+  Every tool, its parameters, and the buy-flow chain.
+</Card>
+</CardGroup>

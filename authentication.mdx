@@ -1,7 +1,12 @@
 ---
 title: 'Authentication & Environments'
 description: 'Learn how to authenticate your requests and use Prava environments.'
+icon: 'shield-halved'
 ---
+
+import Portals from '/snippets/portals.mdx';
+
+<Portals />
 
 ## Authentication Model
 
@@ -29,11 +34,11 @@ Used to initialize the SDK in the browser.
 
 ### Session-Based Auth
 
-After creating a session via the backend (`POST /v1/sessions`), the returned `session_token` authenticates all subsequent operations within that session (card collection, transactions, FIDO authentication). Session tokens are:
+After creating a session via the backend (`POST /v1/sessions`), the returned `session_token` authenticates all subsequent operations within that session (card collection, transactions, FIDO authentication; FIDO is the standard behind passkeys). Session tokens are:
 
-*   **Short-lived** — expire after a configured duration.
-*   **Single-use** — tied to a specific merchant, customer, and order.
-*   **Revocable** — can be revoked via `POST /v1/sessions/:id/revoke`.
+*   **Short-lived**: expire after a configured duration.
+*   **Single-use**: tied to a specific merchant, customer, and order.
+*   **Revocable**: can be revoked via `POST /v1/sessions/:id/revoke`.
 
 ## Environments
 
@@ -43,14 +48,14 @@ After creating a session via the backend (`POST /v1/sessions`), the returned `se
 | **Production** | `pk_live_*` / `sk_live_*` | `https://api.prava.space` | Live transactions |
 
 <Note>
-Sandbox is self-serve — start building immediately. Switching to **production** is done from the
+Sandbox is self-serve: start building immediately. Switching to **production** is done from the
 [Prava Dashboard](https://dashboard.prava.space) and may require some additional verification; contact
-[developers@prava.space](mailto:developers@prava.space) when you're ready to go live.
+[support@prava.space](mailto:support@prava.space) when you're ready to go live.
 </Note>
 
 ## Domain Allowlisting
 
-Each merchant account has a list of **allowed domains**. The SDK iframe and session middleware validate that requests originate from an allowed domain. Add your frontend domains in the [Prava Dashboard](https://dashboard.prava.space).
+Each merchant account has a list of **allowed domains**. The SDK iframe (the embedded frame that renders the card form) and session middleware validate that requests originate from an allowed domain. Add your frontend domains in the [Prava Dashboard](https://dashboard.prava.space).
 
 ## Response Headers
 
@@ -62,8 +67,9 @@ X-Response-ID: resp_a1b2c3d4e5f6
 
 ## Webhooks
 
-Prava supports webhooks for asynchronous status updates (e.g., payment completions, disputes, card status changes).
+Webhook **event delivery is coming soon**. Today you can already configure a `webhook_url` on your
+merchant account and you receive a `webhook_secret` (`whsec_…`) at merchant creation. Keep it safe;
+it will be used to verify event signatures once delivery ships.
 
-*   Configure your webhook URL during merchant onboarding.
-*   Each webhook event includes a signature header — verify it using the SDK helper or the `webhook_secret` provided during merchant creation.
-*   Always respond with a `200` status to acknowledge receipt.
+Until then, poll [Get Payment Result](/api-reference/get-payment-result) for payment outcomes; the
+[API journey](/api-reference/overview) is fully synchronous and complete without webhooks.

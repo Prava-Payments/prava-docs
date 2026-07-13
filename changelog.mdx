@@ -1,0 +1,41 @@
+---
+title: 'Changelog'
+description: "What's new in Prava and these docs."
+icon: 'clock-rotate-left'
+---
+
+<Update label="July 2026" description="Prava MCP launch + docs revamp">
+  **Prava MCP is live**
+  - Connect any MCP client to `https://mcp.pay.prava.space/mcp` and your agent can pay and shop
+    with your card. One URL, OAuth sign-in, 12 tools, and a credential firewall: payment
+    credentials never reach the agent. Start at [Prava MCP](/mcp/overview).
+
+  **Docs**
+  - New end-to-end guides: [Add Payments to Your AI App](/guides/add-payments-to-your-ai-app),
+    [REST Checkout Walkthrough](/guides/rest-checkout-walkthrough), and the
+    [Go-Live Checklist](/guides/go-live-checklist).
+  - New reference pages: [Errors](/api-reference/errors) (every code in one catalog),
+    [Testing in Sandbox](/api-reference/testing), and [Delete Card](/api-reference/delete-card).
+  - New audience pages: [Your Prava Pay Dashboard](/prava-pay/your-wallet) for agent owners,
+    [For Merchants](/integration/merchants), [Use Cases](/use-cases), and
+    [Compliance & Verification](/guides/compliance).
+  - Sandbox [test cards and test OTP](/api-reference/test-cards) published.
+  - Navigation reorganized: SDK, MCP, and CLI are sibling integration methods under Developer
+    Guide; Capabilities and FAQ have their own tabs.
+  - [Payments](/concepts/payments) restructured around the public flow — what you drive vs. what
+    Prava does for you — plus a new [Glossary](/concepts/glossary).
+  - Fresh visual identity: brand fonts, light theme, imagery, and an interactive API playground
+    backed by an OpenAPI spec.
+
+  **API**
+  - `POST /v1/deleteCard` documented in the API reference and OpenAPI spec.
+</Update>
+
+<Update label="June 2026" description="Prava Pay CLI v3">
+  - `@prava-sdk/cli` v3.x — agent linking (`prava setup`), payment sessions, and agentic shopping
+    (`prava shop search → product → quote → checkout`).
+  - Agent skills: `prava-pay`, `prava-shopping`, and `prava-sdk-integration` installable via
+    `npx skills add`.
+  - Docs MCP server at `docs.prava.space/mcp` and `llms.txt` for AI-assisted integration —
+    see [Use Prava Docs with AI](/ai).
+</Update>

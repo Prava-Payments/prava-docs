@@ -2,163 +2,21 @@
 title: 'List Cards'
 description: 'Retrieve enrolled cards for a customer'
 icon: 'credit-card'
+openapi: 'api-reference/openapi.json GET /v1/listCards'
 ---
 
-## Endpoint
+<Note>
+  Cards are scoped by `merchant_id` (derived from your secret key) and the `customer_id` query
+  parameter. Only non-sensitive card metadata is returned — full PANs (the real card numbers) are
+  never exposed.
+</Note>
 
-```
-GET /v1/listCards
-```
+## Notes
 
-| Environment | Full URL |
-|-------------|----------|
-| **Sandbox** | `https://sandbox.api.prava.space/v1/listCards` |
-| **Production** | `https://api.prava.space/v1/listCards` |
+- Use `status=all` to include previously deleted cards for historical reference.
+- The `card_id` returned here is the same as the `enrollmentId` from the SDK's `collectPAN()`.
 
-## Authentication
-
-Bearer token using your **secret key**:
-
-```
-Authorization: Bearer sk_test_xxx
-```
-
-Cards are scoped by `merchant_id` (derived from your secret key) and the `customer_id` query parameter.
-
-## Query Parameters
-
-### Required
-
-<ParamField path="customer_id" type="string" required>
-  The customer ID to retrieve cards for (the `user_id` used when creating the session)
-</ParamField>
-
-### Optional
-
-<ParamField path="status" type="string" default="active">
-  Filter by card status: `active` (default) or `all` (includes deleted cards)
-</ParamField>
-
-<ParamField path="include_card_art" type="string" default="false">
-  Include card art URL in response: `"true"` or `"false"` (default: `"false"`)
-</ParamField>
-
-## Response (200)
-
-<ResponseField name="cards" type="array">
-  Array of card objects
-
-  <Expandable title="Card properties">
-    <ResponseField name="card_id" type="string">
-      Unique card identifier (the same as the `enrollmentId` from the SDK's `collectPAN()`)
-    </ResponseField>
-
-    <ResponseField name="card_last4" type="string">
-      Last 4 digits of the card number
-    </ResponseField>
-
-    <ResponseField name="card_brand" type="string | null">
-      Card brand (e.g., `"visa"`), or `null` if unknown
-    </ResponseField>
-
-    <ResponseField name="card_exp_month" type="number | null">
-      Expiration month (1–12)
-    </ResponseField>
-
-    <ResponseField name="card_exp_year" type="number | null">
-      Expiration year (4 digits)
-    </ResponseField>
-
-    <ResponseField name="masked_card_number" type="string | null">
-      Masked card number (e.g., `"•••• •••• •••• 4242"`), or `null`
-    </ResponseField>
-
-    <ResponseField name="is_default" type="boolean">
-      Whether this is the customer's default card
-    </ResponseField>
-
-    <ResponseField name="status" type="string">
-      Card status — `active` or `deleted`
-    </ResponseField>
-
-    <ResponseField name="card_art_url" type="string | null">
-      Card art image URL (only present when `include_card_art=true`)
-    </ResponseField>
-
-    <ResponseField name="metadata" type="object | null">
-      Card display metadata (brand colors: `backgroundColor`, `foregroundColor`, `labelColor`)
-    </ResponseField>
-
-    <ResponseField name="created_at" type="string">
-      ISO 8601 timestamp of when the card was enrolled
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="count" type="number">
-  Total number of cards returned
-</ResponseField>
-
-## Example
-
-<Tip>Swap the host for production: use `https://api.prava.space` instead of `https://sandbox.api.prava.space`.</Tip>
-
-<CodeGroup>
-```bash cURL — Sandbox
-curl "https://sandbox.api.prava.space/v1/listCards?customer_id=user_123&status=active" \
-  -H "Authorization: Bearer sk_test_xxx"
-```
-
-```bash cURL — Production
-curl "https://api.prava.space/v1/listCards?customer_id=user_123&status=active" \
-  -H "Authorization: Bearer sk_live_xxx"
-```
-
-```typescript Node.js
-const BASE_URL = 'https://sandbox.api.prava.space'; // or https://api.prava.space
-
-const result = await fetch(
-  `${BASE_URL}/v1/listCards?customer_id=user_123&status=active`,
-  {
-    headers: {
-      'Authorization': `Bearer ${SECRET_KEY}`,
-    },
-  }
-).then(res => res.json());
-
-console.log(result.cards);  // Array of card objects
-console.log(result.count);  // Number of cards
-```
-</CodeGroup>
-
-### Response
-
-```json
-{
-  "cards": [
-    {
-      "card_id": "enr_abc123",
-      "card_last4": "4242",
-      "card_brand": "visa",
-      "card_exp_month": 12,
-      "card_exp_year": 2027,
-      "masked_card_number": "•••• •••• •••• 4242",
-      "is_default": true,
-      "status": "active",
-      "card_art_url": null,
-      "metadata": {
-        "backgroundColor": "#1A1F71",
-        "foregroundColor": "#FFFFFF",
-        "labelColor": "#CCCCCC"
-      },
-      "created_at": "2026-03-15T10:30:00Z"
-    }
-  ],
-  "count": 1
-}
-```
-
-## Error Responses
+## Error responses
 
 | Status | Code | Cause |
 |--------|------|-------|
@@ -166,20 +24,3 @@ console.log(result.count);  // Number of cards
 | 401 | `AUTH_1001` | Invalid API key |
 | 401 | `AUTH_1002` | Missing or invalid Authorization header |
 | 404 | `CUSTOMER_NOT_FOUND` | No customer found for the given `customer_id` |
-
-### Error Response Format
-
-```json
-{
-  "error": {
-    "code": "AUTH_1001",
-    "message": "Invalid API key"
-  }
-}
-```
-
-## Notes
-
-- Only non-sensitive card metadata is returned — full PANs are never exposed.
-- Use `status=all` to include previously deleted cards for historical reference.
-- The `card_id` returned here is the same as the `enrollmentId` from the SDK's `collectPAN()`.

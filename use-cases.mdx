@@ -1,0 +1,74 @@
+---
+title: 'Use Cases'
+description: 'What people build with Prava, shown as concrete flows.'
+icon: 'lightbulb'
+---
+
+Prava does one thing: it lets an AI agent pay with a real card, without ever holding that card. Here
+is what that looks like in practice.
+
+## An agent buys something for you
+
+You tell your agent "order me a phone case under $20". The agent, connected via
+[MCP](/mcp/overview) (Model Context Protocol) or the [CLI](/prava-pay/overview):
+
+1. Searches products across merchants and picks a case: $18.50.
+2. Locks the live price with a quote.
+3. Sends you a payment link. You open it and approve with Face ID.
+4. The agent completes the checkout. You get an order id; the agent never saw your card.
+
+If the total had changed mid-checkout, the charge would not have gone through. The credential is
+locked to that merchant and that amount.
+
+**Start here:** [Connect via MCP](/mcp/connect) or [Prava Pay quickstart](/prava-pay/quickstart).
+
+## An agent pays a bill you already know
+
+No product discovery needed. You say "pay my $54.20 internet bill at Comcast". The agent creates a
+payment session for exactly $54.20, you approve with a passkey, and it pays with the one-time
+credentials. Wrong-amount or wrong-merchant use is declined.
+
+**Start here:** [Payment sessions (CLI)](/prava-pay/sessions) or
+[create_payment_session (MCP)](/mcp/tools#create-payment-session--checkoutrun).
+
+## Your AI app takes payments from its users
+
+You're building a shopping assistant, a travel planner, or a booking bot. Your users need to pay
+*inside your product*. You integrate the [SDK + API](/sdk/overview): your backend creates a session,
+your frontend shows Prava's secure card form, and your app receives one-time credentials to complete
+the purchase. Your servers never touch a card number, which keeps you out of PCI scope (the
+security compliance that applies once you handle card data).
+
+Example: a stylist app's user picks a $79 jacket. The app creates a session for $79, the user enters
+their card and approves in the embedded form, the app checks out at the boutique with the one-time
+token, then reports the result.
+
+**Start here:** [Add Payments to Your AI App](/guides/add-payments-to-your-ai-app).
+
+## Human-in-the-loop, by design
+
+Every flow above has the same shape: **the agent proposes, the human approves, Prava executes.**
+The approval is a passkey (Touch ID / Face ID) on the user's own device. An agent cannot skip it,
+and an approval for one purchase authorizes nothing else.
+
+## Recurring payments (planned)
+
+A mandate is the user's recorded permission to pay. Today every mandate is one-time: one approval,
+one purchase. Recurring mandates are planned. Once
+shipped, a user will approve a subscription once (say, $12/month at one merchant), and the agent can
+invoke it monthly within those limits, without a fresh passkey each time. Until then, each payment
+needs its own approval.
+
+## Where to next
+
+<CardGroup cols={3}>
+<Card title="Choose your integration" icon="signs-post" href="/choosing-your-integration">
+  Agent, embedded, or hosted. Decided in 10 seconds.
+</Card>
+<Card title="How Prava works" icon="diagram-project" href="/concepts/how-it-works">
+  The lifecycle behind every flow above.
+</Card>
+<Card title="Sell to AI shoppers" icon="store" href="/integration/merchants">
+  For merchants: what works with zero changes.
+</Card>
+</CardGroup>

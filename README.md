@@ -1,43 +1,30 @@
-# Mintlify Starter Kit
+# Prava Docs
 
-Use the starter kit to get your docs deployed and ready to customize.
+Source for [docs.prava.space](https://docs.prava.space) — Prava's developer documentation, built with
+[Mintlify](https://mintlify.com).
 
-Click the green **Use this template** button at the top of this repo to copy the Mintlify starter kit. The starter kit contains examples with
+## Preview locally
 
-- Guide pages
-- Navigation
-- Customizations
-- API reference pages
-- Use of popular components
-
-**[Follow the full quickstart guide](https://starter.mintlify.com/quickstart)**
-
-## Development
-
-Install the [Mintlify CLI](https://www.npmjs.com/package/mint) to preview your documentation changes locally. To install, use the following command:
-
-```
+```bash
 npm i -g mint
+mint dev          # http://localhost:3000
+mint broken-links # check internal links
 ```
 
-Run the following command at the root of your documentation, where your `docs.json` is located:
+## Structure
 
-```
-mint dev
-```
+- `docs.json` — navigation, theme, fonts, SEO
+- `*.mdx` — pages (tabs: Developer Guide, Prava Pay, API Reference, Concepts, Agentic Commerce)
+- `api-reference/openapi.json` — OpenAPI spec backing the interactive API reference
+- `style.css`, `fonts/`, `images/`, `logo/` — branding
+- `ROADMAP.md` — internal improvement tracker (not published)
 
-View your local preview at `http://localhost:3000`.
+## Deploys
 
-## Publishing changes
+Merging to `main` auto-deploys via the Mintlify GitHub app — watch the Mintlify dashboard →
+Deployments. Note: docs.prava.space sits behind Cloudflare; cached HTML can serve stale after a deploy
+(see ROADMAP ops item).
 
-Install our GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app) to propagate changes from your repo to your deployment. Changes are deployed to production automatically after pushing to the default branch.
+## Support
 
-## Need help?
-
-### Troubleshooting
-
-- If your dev environment isn't running: Run `mint update` to ensure you have the most recent version of the CLI.
-- If a page loads as a 404: Make sure you are running in a folder with a valid `docs.json`.
-
-### Resources
-- [Mintlify documentation](https://mintlify.com/docs)
+Questions: support@prava.space

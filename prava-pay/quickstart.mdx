@@ -80,7 +80,8 @@ Run `prava sessions poll --session-id ses_abc123` to wait for card entry.
 
 **You:** open the **Payment URL**, enter your card in Prava's secure page, and confirm.
 
-Meanwhile, the agent waits for the card to be tokenized:
+Meanwhile, the agent waits for the card to be tokenized (swapped for a one-time card number and
+code that stand in for the real card):
 
 ```bash
 prava sessions poll --session-id ses_abc123
@@ -98,7 +99,7 @@ Expiry:       12/2028
 ```
 
 <Warning>
-  These credentials are **single-use and short-lived** — use them right away to complete the
+  These credentials are **single-use and short-lived**: use them right away to complete the
   checkout. Don't store or reuse them.
 </Warning>
 
@@ -134,7 +135,7 @@ That's the whole loop. 🎉
   Every flag for `sessions create` and `sessions poll`.
 </Card>
 <Card title="Agentic shopping" icon="cart-shopping" href="/prava-pay/shopping">
-  Search, compare, quote, and pay — the discovery flow.
+  Search, compare, quote, and pay: the discovery flow.
 </Card>
 <Card title="Troubleshooting" icon="life-ring" href="/prava-pay/troubleshooting">
   What each message means and how to recover.

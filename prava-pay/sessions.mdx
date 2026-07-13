@@ -45,7 +45,7 @@ Each `--product` is a JSON object:
 ```
 
 <Tip>
-  For multiple units of the same item, set `"quantity"` — don't repeat `--product` or bake counts
+  For multiple units of the same item, set `"quantity"`; don't repeat `--product` or bake counts
   into the description. The total must reconcile with the line items.
 </Tip>
 
@@ -60,12 +60,13 @@ Share this URL to complete card entry.
 Run `prava sessions poll --session-id ses_abc123` to wait for card entry.
 ```
 
-Give the **Payment URL** to the owner. They open it and enter their card in Prava's secure page —
+Give the **Payment URL** to the owner. They open it and enter their card in Prava's secure page;
 the card details never pass through the agent.
 
 ## `prava sessions poll`
 
-Wait for the card to be entered and tokenized:
+Wait for the card to be entered and tokenized (exchanged for one-time credentials that stand in
+for the real card):
 
 ```bash
 prava sessions poll --session-id ses_abc123
@@ -88,7 +89,9 @@ Cryptogram:   957
 Expiry:       12/2028
 ```
 
-`poll` waits up to **10 minutes** for the owner to enter the card.
+`poll` waits up to **10 minutes** for the owner to enter the card; that's the CLI's card-entry
+window. The underlying session expires **15 minutes** after creation; once it does, create a new
+session.
 
 ### What you receive
 
@@ -100,7 +103,7 @@ Expiry:       12/2028
 
 <Warning>
   These credentials are **single-use and expire quickly**. Complete the checkout immediately after
-  polling — don't cache, log, or reuse them. If they expire, create a new session.
+  polling; don't cache, log, or reuse them. If they expire, create a new session.
 </Warning>
 
 ## Exit codes
@@ -111,7 +114,7 @@ Session commands use exit codes so an agent can branch reliably:
 |------|---------|
 | `0` | Success. |
 | `1` | Error or timeout (e.g. session expired, tokenization failed). |
-| `2` | Not linked / no agent configured — run [`prava setup`](/prava-pay/linking). |
+| `2` | Not linked / no agent configured; run [`prava setup`](/prava-pay/linking). |
 
 ## Common outcomes
 

@@ -51,7 +51,7 @@ recovery step.
 </Accordion>
 <Accordion title="Tokenization failed.">
   The card couldn't be processed. Try the payment session again, or use a different card. If it keeps
-  failing, contact [support](mailto:developers@prava.space).
+  failing, contact [support](mailto:support@prava.space).
 </Accordion>
 <Accordion title="Invalid product JSON: …">
   A `--product` value isn't valid JSON. Use the exact shape, quoted for your shell:
@@ -64,8 +64,9 @@ recovery step.
 </AccordionGroup>
 
 <Warning>
-  The token and cryptogram from `sessions poll` are **single-use and short-lived**. If you wait too
-  long to check out, mint a fresh session — don't try to reuse old credentials.
+  The token and cryptogram (the one-time card number and security code) from `sessions poll` are
+  **single-use and short-lived**. If you wait too long to check out, mint a fresh session; don't
+  try to reuse old credentials.
 </Warning>
 
 ## Shopping: quotes & checkout
@@ -73,7 +74,7 @@ recovery step.
 <AccordionGroup>
 <Accordion title="request failed: timed out — the merchant checkout can be slow; try again">
   Quotes and checkouts drive a live merchant checkout and can take 20–40 seconds. For **quotes**,
-  simply retry (the CLI retries once by default; raise it with `--retries`). For **checkout**, see the
+  retry (the CLI retries once by default; raise it with `--retries`). For **checkout**, see the
   note on unknown outcomes below before retrying.
 </Accordion>
 <Accordion title="This checkout has expired">
@@ -85,8 +86,8 @@ recovery step.
   (~15 min), then quote again.
 </Accordion>
 <Accordion title="Checkout quota exceeded">
-  The account's purchase limit has been reached. This is an owner-level guardrail — the owner needs to
-  raise the limit or contact [support](mailto:developers@prava.space). See [Guardrails](/concepts/guardrails).
+  The account's purchase limit has been reached. This is an owner-level guardrail: the owner needs to
+  raise the limit or contact [support](mailto:support@prava.space). See [Guardrails](/concepts/guardrails).
 </Accordion>
 <Accordion title="No delivery addresses on file / No contact phone on file">
   Physical goods need a delivery address and a contact phone. Add them in the Prava dashboard, or via
@@ -100,15 +101,15 @@ recovery step.
 
 ## Payment outcomes
 
-The result of a checkout is read from the payment itself, not just the network response — so the
-status you see is the real one.
+The result of a checkout is read from the payment itself rather than the network response alone,
+so the status you see is the real one.
 
 <AccordionGroup>
 <Accordion title="✓ Paid.">
   Success. The charge went through; an order id is shown when the merchant provides one.
 </Accordion>
 <Accordion title="✗ Checkout failed: <reason>">
-  The payment was declined or the merchant rejected it. This checkout is done — start a new
+  The payment was declined or the merchant rejected it. This checkout is done; start a new
   [quote](/prava-pay/shopping#quote) to try again.
 </Accordion>
 <Accordion title="✗ Checkout … (already processed — no new charge)">
@@ -119,7 +120,7 @@ status you see is the real one.
 
 <Note>
 **Unknown outcome (rare).** If a checkout times out or the merchant response is lost, Prava does **not**
-guess — it leaves the payment un-finalized rather than risk a double charge, and asks you to wait
+guess: it leaves the payment un-finalized rather than risk a double charge, and asks you to wait
 rather than blindly retry. Do **not** immediately re-run checkout with the same credentials; re-quote
 if you need to try again, and reconcile the earlier attempt first if in doubt.
 </Note>
@@ -155,4 +156,4 @@ Prava tells you when a version is behind:
 
 Run `prava status` to confirm the agent is linked and active, and re-check the command flags against
 the [Payment sessions](/prava-pay/sessions) and [Agentic shopping](/prava-pay/shopping) references.
-For anything else, reach us at [developers@prava.space](mailto:developers@prava.space).
+For anything else, reach us at [support@prava.space](mailto:support@prava.space).

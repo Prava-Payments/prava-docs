@@ -5,16 +5,18 @@ icon: 'plug'
 ---
 
 Prava is more than a payment token. It provides the **commerce capabilities** an AI application needs to
-turn an intent to buy into a completed order — discovering products, pricing them accurately, and
+turn an intent to buy into a completed order: discovering products, pricing them accurately, and
 completing a real checkout on the merchant's site.
 
 ## The capability pipeline
 
-```
-  Discover        →     Quote        →      Checkout           →     Pay
- ───────────         ───────────         ─────────────────         ───────────
-  UCP search          UCP + live         Browser Harness            one-time
-  & catalog           reconciliation     completes the order        tokenized card
+```mermaid
+flowchart LR
+    D["Discover<br/>UCP search & catalog"]
+    Q["Quote<br/>live price, reconciled"]
+    C["Checkout<br/>Browser Harness"]
+    P["Pay<br/>one-time tokenized card"]
+    D --> Q --> C --> P
 ```
 
 Two capabilities do the heavy lifting, and they work as a pair:
@@ -32,13 +34,13 @@ Two capabilities do the heavy lifting, and they work as a pair:
 
 ## Who this is for
 
-AI applications and agents that want to **find and buy** on a user's behalf — not just process a
-payment. These same capabilities power [Prava Pay's agentic shopping](/prava-pay/shopping)
+AI applications and agents that want to **find and buy** on a user's behalf rather than only
+process a payment. These same capabilities power [Prava Pay's agentic shopping](/prava-pay/shopping)
 (`prava shop search → product → quote → checkout`); this section explains what's behind those commands.
 
 <Note>
   Whichever surface you use, the card is always collected on Prava's secure surface and turned into a
-  one-time, merchant-scoped credential — the AI application never handles a raw card.
+  one-time, merchant-scoped credential; the AI application never handles a raw card.
 </Note>
 
 ## How the pieces fit

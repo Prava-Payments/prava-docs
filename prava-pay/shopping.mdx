@@ -23,7 +23,7 @@ When the agent needs to **find** the product too, Prava Pay adds a discovery flo
 ## Delivery addresses
 
 Physical goods need a delivery address and a contact phone. These are stored on the **owner's
-account** and hydrated server-side at purchase time — the agent only ever sees **masked summaries**,
+account** and hydrated server-side at purchase time: the agent only ever sees **masked summaries**,
 never full street addresses or phone numbers.
 
 <Warning>
@@ -84,7 +84,7 @@ prava shop search --query "dark roast coffee" --intent "gift for a coffee lover"
 | Option | Required | Description |
 |--------|----------|-------------|
 | `--query <text>` | Yes | Tight keyword query. |
-| `--intent <text>` | No | The user's full natural-language request (occasion, budget) — improves ranking. |
+| `--intent <text>` | No | The user's full natural-language request (occasion, budget); improves ranking. |
 | `--limit <n>` | No | Max results (default 10). |
 | `--cursor <cursor>` | No | Next-page cursor from a previous search. |
 | `--merchant <domain>` | No | Restrict to one merchant domain. |
@@ -115,7 +115,7 @@ prava shop product --product-id prod_abc --merchant stumptowncoffee.com
 | `--merchant <domain>` | No | Merchant domain from the search result. |
 | `--json` | No | Raw JSON output. |
 
-Offers are listed **orderable first, then cheapest**. Prices shown are item-only — **shipping and tax
+Offers are listed **orderable first, then cheapest**. Prices shown are item-only: **shipping and tax
 are added at the quote step**.
 
 ```
@@ -129,7 +129,7 @@ Next: prava shop quote --variant-id <id> --merchant <that offer's merchant above
 
 ## Quote
 
-Pricing a variant opens a **checkout session** with the *final*, binding total — subtotal + shipping
+Pricing a variant opens a **checkout session** with the *final*, binding total: subtotal + shipping
 + tax. This is a spend-adjacent step, so it asks for confirmation.
 
 ```bash
@@ -199,7 +199,7 @@ On success:
 ```
 
 <Note>
-  The total charged is **bound to the quote** — it can't drift between quote and payment. Prava pays
+  The total charged is **bound to the quote**: it can't drift between quote and payment. Prava pays
   exactly the amount you saw, at exactly the merchant you quoted.
 </Note>
 
@@ -208,7 +208,7 @@ On success:
 Both `quote` and `checkout` are gated by a confirmation:
 
 - At an interactive terminal, they prompt `[y/N]`.
-- For an agent (non-interactive), they **refuse** unless `--yes` is passed — making a skipped
+- For an agent (non-interactive), they **refuse** unless `--yes` is passed, making a skipped
   confirmation a deliberate, visible act.
 
 <Warning>

@@ -167,14 +167,8 @@ interface PravaError {
 }
 ```
 
-### Error codes
-
-| Code | When | What to do |
-|------|------|-----------|
-| `SDK_ALREADY_ACTIVE` | `collectPAN` called while a collection is already in progress | Call `destroy()` first, then retry |
-| `INVALID_CONFIG` | Missing `iframeUrl` (or a bad `publishableKey`) | Pass the `iframe_url` from your backend session response |
-| `IFRAME_LOAD_ERROR` | The secure iframe failed to load | Check the network and the `iframeUrl` |
-| `SDK_INIT_ERROR` | Initialization failed | Verify browser compatibility and config |
+Error codes, every `collectPAN` option, and validation states are documented on
+[Collect Card Details](/sdk/cards/collect-pan) — the canonical `collectPAN` reference.
 
 ## Requirements
 
