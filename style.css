@@ -70,6 +70,24 @@ img[src*="brand-banner"] {
 }
 
 /* ============================================================
+   Background image — reveal the lower "hills" band on wide screens.
+   docs.json pins the bg at natural size, top-right, no background-size.
+   A short/landscape viewport only shows the pale top of the image and
+   crops the green lower band that portrait screens show in full. On
+   landscape, pull the image up so that band peeks into view.
+   Light mode only — the dark image bottoms out to black, so shifting
+   it up would drag a black band into view. Inline style sets the
+   position → !important is required.
+   --bg-shift is the ONE knob: more negative = more green revealed.
+   ============================================================ */
+@media (orientation: landscape) {
+  [style*="/images/bg-light"] {
+    --bg-shift: -800px; /* ponytail: single tuning knob — nudge this one number */
+    background-position: right var(--bg-shift) !important;
+  }
+}
+
+/* ============================================================
    Mermaid — one diagram language: airy teal nodes, teal edges,
    deep-teal text. Complements the per-diagram conventions
    (flowchart LR, plain labels, no inline HTML styling).
