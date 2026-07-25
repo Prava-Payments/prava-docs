@@ -16,7 +16,7 @@ Reconcile a mandate charge outcome and settle it with the card network. Call thi
 ## Body
 
 <ParamField body="txn_status" type="string" required>`APPROVED` or `DECLINED`.</ParamField>
-<ParamField body="txn_type" type="string" required default="PURCHASE">`PURCHASE`.</ParamField>
+<ParamField body="txn_type" type="string" required>`PURCHASE`.</ParamField>
 <ParamField body="authorization_code" type="string">Authorization code from your processor, max 128. Optional; recorded when supplied.</ParamField>
 <ParamField body="response_code" type="string">Processor response code, max 2. Optional.</ParamField>
 <ParamField body="amount_paid" type="string">Amount paid, decimal string. Optional.</ParamField>

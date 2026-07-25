@@ -850,7 +850,7 @@
           },
           "currency": {
             "type": "string",
-            "description": "ISO 4217 currency code \u2014 exactly 3 uppercase letters, and one of Prava's 50 supported currencies (e.g. USD, EUR, GBP, INR) - other codes are rejected"
+            "description": "ISO 4217 currency code \u2014 exactly 3 uppercase letters, and one of Prava's supported currencies (e.g. USD, EUR, GBP, INR) - other codes are rejected"
           },
           "purchase_context": {
             "type": "array",

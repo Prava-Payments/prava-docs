@@ -125,7 +125,7 @@ Create a short-lived, single-use session tied to one merchant, customer, and ord
       ISO 8601 datetime. **Ignored for `one_time`**, which is always clamped to 7 days. Recurring horizons: yearly 5y, monthly 2y, weekly 1y.
     </ParamField>
     <ParamField body="max_charges" type="integer" default={1}>
-      Maximum number of charges. Positive integer; the per-charge amount cap is enforced by the card network.
+      Maximum number of charges allowed against this mandate. Positive integer. (The per-charge *amount* cap is enforced separately, at the card network.)
     </ParamField>
   </Expandable>
 </ParamField>
