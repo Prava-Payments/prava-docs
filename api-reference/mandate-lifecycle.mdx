@@ -1,0 +1,62 @@
+---
+title: 'Pause, Resume & Cancel'
+description: 'Lifecycle actions for a mandate — suspend, reactivate, or revoke.'
+icon: 'sliders'
+---
+
+Three lifecycle actions change a mandate's status. Each is a `POST` to the mandate by id, takes no body (dashboard callers pass `dashboard_user_id`), and returns the updated [mandate](/api-reference/mandate-list).
+
+`POST /v1/mandates/{id}/pause` · `/resume` · `/cancel` — control-plane operations.
+
+## Endpoints
+
+| Action | Endpoint | Allowed from | Result |
+|--------|----------|--------------|--------|
+| **Pause** | `POST /v1/mandates/{id}/pause` | `active` | `paused` — no charges until resumed |
+| **Resume** | `POST /v1/mandates/{id}/resume` | `paused` | `active` |
+| **Cancel** | `POST /v1/mandates/{id}/cancel` | `active`, `paused` | `cancelled` (terminal) — stops all future charges |
+
+## Path parameters
+
+<ParamField path="id" type="string" required>The mandate id.</ParamField>
+
+## Response
+
+Returns the updated mandate object (see [List Mandates](/api-reference/mandate-list)).
+
+## Notes
+
+- Legal transitions only: pause from `active`, resume from `paused`, cancel from `active` or `paused`. Any other transition returns `409 MANDATE_INVALID_TRANSITION`.
+- `cancel` is terminal and local to Prava — it revokes the authorization so no further charges can be minted. **Past charges are unaffected.**
+- Only the mandate's owner can act on it — a mismatched caller gets `403 MANDATE_FORBIDDEN`.
+- The same actions are available to owners in the dashboard at [pay.prava.space](https://pay.prava.space) and to agents via [`prava mandate cancel`](/prava-pay/mandates#prava-mandate-cancel) / the [MCP tools](/mcp/tools#mandates).
+
+## Error responses
+
+| Status | Code | Cause |
+|--------|------|-------|
+| 403 | `MANDATE_FORBIDDEN` | Caller does not own this mandate |
+| 409 | `MANDATE_INVALID_TRANSITION` | The mandate's current status forbids this action |
+
+<RequestExample>
+```bash Pause
+curl -X POST https://sandbox.api.prava.space/v1/mandates/mdt_123/pause \
+  -H "Authorization: Bearer sk_test_..."
+```
+
+```bash Resume
+curl -X POST https://sandbox.api.prava.space/v1/mandates/mdt_123/resume \
+  -H "Authorization: Bearer sk_test_..."
+```
+
+```bash Cancel
+curl -X POST https://sandbox.api.prava.space/v1/mandates/mdt_123/cancel \
+  -H "Authorization: Bearer sk_test_..."
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{ "id": "mdt_123", "status": "paused", "state": "available", "merchantScope": "listed", "approvedAmount": "40.00", "currency": "USD" }
+```
+</ResponseExample>
