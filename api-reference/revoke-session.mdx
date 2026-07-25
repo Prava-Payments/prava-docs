@@ -2,8 +2,23 @@
 title: 'Revoke Session'
 description: 'Revoke an active payment session'
 icon: 'ban'
-openapi: 'api-reference/openapi.json POST /v1/sessions/{id}/revoke'
 ---
+
+Revoke a payment session before it is used. Revocation is immediate and cannot be undone — a revoked session can no longer collect a card or produce credentials.
+
+`POST /v1/sessions/{id}/revoke` · Authenticated with your secret key.
+
+## Path parameters
+
+<ParamField path="id" type="string" required>
+  The `session_id` returned by [Create Session](/api-reference/create-session).
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Always `true` on successful revocation.
+</ResponseField>
 
 ## Notes
 
@@ -19,3 +34,16 @@ openapi: 'api-reference/openapi.json POST /v1/sessions/{id}/revoke'
 | 401 | `AUTH_1001` | Invalid API key |
 | 401 | `AUTH_1002` | Missing or invalid Authorization header |
 | 404 | `NOT_FOUND` | Session not found or doesn't belong to your merchant account |
+
+<RequestExample>
+```bash cURL
+curl -X POST https://sandbox.api.prava.space/v1/sessions/sess_123/revoke \
+  -H "Authorization: Bearer sk_test_..."
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{ "success": true }
+```
+</ResponseExample>
