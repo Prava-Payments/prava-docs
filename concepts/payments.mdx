@@ -35,10 +35,10 @@ The user gets Prava's secure surface, enters or picks their card, and approves w
 Only then does a one-time credential exist, and it works only for $34 at Bookshop. No approval,
 no credential, no charge.
 
-**Recurring (planned).** The same shape, approved once: a user will approve "up to $12/month at
-this merchant" a single time, and the agent can invoke that mandate monthly within the limits
-without a fresh passkey per charge. Until this ships, every mandate is `one_time` and each payment
-needs its own approval.
+**Recurring.** The same shape, approved once: a user approves "up to $12/month at this merchant" a
+single time, and the agent charges monthly within the limits without a fresh passkey per charge.
+This ships today as a [mandate](/concepts/mandates). *Scheduled* subscriptions — where Prava
+auto-charges each cycle — are coming next; for now the agent initiates each charge within the cycle.
 
 ### 1. Session
 
@@ -75,7 +75,8 @@ type, and card fingerprint, so retrying the same request cannot cause a double c
 
 | Status | Meaning |
 |--------|---------|
-| `pending` | Transaction created, awaiting authentication |
+| `pending` | Session created; no transaction started yet |
+| `processing` | Transaction in flight — authenticating / tokenizing; credentials not yet available |
 | `awaiting_result` | Credentials issued; checkout in progress, awaiting your [status report](/api-reference/report-status) |
 | `completed` | Payment authorized and completed |
 | `failed` | Payment failed (declined, timeout, or error) |
@@ -93,12 +94,15 @@ registers a mandate with the card network that specifies:
 
 *   **Merchant**: who can charge the card
 *   **Amount threshold**: maximum per-transaction amount
-*   **Frequency**: currently `one_time` (recurring frequencies are planned)
+*   **Frequency**: `one_time`, or recurring `weekly` / `monthly` / `yearly`
 *   **Effective duration**: how long the mandate remains active (`effective_until_minutes`, default 15)
 
 Each mandate also carries **line items** (product IDs, descriptions, unit prices, quantities) that
 break down the purchase at a product level; the amount threshold and quantity limit apply at the
 **mandate level**, not per line item.
+
+For **standing** mandates — approve once, then charge repeatedly within caps — see
+[Mandates](/concepts/mandates).
 
 **Mandate statuses** (surfaced in payment results and status reports):
 
@@ -106,6 +110,7 @@ break down the purchase at a product level; the amount threshold and quantity li
 |--------|---------|
 | `pending` | Created, awaiting network confirmation |
 | `active` | Live and usable for payment token generation |
+| `paused` | Temporarily suspended by the owner; no charges until resumed |
 | `consumed` | Fully used (all allowed invocations exhausted) |
 | `cancelled` | Revoked by user or system |
 | `expired` | Past its effective date |

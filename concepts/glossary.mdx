@@ -16,7 +16,7 @@ Prava's surfaces sometimes use different names for the same value. This table is
 | One-time security code | `dynamic_cvv` | `Cryptogram` | Single-use CVV |
 | Card expiry for the token | `expiry_month` + `expiry_year` | `Expiry` (`MM/YYYY`) | Token expiry |
 | Payment container | session (`session_id`, `ses_…`) | session (`--session-id`) | Session |
-| Spending permission | mandate (in statuses) | — (handled server-side) | Mandate |
+| Spending permission | mandate (`/v1/mandates`) | `prava mandate` | Mandate |
 
 ## The portals
 
@@ -29,7 +29,7 @@ Prava's surfaces sometimes use different names for the same value. This table is
 | **Session** | The container for one payment: customer + merchant + order, created by `POST /v1/sessions` (or `prava sessions create`). Expires after 15 minutes. |
 | **Transaction** | A single payment attempt within a session (`addCard` or `savedCard` flow). |
 | **Passkey** | WebAuthn biometric/device approval (Touch ID, Face ID, security key). Required for every payment; no fallback. |
-| **Mandate** | A card-network-level spending permission: merchant, amount threshold, frequency (`one_time` today), duration. Prava registers it after passkey approval. |
+| **Mandate** | A standing card-network spending permission: merchant, amount cap, frequency (`one_time` or recurring `weekly`/`monthly`/`yearly`), duration. Approved once with a passkey, then charged within caps. See [Mandates](/concepts/mandates). |
 | **Payment token** | The single-use virtual card credentials (number + CVV + expiry) issued against an active mandate: merchant-locked, amount-scoped, short-lived. |
 | **Enrollment** | Securely collecting and tokenizing a card (via [`collectPAN`](/sdk/cards/collect-pan) or a hosted page). Yields an `enrollmentId`. |
 | **Agentic commerce enrollment** | A card flag (`isAgenticCommerceEnrolled`) enabling AI-initiated purchases with network-level (Visa) merchant/amount locking. |

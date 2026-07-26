@@ -1134,11 +1134,12 @@
             "type": "string",
             "enum": [
               "pending",
+              "processing",
               "awaiting_result",
               "completed",
               "failed"
             ],
-            "description": "Overall session status"
+            "description": "Overall session status. `processing` = a transaction exists and is in flight (authenticating / tokenizing) but credentials are not yet available."
           },
           "transactions": {
             "type": "array",

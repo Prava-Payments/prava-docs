@@ -1,0 +1,215 @@
+---
+title: 'Mandates'
+description: 'Authorize a card once, then charge it later within caps — no passkey per charge.'
+icon: 'shield-check'
+---
+
+A [**mandate**](/concepts/mandates) lets an agent charge the owner's card **again
+and again within caps** after a single passkey approval. Use it for repeat or
+deferred spend; for a one-off purchase use a [payment session](/prava-pay/sessions)
+instead.
+
+<Note>
+  The agent must be [linked](/prava-pay/linking) first. If it isn't, mandate
+  commands exit with `Agent not linked. Run: prava setup --name "<name>"`.
+</Note>
+
+The lifecycle is: **create** (owner approves once) → **poll** (wait for it to go
+active) → **charge** (mint credentials, no passkey) → **report** (settle the
+outcome). **cancel** revokes it. `list` shows what's authorized.
+
+## `prava mandate create`
+
+Set up a mandate. This prints a passkey approval URL — it authorizes, it does not
+charge.
+
+```bash
+prava mandate create \
+  --merchant-name "Nike" \
+  --merchant-url "https://nike.com" \
+  --merchant-country US \
+  --amount 120.00 \
+  --currency USD \
+  --frequency one_time \
+  --scope listed \
+  -y
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--amount <amount>` | Yes | Per-charge cap as a string, e.g. `"120.00"`. |
+| `--currency <code>` | Yes | ISO 4217 code, e.g. `USD`, `EUR`, `GBP`, `INR`. |
+| `--merchant-name <name>` | Unless `--scope any` | Merchant display name (shown to the owner). |
+| `--merchant-url <url>` | Unless `--scope any` | Full merchant URL **including `https://`**. |
+| `--merchant-country <code>` | Unless `--scope any` | ISO 3166-1 alpha-2 country, e.g. `US`. |
+| `--frequency <freq>` | No | `one_time` (default), `weekly`, `monthly`, or `yearly`. |
+| `--scope <scope>` | No | `listed` (default, one merchant) or `any` (any merchant). **Forced to `listed` for any recurring frequency.** |
+| `--product <json>` | No | A product line item as JSON. **Repeat** the flag per item. Defaults to a single synthesized item. |
+| `--valid-until <iso>` | No | Validity hint (ISO 8601). One-time mandates are capped at 7 days regardless. |
+| `--max-charges <n>` | No | Advisory hint on the number of charges; the enforced ceiling is the amount cap, not this count. |
+| `-y, --yes` | No | Skip the confirmation prompt (required when running non-interactively). |
+| `--json` | No | Emit raw JSON instead of formatted output. |
+
+On success:
+
+```
+Mandate setup started. Ask the user to approve with their passkey:
+  https://pay.prava.space/...
+
+One-time mandates are valid up to 7 days. After the user approves, run:
+  prava mandate poll --merchant https://nike.com --amount 120.00
+```
+
+Give the approval URL to the owner. They open it and approve with their passkey;
+that single approval authorizes every later charge within the caps.
+
+<Tip>
+  For a generic budget not tied to one merchant (e.g. "$200 for groceries this
+  week"), drop the three `--merchant-*` flags and add `--scope any`. Generic
+  mandates are `one_time` only.
+</Tip>
+
+## `prava mandate poll`
+
+Wait for a just-created mandate to become active (i.e. for the owner to approve):
+
+```bash
+prava mandate poll --merchant https://nike.com --amount 120.00
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--merchant <domain>` | No | Disambiguate when polling among several mandates. |
+| `--amount <amount>` | No | Disambiguate by authorized amount. |
+| `--json` | No | Emit raw JSON. |
+
+It waits up to **10 minutes**. Once the owner approves:
+
+```
+✓ Mandate active — Nike, 120.00 USD, expires 2026-07-26.
+```
+
+## `prava mandate list`
+
+List the mandates authorized on this account:
+
+```bash
+prava mandate list
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--merchant <domain>` | No | Filter to one merchant (also matches `any`-scope mandates). |
+| `--json` | No | Emit raw JSON, **including mandate ids** for chaining into `charge`. |
+
+```
+• Nike — 120.00/120.00 USD, expires 2026-07-26 [available]
+• Any store — 150.00/200.00 USD, renews 2026-07-25 [active]
+```
+
+Each line reads `<merchant> — <remaining>/<approved> <currency>, expires|renews <date> [<state>]`.
+Use `--json` to get the mandate id you'll pass to `charge`.
+
+## `prava mandate charge`
+
+Charge an approved mandate — **no passkey** — and receive single-use credentials.
+
+```bash
+prava mandate charge --mandate-id <id> --amount 40.00 --reference order-8842 -y
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--mandate-id <id>` | Yes | The mandate id from `mandate list --json`. |
+| `--amount <amount>` | Yes | Charge amount as a string; must be within the mandate's cap. |
+| `--reference <ref>` | No | Idempotency key. The same `--mandate-id` + `--reference` returns the original charge instead of a duplicate. |
+| `--product <json>` | No | Per-charge product line item as JSON. **Repeat** per item. |
+| `-y, --yes` | No | Skip the confirmation prompt. |
+| `--json` | No | Emit raw JSON. |
+
+On success:
+
+```
+Card tokenized from mandate.
+Token:        4323126882557932
+Cryptogram:   957
+Expiry:       12/2028
+Transaction:  txn_9f2a
+
+Use these to check out at the merchant, then run:
+  prava mandate report --mandate-id <id> --txn-id txn_9f2a --status APPROVED
+```
+
+<Warning>
+  These credentials are **single-use and expire quickly**. Check out immediately;
+  don't cache, log, or reuse them.
+</Warning>
+
+A charge over the cap (or otherwise refused by the network) is a **normal**
+outcome — it prints `✗ Charge declined: THRESHOLD_EXCEEDED` (or similar) and exits `1`.
+
+## `prava mandate report`
+
+Settle a charge outcome after checking out:
+
+```bash
+prava mandate report --mandate-id <id> --txn-id txn_9f2a --status APPROVED
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--mandate-id <id>` | Yes | The mandate id. |
+| `--txn-id <id>` | Yes | The `Transaction` id from `charge`. |
+| `--status <status>` | Yes | `APPROVED` or `DECLINED`. |
+| `--authorization-code <code>` | No | The merchant's authorization code, if you have it. |
+| `--response-code <code>` | No | The network response code, if you have it. |
+| `--amount-paid <amount>` | No | The amount actually captured. |
+| `--json` | No | Emit raw JSON. |
+
+```
+✓ Charge reported.
+```
+
+## `prava mandate cancel`
+
+Revoke a mandate. This stops all future charges and is terminal.
+
+```bash
+prava mandate cancel --mandate-id <id> -y
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--mandate-id <id>` | Yes | The mandate id. |
+| `-y, --yes` | No | Skip the confirmation prompt. |
+| `--json` | No | Emit raw JSON. |
+
+```
+✓ Mandate cancelled.
+```
+
+The owner can also revoke a mandate from the dashboard at
+[pay.prava.space](https://pay.prava.space). Cancelling stops future charges;
+past charges are unaffected.
+
+## Exit codes
+
+Mandate commands use exit codes so an agent can branch reliably:
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success. |
+| `1` | Error or declined charge (e.g. `THRESHOLD_EXCEEDED`, timeout). |
+| `2` | Not linked / no agent configured, or confirmation required and not given; run [`prava setup`](/prava-pay/linking). |
+
+## Common outcomes
+
+| Output | What it means | What to do |
+|--------|---------------|------------|
+| `Mandate setup started…` | Setup created; awaiting the owner's passkey approval. | Share the URL, then `prava mandate poll`. |
+| `✓ Mandate active …` | The owner approved; the mandate is chargeable. | Run `prava mandate charge` when you need to pay. |
+| `✗ Charge declined: THRESHOLD_EXCEEDED` | The charge exceeded the mandate's amount cap. | Charge within the remaining cap, or set up a new mandate. |
+| `Agent not linked. Run: prava setup …` | No linked agent on this machine. | [Link the agent](/prava-pay/linking) first. |
+
+Next: use the returned token to [complete a checkout](/prava-pay/shopping#checkout),
+then `report` the outcome.

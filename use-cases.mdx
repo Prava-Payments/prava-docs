@@ -51,13 +51,12 @@ Every flow above has the same shape: **the agent proposes, the human approves, P
 The approval is a passkey (Touch ID / Face ID) on the user's own device. An agent cannot skip it,
 and an approval for one purchase authorizes nothing else.
 
-## Recurring payments (planned)
+## Recurring payments
 
-A mandate is the user's recorded permission to pay. Today every mandate is one-time: one approval,
-one purchase. Recurring mandates are planned. Once
-shipped, a user will approve a subscription once (say, $12/month at one merchant), and the agent can
-invoke it monthly within those limits, without a fresh passkey each time. Until then, each payment
-needs its own approval.
+A [mandate](/concepts/mandates) is the user's standing permission to pay: approve once, and the agent
+charges within caps without a fresh passkey each time. A user approves "up to $12/month at one
+merchant" a single time, and the agent charges monthly within those limits. *Scheduled* subscriptions —
+where Prava auto-charges each cycle — are coming next; for now the agent initiates each charge.
 
 ## Where to next
 

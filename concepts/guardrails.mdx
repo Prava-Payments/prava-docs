@@ -28,7 +28,7 @@ Every payment intent creates a **mandate**, a spending permission registered at 
 |-----------|-----------------|
 | **Merchant** | The merchant the mandate is scoped to |
 | **Amount threshold** | Maximum amount for the transaction |
-| **Frequency** | Currently `one_time` (recurring frequencies are planned) |
+| **Frequency** | `one_time`, or recurring `weekly`/`monthly`/`yearly` (one charge per cycle, single-merchant) |
 | **Effective duration** | When the mandate expires (`expiresAt`) |
 | **Product scope** | The products in the purchase (via mandate line items) |
 
