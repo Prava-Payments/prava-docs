@@ -2,7 +2,7 @@
 title: 'Report a Mandate Charge'
 description: 'Settle a mandate charge outcome (APPROVED / DECLINED) with the card network.'
 icon: 'clipboard-check'
-tag: 'POST'
+api: 'POST /v1/mandates/{id}/charges/{txnId}/report'
 ---
 
 Reconcile a mandate charge outcome and settle it with the card network. Call this after checking out with the credentials from [Charge a Mandate](/api-reference/mandate-charge).

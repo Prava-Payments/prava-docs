@@ -2,7 +2,7 @@
 title: 'Charge a Mandate'
 description: 'Mint single-use card credentials against an active mandate — no passkey.'
 icon: 'bolt'
-tag: 'POST'
+api: 'POST /v1/mandates/{id}/charge'
 ---
 
 Mint fresh single-use card credentials against an active mandate — **no passkey**. Merchant callers receive plaintext `credentials`; agent callers receive an `encrypted_payload` (credentials encrypted to the agent's public key).

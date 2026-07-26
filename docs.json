@@ -33,6 +33,23 @@
     }
   },
   "favicon": "/favicon.svg",
+  "api": {
+    "playground": {
+      "display": "interactive"
+    },
+    "examples": {
+      "languages": ["curl", "python", "javascript"]
+    },
+    "mdx": {
+      "server": [
+        "https://sandbox.api.prava.space",
+        "https://api.prava.space"
+      ],
+      "auth": {
+        "method": "bearer"
+      }
+    }
+  },
   "thumbnails": {
     "background": "images/brand-banner.png"
   },

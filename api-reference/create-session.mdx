@@ -2,7 +2,7 @@
 title: 'Create Session'
 description: 'Create a payment session for a customer and order — standard checkout or mandate setup.'
 icon: 'plus'
-tag: 'POST'
+api: 'POST /v1/sessions'
 ---
 
 Create a short-lived, single-use session tied to one merchant, customer, and order. The response gives you a `session_token` + `iframe_url` for the frontend — embed the iframe via the [SDK](/sdk/overview) or open the [hosted checkout](/sdk/integration-modes) directly.

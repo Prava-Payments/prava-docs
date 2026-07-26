@@ -2,7 +2,7 @@
 title: 'Report Status'
 description: 'Report payment execution outcome back to Prava'
 icon: 'flag'
-tag: 'POST'
+api: 'POST /v1/sessions/{sessionId}/report-status'
 ---
 
 Report the payment execution outcome back to Prava. Always report after you attempt the charge with the credentials — it updates transaction records and relays the outcome to the card network.

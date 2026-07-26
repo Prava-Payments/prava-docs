@@ -2,7 +2,7 @@
 title: 'Pause, Resume & Cancel'
 description: 'Lifecycle actions for a mandate — suspend, reactivate, or revoke.'
 icon: 'sliders'
-tag: 'POST'
+api: 'POST /v1/mandates/{id}/pause'
 ---
 
 Three lifecycle actions change a mandate's status. Each is a `POST` to the mandate by id, takes no body (dashboard callers pass `dashboard_user_id`), and returns the updated [mandate](/api-reference/mandate-list).
