@@ -413,6 +413,256 @@
           }
         }
       }
+    },
+    "/v1/mandates/{id}/charge": {
+      "post": {
+        "summary": "Charge a Mandate",
+        "description": "Mint fresh single-use card credentials against an active mandate \u2014 no passkey. Available to merchants (secret key) and agents (Ed25519 signature); not exposed over MCP. For agent callers the credentials are returned as an encrypted_payload.",
+        "operationId": "chargeMandate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The mandate id (from List Mandates).",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/MandateChargeRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Charge initiated; single-use credentials issued.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MandateChargeResult" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/Error" },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" },
+          "500": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/mandates/{id}/charges/{txnId}/report": {
+      "post": {
+        "summary": "Report a Mandate Charge",
+        "description": "Reconcile a mandate charge outcome (APPROVED / DECLINED) and settle it with the card network.",
+        "operationId": "reportMandateCharge",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The mandate id.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "txnId",
+            "in": "path",
+            "required": true,
+            "description": "The transactionId returned from Charge a Mandate.",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/MandateReportRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Charge outcome recorded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mandateId": { "type": "string" },
+                    "transactionId": { "type": "string" },
+                    "orderId": { "type": "string" },
+                    "status": { "type": "string", "enum": ["completed", "failed"] },
+                    "mandateStatus": { "type": "string" },
+                    "visaConfirmation": { "type": "string", "enum": ["SUCCESS", "FAILURE"] }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/Error" },
+          "401": { "$ref": "#/components/responses/Error" },
+          "404": { "$ref": "#/components/responses/Error" },
+          "500": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/mandates": {
+      "get": {
+        "summary": "List Mandates",
+        "description": "List the caller's mandates. Merchant keys pass customer_id; control-plane callers pass dashboard_user_id (+ agent_id). Set standing_only=true to exclude transient per-checkout mandates.",
+        "operationId": "listMandates",
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "query",
+            "required": false,
+            "description": "Filter to one customer (merchant keys): the external_user_id or a cus_ id.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "standing_only",
+            "in": "query",
+            "required": false,
+            "description": "When true, return only standing mandates.",
+            "schema": { "type": "boolean" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The caller's mandates.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mandates": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Mandate" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/mandates/{id}": {
+      "get": {
+        "summary": "Get a Mandate",
+        "description": "Retrieve one mandate with its derived balance and full charge history.",
+        "operationId": "getMandate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The mandate id.",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The mandate detail view.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MandateDetail" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "404": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/mandates/{id}/pause": {
+      "post": {
+        "summary": "Pause a Mandate",
+        "description": "Suspend an active mandate. No charges succeed until it is resumed.",
+        "operationId": "pauseMandate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The mandate id.",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated mandate.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Mandate" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/mandates/{id}/resume": {
+      "post": {
+        "summary": "Resume a Mandate",
+        "description": "Reactivate a paused mandate.",
+        "operationId": "resumeMandate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The mandate id.",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated mandate.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Mandate" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/mandates/{id}/cancel": {
+      "post": {
+        "summary": "Cancel a Mandate",
+        "description": "Revoke a mandate. Stops all future charges; terminal. Past charges are unaffected.",
+        "operationId": "cancelMandate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The mandate id.",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated mandate.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Mandate" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" }
+        }
+      }
     }
   },
   "components": {
@@ -436,6 +686,122 @@
       }
     },
     "schemas": {
+      "Mandate": {
+        "type": "object",
+        "description": "A standing spending authorization (list view).",
+        "properties": {
+          "id": { "type": "string", "description": "Mandate id (mdt_…)." },
+          "agentId": { "type": "string" },
+          "customerId": { "type": "string" },
+          "externalUserId": { "type": "string" },
+          "state": { "type": "string", "enum": ["available", "consumed", "expired"], "description": "Display-derived usability." },
+          "status": { "type": "string", "enum": ["pending", "active", "paused", "consumed", "cancelled", "expired"] },
+          "recurringFrequency": { "type": "string", "enum": ["one_time", "weekly", "monthly", "yearly"] },
+          "merchantScope": { "type": "string", "enum": ["any", "listed"] },
+          "merchantName": { "type": "string" },
+          "approvedAmount": { "type": "string", "description": "The authorized per-charge cap." },
+          "remaining": { "type": "string", "description": "Remaining spend in the current window (indicative; the network enforces the real cap)." },
+          "currency": { "type": "string" },
+          "validUntil": { "type": "string", "format": "date-time", "nullable": true },
+          "renewsAt": { "type": "string", "format": "date-time", "nullable": true, "description": "Next cycle boundary for recurring mandates." },
+          "lastCharge": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "status": { "type": "string" },
+              "at": { "type": "string", "format": "date-time" }
+            }
+          },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "MandateCharge": {
+        "type": "object",
+        "description": "One charge against a mandate.",
+        "properties": {
+          "transactionId": { "type": "string" },
+          "amount": { "type": "string" },
+          "currency": { "type": "string" },
+          "status": { "type": "string" },
+          "reference": { "type": "string", "nullable": true, "description": "Idempotency reference supplied at charge time." },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "MandateDetail": {
+        "allOf": [
+          { "$ref": "#/components/schemas/Mandate" },
+          {
+            "type": "object",
+            "properties": {
+              "spent": { "type": "string", "description": "Cumulative amount charged." },
+              "chargeCount": { "type": "integer" },
+              "charges": {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/MandateCharge" }
+              }
+            }
+          }
+        ]
+      },
+      "MandateChargeRequest": {
+        "type": "object",
+        "required": ["amount"],
+        "properties": {
+          "amount": { "type": "string", "description": "Charge amount as a decimal string, e.g. \"40.00\". Must be within the mandate cap." },
+          "reference": { "type": "string", "description": "Idempotency key. The same mandate id + reference returns the original charge." },
+          "purchase_context": {
+            "type": "array",
+            "description": "Optional per-charge product details.",
+            "items": { "type": "object" }
+          }
+        }
+      },
+      "MandateChargeResult": {
+        "type": "object",
+        "properties": {
+          "mandateId": { "type": "string" },
+          "instructionId": { "type": "string" },
+          "transactionId": { "type": "string" },
+          "orderId": { "type": "string" },
+          "status": { "type": "string", "enum": ["awaiting_result", "failed"] },
+          "fetchStatus": { "type": "string", "enum": ["SUCCESS", "FAILURE"] },
+          "credentials": {
+            "type": "object",
+            "description": "Present for merchant callers: single-use card credentials.",
+            "properties": {
+              "token": { "type": "string" },
+              "dynamicCvv": { "type": "string" },
+              "expiryMonth": { "type": "string" },
+              "expiryYear": { "type": "string" }
+            }
+          },
+          "encrypted_payload": {
+            "type": "object",
+            "description": "Present for agent callers: credentials encrypted to the agent's public key.",
+            "properties": {
+              "ephemeral_public_key": { "type": "string" },
+              "iv": { "type": "string" },
+              "auth_tag": { "type": "string" },
+              "data": { "type": "string" }
+            }
+          },
+          "errorCode": { "type": "string" },
+          "errorMessage": { "type": "string", "description": "e.g. THRESHOLD_EXCEEDED on an over-cap decline." },
+          "deduplicated": { "type": "boolean" }
+        }
+      },
+      "MandateReportRequest": {
+        "type": "object",
+        "required": ["txn_status", "txn_type"],
+        "properties": {
+          "txn_status": { "type": "string", "enum": ["APPROVED", "DECLINED"] },
+          "txn_type": { "type": "string", "enum": ["PURCHASE"] },
+          "authorization_code": { "type": "string" },
+          "response_code": { "type": "string" },
+          "amount_paid": { "type": "string" }
+        }
+      },
       "Error": {
         "type": "object",
         "properties": {
@@ -484,7 +850,7 @@
           },
           "currency": {
             "type": "string",
-            "description": "ISO 4217 currency code \u2014 exactly 3 uppercase letters (e.g. \"USD\")"
+            "description": "ISO 4217 currency code \u2014 exactly 3 uppercase letters, and one of Prava's supported currencies (e.g. USD, EUR, GBP, INR) - other codes are rejected"
           },
           "purchase_context": {
             "type": "array",
@@ -524,11 +890,11 @@
           "callback_url": {
             "type": "string",
             "maxLength": 2048,
-            "description": "For hosted checkout: the https URL Prava redirects the cardholder to after they finish."
+            "description": "For hosted checkout: the https URL Prava redirects the cardholder to after they finish. Optional for all integration types."
           },
           "card": {
             "type": "object",
-            "description": "Pre-select a card for the session",
+            "description": "Pre-select a card. Send card_id OR vault_ref_id; if both are sent, card_id wins.",
             "properties": {
               "card_id": {
                 "type": "string",
@@ -538,6 +904,36 @@
                 "type": "string",
                 "format": "uuid",
                 "description": "A valid UUID referencing a vaulted card"
+              }
+            }
+          },
+          "mandate_setup": {
+            "type": "object",
+            "description": "Turns the session into mandate setup (authorize-only). Absent = standard checkout.",
+            "properties": {
+              "intent": {
+                "type": "string",
+                "enum": ["checkout", "mandate_setup"],
+                "description": "mandate_setup = authorize-only (no charge/credentials). Defaults to mandate_setup when this block is present."
+              },
+              "recurring_frequency": {
+                "type": "string",
+                "enum": ["one_time", "weekly", "monthly", "yearly"]
+              },
+              "merchant_scope": {
+                "type": "string",
+                "enum": ["any", "listed"],
+                "description": "Recurring frequencies force listed; any with a recurring frequency returns 400 MANDATE_RECURRING_MUST_BE_SCOPED."
+              },
+              "valid_until": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Ignored for one_time (clamped to 7 days). Recurring horizons: yearly 5y, monthly 2y, weekly 1y."
+              },
+              "max_charges": {
+                "type": "integer",
+                "default": 1,
+                "description": "Positive integer; per-charge cap is network-enforced."
               }
             }
           }
@@ -564,7 +960,7 @@
               },
               "url": {
                 "type": "string",
-                "description": "Merchant website URL"
+                "description": "Merchant website URL. Must use https - the URL is forwarded to Visa."
               },
               "country_code_iso2": {
                 "type": "string",
@@ -598,7 +994,7 @@
                 },
                 "unit_price": {
                   "type": "string",
-                  "description": "Unit price as a string (e.g. \"49.99\")"
+                  "description": "Unit price as a string (no fixed decimal format enforced)"
                 },
                 "product_id": {
                   "type": "string",
@@ -616,7 +1012,7 @@
           "effective_until_minutes": {
             "type": "integer",
             "default": 15,
-            "description": "How long the mandate remains effective, in minutes."
+            "description": "How long the mandate remains effective, in minutes. Positive integer, no maximum."
           }
         }
       },
@@ -643,6 +1039,10 @@
             "type": "string",
             "format": "date-time",
             "description": "ISO 8601 timestamp when the session expires"
+          },
+          "authorizeOnly": {
+            "type": "boolean",
+            "description": "Present and true for mandate-setup sessions (no credentials issued)."
           }
         }
       },
@@ -734,11 +1134,12 @@
             "type": "string",
             "enum": [
               "pending",
+              "processing",
               "awaiting_result",
               "completed",
               "failed"
             ],
-            "description": "Overall session status"
+            "description": "Overall session status. `processing` = a transaction exists and is in flight (authenticating / tokenizing) but credentials are not yet available."
           },
           "transactions": {
             "type": "array",

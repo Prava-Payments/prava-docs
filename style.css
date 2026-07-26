@@ -88,6 +88,19 @@ img[src*="brand-banner"] {
 }
 
 /* ============================================================
+   Legibility: the green "hills" band can land behind the reading
+   column on wide screens and sink body-text contrast. Mute the
+   background layer toward the pale page color (#f0fdfa, from
+   docs.json) so the image stays soft ambience — never a backdrop
+   text has to fight. Light mode only: the selector only matches
+   the light image (dark mode uses bg-dark.jpg, untouched).
+   --bg-mute is the ONE knob: lower opacity = paler bg, safer text.
+   ============================================================ */
+[style*="/images/bg-light"] {
+  opacity: 0.5; /* ponytail: single knob — lower if text still fights the bg */
+}
+
+/* ============================================================
    Mermaid — one diagram language: airy teal nodes, teal edges,
    deep-teal text. Complements the per-diagram conventions
    (flowchart LR, plain labels, no inline HTML styling).
@@ -210,4 +223,41 @@ img[src*="brand-banner"] {
 .dark .callout[data-callout-type="warning"] [data-component-part="callout-content"],
 .dark .callout[data-callout-type="warning"] [data-component-part="callout-icon"] svg {
   color: #e4b45e;
+}
+
+/* ============================================================
+   Sidebar HTTP-method badges — color-code by method.
+   The `tag` frontmatter renders a single teal pill (text-primary);
+   the auto-colored method badge only came with OpenAPI pages, which
+   we dropped. Mintlify exposes the method on a stable
+   `data-nav-tag` attribute, so we recolor per method here.
+   Only GET/POST are used today — add PUT/PATCH/DELETE if endpoints
+   ever need them.
+   ============================================================ */
+.nav-tag-pill-text[data-nav-tag="GET"] {
+  color: #15803d !important;
+  background-color: rgba(22, 163, 74, 0.12) !important;
+}
+.dark .nav-tag-pill-text[data-nav-tag="GET"] {
+  color: #4ade80 !important;
+  background-color: rgba(74, 222, 128, 0.14) !important;
+}
+.nav-tag-pill-text[data-nav-tag="POST"] {
+  color: #1d4ed8 !important;
+  background-color: rgba(37, 99, 235, 0.12) !important;
+}
+.dark .nav-tag-pill-text[data-nav-tag="POST"] {
+  color: #60a5fa !important;
+  background-color: rgba(96, 165, 250, 0.14) !important;
+}
+
+/* Put the badge on the LEFT of the label (before the title) instead of
+   trailing on the right. The pill wrapper and the title share a flex row;
+   ordering the wrapper first moves the badge ahead of the title text.
+   Result: [icon] [POST] Create Session. */
+.nav-tag-pill {
+  order: -1;
+}
+:where(div, span):has(> .nav-tag-pill) {
+  order: -1;
 }

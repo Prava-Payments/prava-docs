@@ -93,6 +93,7 @@
               "prava-pay/skills",
               "prava-pay/linking",
               "prava-pay/sessions",
+              "prava-pay/mandates",
               "prava-pay/shopping",
               "prava-pay/your-wallet",
               "prava-pay/troubleshooting"
@@ -119,7 +120,12 @@
               "api-reference/list-cards",
               "api-reference/delete-card",
               "api-reference/get-payment-result",
-              "api-reference/report-status"
+              "api-reference/report-status",
+              "api-reference/mandate-charge",
+              "api-reference/mandate-report",
+              "api-reference/mandate-list",
+              "api-reference/mandate-get",
+              "api-reference/mandate-lifecycle"
             ]
           },
           {
@@ -139,6 +145,7 @@
             "group": "Core Concepts",
             "pages": [
               "concepts/payments",
+              "concepts/mandates",
               "concepts/accounts",
               "concepts/guardrails",
               "concepts/glossary"

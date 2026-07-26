@@ -41,7 +41,7 @@ Authorization: Bearer sk_test_xxx
 
 ## Response Format
 
-All responses are JSON. Every response includes an `X-Response-ID` header for debugging:
+All requests and responses are JSON. Monetary amounts are always decimal strings (e.g. `"49.99"`), never numbers. Every response includes an `X-Response-ID` header for debugging:
 
 ```
 X-Response-ID: resp_a1b2c3d4e5f6

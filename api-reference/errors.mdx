@@ -76,6 +76,27 @@ These can occur on **any** endpoint:
 | 404 | `NOT_FOUND` | Session not found | Verify the session ID |
 | 400 | `INVALID_STATE` | Session not in a revocable state | It may already be completed or expired |
 
+## Mandates — `/v1/mandates/*`
+
+Mandate routes authenticate with a secret key **or** an agent Ed25519 signature; a missing/invalid credential returns `401 AUTH_REQUIRED`.
+
+| Status | Code | Cause | Recovery |
+|--------|------|-------|----------|
+| 401 | `AUTH_REQUIRED` | Missing or invalid credentials | Send a valid secret key or agent signature |
+| 403 | `MANDATE_FORBIDDEN` | The caller doesn't own this mandate | Act only on mandates owned by the calling agent/merchant |
+| 403 | `MANDATE_MERCHANT_NOT_ALLOWED` | A charge fell outside a `listed` mandate's merchant | Charge only at the mandate's merchant, or use an `any`-scope mandate |
+| 404 | `MANDATE_NOT_FOUND` | No mandate with that id for the caller | Verify the mandate id via [List Mandates](/api-reference/mandate-list) |
+| 409 | `MANDATE_NOT_ACTIVE` | Charged a mandate that isn't `active` (e.g. paused, consumed, expired) | Resume it, or set up a new mandate |
+| 409 | `MANDATE_INVALID_TRANSITION` | An illegal lifecycle change (e.g. resume a cancelled mandate) | Only pause `active`, resume `paused`, cancel `active`/`paused` |
+| 409 | `NO_INSTRUCTION` / `NO_ORDER` | The mandate is missing its underlying instruction/order (charge) | Re-run mandate setup |
+| 500 | `NO_TOKEN` | Credential minting failed (charge) | Retry; then support |
+
+Reporting a charge (`/charges/{txnId}/report`) can additionally return `404 CHARGE_NOT_FOUND`, `409 CHARGE_NOT_REPORTABLE` / `CHARGE_NO_TLI`, `502 VISA_CONFIRMATION_FAILED`, or `500 MANDATE_CHARGE_REPORT_DB_FAILED`.
+
+<Note>
+  `THRESHOLD_EXCEEDED` is **not** a Prava error code — it's a Visa decline (an over-cap charge) surfaced in a failed charge's `errorCode` / `errorMessage`, not in the error envelope. See [Charge a Mandate](/api-reference/mandate-charge).
+</Note>
+
 <Note>
   The **SDK** has its own client-side error codes (`SDK_ALREADY_ACTIVE`, `INVALID_CONFIG`,
   `IFRAME_LOAD_ERROR`, `SDK_INIT_ERROR`); see

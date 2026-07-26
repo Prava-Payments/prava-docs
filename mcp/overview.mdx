@@ -27,6 +27,7 @@ sign-in. See [Connect](/mcp/connect).
 | Ability | Tools |
 |---------|-------|
 | Pay a known total at a named merchant | `create_payment_session`, `get_payment_status` |
+| Set up & manage standing mandates | `create_mandate`, `list_mandates`, `get_mandate`, `pause_mandate`, `resume_mandate`, `cancel_mandate` |
 | Find and buy products | `shop_search`, `shop_product`, `shop_quote`, `shop_checkout` |
 | Manage delivery addresses | `shop_list_addresses`, `shop_add_address`, `shop_set_default_address` |
 | See your cards and agents | `list_cards`, `list_agents` |
@@ -57,8 +58,8 @@ you connect, and you approve them once.
 
 | Scope | Grants |
 |-------|--------|
-| `payments:read` | Read cards (masked), agents, payment status, product search, masked addresses |
-| `payments:write` | Lock quotes, add or change delivery addresses |
+| `payments:read` | Read cards (masked), agents, payment status, product search, masked addresses, and mandates |
+| `payments:write` | Lock quotes, add or change delivery addresses, and set up or manage mandates (pause / resume / cancel) |
 | `checkout:run` | Create payment sessions and execute checkouts |
 
 ## MCP, CLI, or SDK?

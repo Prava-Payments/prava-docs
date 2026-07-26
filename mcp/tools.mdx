@@ -4,7 +4,7 @@ description: 'Every Prava MCP tool: parameters, scopes, and the order to call th
 icon: 'wrench'
 ---
 
-The server exposes 12 tools. Your MCP client discovers them automatically; this page is the map of
+The server exposes 18 tools. Your MCP client discovers them automatically; this page is the map of
 what they do and how they chain together.
 
 ## The buy-flow chain
@@ -57,6 +57,75 @@ Payment credentials never leave the gateway.
 | Parameter | Type | Notes |
 |-----------|------|-------|
 | `session_id` | string, required | From `create_payment_session` |
+
+## Mandates
+
+Manage [standing mandates](/concepts/mandates) — spend authorizations the owner
+approves once with a passkey, then an agent charges within caps. Setting one up
+returns an approval URL; it charges nothing by itself. **Charging a mandate is not
+available over MCP** — use the [CLI](/prava-pay/mandates#prava-mandate-charge) or
+the [REST API](/api-reference/mandate-charge).
+
+### create_mandate — `payments:write`
+
+Starts mandate setup and returns an `approval_url` for the owner to approve with a
+passkey. Spends nothing.
+
+| Parameter | Type | Notes |
+|-----------|------|-------|
+| `amount` | string, required | Per-charge cap, e.g. `"120.00"` |
+| `currency` | string, required | 3-letter ISO 4217, e.g. `USD` |
+| `merchant_name` | string | Required unless `merchant_scope` is `any` |
+| `merchant_url` | string | Required unless `merchant_scope` is `any` |
+| `merchant_country` | string | 2-letter ISO 3166-1, e.g. `US` |
+| `recurring_frequency` | string, optional | `one_time` (default), `weekly`, `monthly`, `yearly` |
+| `merchant_scope` | string, optional | `listed` (default) or `any` (one-time only) |
+| `valid_until` | string, optional | ISO 8601; one-time is capped at 7 days |
+| `max_charges` | integer, optional | Maximum number of charges allowed against the mandate |
+| `products` | array, optional | Line items: `{ description, unit_price, quantity? }` |
+
+Returns `{ approval_url, ... }`. Send the URL to the owner; after they approve, call
+`list_mandates` to confirm the mandate is active before spending against it.
+
+### list_mandates — `payments:read`
+
+Returns the owner's **standing** mandates (transient per-checkout mandates are
+excluded). Each entry includes merchant, frequency, approved/remaining amount,
+status, and validity.
+
+No required parameters.
+
+### get_mandate — `payments:read`
+
+Returns one mandate with its spend and charge history.
+
+| Parameter | Type | Notes |
+|-----------|------|-------|
+| `mandate_id` | string, required | From `list_mandates` (e.g. `mdt_…`) |
+
+### cancel_mandate — `payments:write`
+
+Revokes a mandate; stops all future charges. Terminal.
+
+| Parameter | Type | Notes |
+|-----------|------|-------|
+| `mandate_id` | string, required | From `list_mandates` (e.g. `mdt_…`) |
+
+### pause_mandate — `payments:write`
+
+Temporarily suspends a mandate. No charges succeed until resumed.
+
+| Parameter | Type | Notes |
+|-----------|------|-------|
+| `mandate_id` | string, required | From `list_mandates` (e.g. `mdt_…`) |
+
+### resume_mandate — `payments:write`
+
+Reactivates a paused mandate.
+
+| Parameter | Type | Notes |
+|-----------|------|-------|
+| `mandate_id` | string, required | From `list_mandates` (e.g. `mdt_…`) |
 
 ## Shopping
 
