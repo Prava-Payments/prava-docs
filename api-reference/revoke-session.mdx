@@ -2,6 +2,7 @@
 title: 'Revoke Session'
 description: 'Revoke an active payment session'
 icon: 'ban'
+tag: 'POST'
 ---
 
 Revoke a payment session before it is used. Revocation is immediate and cannot be undone — a revoked session can no longer collect a card or produce credentials.
@@ -40,10 +41,40 @@ Revoke a payment session before it is used. Revocation is immediate and cannot b
 curl -X POST https://sandbox.api.prava.space/v1/sessions/sess_123/revoke \
   -H "Authorization: Bearer sk_test_..."
 ```
+
+```python Python
+import requests
+
+resp = requests.post(
+    "https://sandbox.api.prava.space/v1/sessions/sess_123/revoke",
+    headers={"Authorization": "Bearer sk_test_..."},
+)
+```
+
+```javascript JavaScript
+const resp = await fetch("https://sandbox.api.prava.space/v1/sessions/sess_123/revoke", {
+  method: "POST",
+  headers: {
+    Authorization: "Bearer sk_test_...",
+  },
+});
+```
 </RequestExample>
 
 <ResponseExample>
-```json 200
+```json 200 Success
 { "success": true }
+```
+
+```json 401 Unauthorized
+{
+  "error": { "code": "AUTH_1002", "message": "Missing or invalid Authorization header" }
+}
+```
+
+```json 404 Not Found
+{
+  "error": { "code": "NOT_FOUND", "message": "Session not found" }
+}
 ```
 </ResponseExample>

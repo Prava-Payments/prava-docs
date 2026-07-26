@@ -2,6 +2,7 @@
 title: 'Create Session'
 description: 'Create a payment session for a customer and order — standard checkout or mandate setup.'
 icon: 'plus'
+tag: 'POST'
 ---
 
 Create a short-lived, single-use session tied to one merchant, customer, and order. The response gives you a `session_token` + `iframe_url` for the frontend — embed the iframe via the [SDK](/sdk/overview) or open the [hosted checkout](/sdk/integration-modes) directly.
@@ -176,7 +177,7 @@ Create a short-lived, single-use session tied to one merchant, customer, and ord
 | 500 | `CONFIG_ERROR` | Server-side configuration issue (Visa or Skyflow not configured) |
 
 <RequestExample>
-```bash Standard checkout
+```bash cURL
 curl -X POST https://sandbox.api.prava.space/v1/sessions \
   -H "Authorization: Bearer sk_test_..." \
   -H "Content-Type: application/json" \
@@ -194,7 +195,50 @@ curl -X POST https://sandbox.api.prava.space/v1/sessions \
   }'
 ```
 
-```bash Mandate setup
+```python Python
+import requests
+
+resp = requests.post(
+    "https://sandbox.api.prava.space/v1/sessions",
+    headers={"Authorization": "Bearer sk_test_..."},
+    json={
+        "user_id": "user_123",
+        "user_email": "jane@example.com",
+        "total_amount": "49.99",
+        "currency": "USD",
+        "purchase_context": [{
+            "merchant_details": {"name": "Acme Store", "url": "https://acme.example.com", "country_code_iso2": "US"},
+            "product_details": [{"description": "Widget", "unit_price": "24.99", "quantity": 2}],
+        }],
+        "integration_type": "full_checkout",
+        "callback_url": "https://acme.example.com/return",
+    },
+)
+```
+
+```javascript JavaScript
+const resp = await fetch("https://sandbox.api.prava.space/v1/sessions", {
+  method: "POST",
+  headers: {
+    Authorization: "Bearer sk_test_...",
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    user_id: "user_123",
+    user_email: "jane@example.com",
+    total_amount: "49.99",
+    currency: "USD",
+    purchase_context: [{
+      merchant_details: { name: "Acme Store", url: "https://acme.example.com", country_code_iso2: "US" },
+      product_details: [{ description: "Widget", unit_price: "24.99", quantity: 2 }],
+    }],
+    integration_type: "full_checkout",
+    callback_url: "https://acme.example.com/return",
+  }),
+});
+```
+
+```bash cURL · Mandate setup
 curl -X POST https://sandbox.api.prava.space/v1/sessions \
   -H "Authorization: Bearer sk_test_..." \
   -H "Content-Type: application/json" \
@@ -218,7 +262,7 @@ curl -X POST https://sandbox.api.prava.space/v1/sessions \
 </RequestExample>
 
 <ResponseExample>
-```json Standard 201
+```json 201 Standard
 {
   "session_id": "sess_9f2c...",
   "session_token": "eyJhbGciOi...",
@@ -228,7 +272,7 @@ curl -X POST https://sandbox.api.prava.space/v1/sessions \
 }
 ```
 
-```json Mandate setup 201
+```json 201 Mandate setup
 {
   "session_id": "sess_7d1a...",
   "session_token": "eyJhbGciOi...",
@@ -236,6 +280,22 @@ curl -X POST https://sandbox.api.prava.space/v1/sessions \
   "order_id": "ord_88c2...",
   "expires_at": "2026-07-26T12:15:00Z",
   "authorizeOnly": true
+}
+```
+
+```json 400 Validation
+{
+  "error": {
+    "code": "VAL_2001",
+    "message": "Validation failed",
+    "details": { "currency": "Unsupported currency code" }
+  }
+}
+```
+
+```json 401 Unauthorized
+{
+  "error": { "code": "AUTH_1001", "message": "Invalid API key" }
 }
 ```
 </ResponseExample>

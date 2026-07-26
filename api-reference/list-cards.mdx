@@ -2,6 +2,7 @@
 title: 'List Cards'
 description: 'Retrieve enrolled cards for a customer'
 icon: 'credit-card'
+tag: 'GET'
 ---
 
 Retrieve a customer's enrolled cards. Only non-sensitive card metadata is returned — full PANs (the real card numbers) are never exposed.
@@ -58,10 +59,31 @@ Retrieve a customer's enrolled cards. Only non-sensitive card metadata is return
 curl "https://sandbox.api.prava.space/v1/listCards?customer_id=user_123&status=active" \
   -H "Authorization: Bearer sk_test_..."
 ```
+
+```python Python
+import requests
+
+resp = requests.get(
+    "https://sandbox.api.prava.space/v1/listCards",
+    headers={"Authorization": "Bearer sk_test_..."},
+    params={"customer_id": "user_123", "status": "active"},
+)
+```
+
+```javascript JavaScript
+const resp = await fetch(
+  "https://sandbox.api.prava.space/v1/listCards?customer_id=user_123&status=active",
+  {
+    headers: {
+      Authorization: "Bearer sk_test_...",
+    },
+  }
+);
+```
 </RequestExample>
 
 <ResponseExample>
-```json 200
+```json 200 Success
 {
   "cards": [
     {
@@ -76,6 +98,18 @@ curl "https://sandbox.api.prava.space/v1/listCards?customer_id=user_123&status=a
     }
   ],
   "count": 1
+}
+```
+
+```json 400 Validation
+{
+  "error": { "code": "INVALID_REQUEST", "message": "Missing customer_id" }
+}
+```
+
+```json 404 Not Found
+{
+  "error": { "code": "CUSTOMER_NOT_FOUND", "message": "No customer for the given customer_id" }
 }
 ```
 </ResponseExample>

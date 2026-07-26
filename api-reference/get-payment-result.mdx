@@ -2,6 +2,7 @@
 title: 'Get Payment Result'
 description: 'Retrieve payment credentials and transaction status for a session'
 icon: 'receipt'
+tag: 'GET'
 ---
 
 A polling endpoint: after the cardholder completes card entry and passkey approval on Prava's secure surface, poll it to read the outcome and, when ready, the single-use credentials.
@@ -66,10 +67,27 @@ A polling endpoint: after the cardholder completes card entry and passkey approv
 curl "https://sandbox.api.prava.space/v1/sessions/sess_123/payment-result" \
   -H "Authorization: Bearer sk_test_..."
 ```
+
+```python Python
+import requests
+
+resp = requests.get(
+    "https://sandbox.api.prava.space/v1/sessions/sess_123/payment-result",
+    headers={"Authorization": "Bearer sk_test_..."},
+)
+```
+
+```javascript JavaScript
+const resp = await fetch("https://sandbox.api.prava.space/v1/sessions/sess_123/payment-result", {
+  headers: {
+    Authorization: "Bearer sk_test_...",
+  },
+});
+```
 </RequestExample>
 
 <ResponseExample>
-```json 200
+```json 200 Success
 {
   "session_id": "sess_123",
   "order_id": "ord_4a1b",
@@ -93,6 +111,18 @@ curl "https://sandbox.api.prava.space/v1/sessions/sess_123/payment-result" \
       ]
     }
   ]
+}
+```
+
+```json 401 Unauthorized
+{
+  "error": { "code": "AUTH_1002", "message": "Missing or invalid Authorization header" }
+}
+```
+
+```json 404 Not Found
+{
+  "error": { "code": "NOT_FOUND", "message": "Session not found" }
 }
 ```
 </ResponseExample>

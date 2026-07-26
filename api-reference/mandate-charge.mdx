@@ -2,6 +2,7 @@
 title: 'Charge a Mandate'
 description: 'Mint single-use card credentials against an active mandate — no passkey.'
 icon: 'bolt'
+tag: 'POST'
 ---
 
 Mint fresh single-use card credentials against an active mandate — **no passkey**. Merchant callers receive plaintext `credentials`; agent callers receive an `encrypted_payload` (credentials encrypted to the agent's public key).
@@ -70,10 +71,34 @@ curl -X POST https://sandbox.api.prava.space/v1/mandates/mdt_123/charge \
   -H "Content-Type: application/json" \
   -d '{ "amount": "40.00", "reference": "invoice_2026_07" }'
 ```
+
+```python Python
+import requests
+
+resp = requests.post(
+    "https://sandbox.api.prava.space/v1/mandates/mdt_123/charge",
+    headers={"Authorization": "Bearer sk_test_..."},
+    json={"amount": "40.00", "reference": "invoice_2026_07"},
+)
+```
+
+```javascript JavaScript
+const resp = await fetch("https://sandbox.api.prava.space/v1/mandates/mdt_123/charge", {
+  method: "POST",
+  headers: {
+    Authorization: "Bearer sk_test_...",
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    amount: "40.00",
+    reference: "invoice_2026_07",
+  }),
+});
+```
 </RequestExample>
 
 <ResponseExample>
-```json 200
+```json 200 Success
 {
   "mandateId": "mdt_123",
   "instructionId": "ins_1",
@@ -83,6 +108,18 @@ curl -X POST https://sandbox.api.prava.space/v1/mandates/mdt_123/charge \
   "fetchStatus": "SUCCESS",
   "credentials": { "token": "4111111111111111", "dynamicCvv": "123", "expiryMonth": "12", "expiryYear": "2030" },
   "deduplicated": false
+}
+```
+
+```json 403 Forbidden
+{
+  "error": { "code": "MANDATE_FORBIDDEN", "message": "Caller does not own this mandate" }
+}
+```
+
+```json 409 Mandate Not Active
+{
+  "error": { "code": "MANDATE_NOT_ACTIVE", "message": "Mandate is not active" }
 }
 ```
 </ResponseExample>

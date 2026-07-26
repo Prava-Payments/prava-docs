@@ -2,6 +2,7 @@
 title: 'Delete Card'
 description: "Delete a customer's enrolled card and retire its network token"
 icon: 'trash'
+tag: 'POST'
 ---
 
 Delete an enrolled card. Deletion also retires the card's network token (the tokenized stand-in for the card at the card network) where one exists.
@@ -44,10 +45,47 @@ curl -X POST https://sandbox.api.prava.space/v1/deleteCard \
   -H "Content-Type: application/json" \
   -d '{ "customer_id": "user_123", "card_id": "card_1", "reason": "CUSTOMER_CONFIRMED" }'
 ```
+
+```python Python
+import requests
+
+resp = requests.post(
+    "https://sandbox.api.prava.space/v1/deleteCard",
+    headers={"Authorization": "Bearer sk_test_..."},
+    json={"customer_id": "user_123", "card_id": "card_1", "reason": "CUSTOMER_CONFIRMED"},
+)
+```
+
+```javascript JavaScript
+const resp = await fetch("https://sandbox.api.prava.space/v1/deleteCard", {
+  method: "POST",
+  headers: {
+    Authorization: "Bearer sk_test_...",
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    customer_id: "user_123",
+    card_id: "card_1",
+    reason: "CUSTOMER_CONFIRMED",
+  }),
+});
+```
 </RequestExample>
 
 <ResponseExample>
-```json 200
+```json 200 Success
 { "success": true, "card_id": "card_1", "was_default": false, "network_token_deleted": true }
+```
+
+```json 400 Validation
+{
+  "error": { "code": "INVALID_REQUEST", "message": "Missing customer_id or card_id" }
+}
+```
+
+```json 404 Not Found
+{
+  "error": { "code": "NOT_FOUND", "message": "Card not found" }
+}
 ```
 </ResponseExample>

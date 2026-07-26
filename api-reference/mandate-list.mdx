@@ -2,6 +2,7 @@
 title: 'List Mandates'
 description: 'List the standing mandates on an account, with approved and remaining amounts.'
 icon: 'list'
+tag: 'GET'
 ---
 
 List the caller's mandates. Merchant keys pass `customer_id`; control-plane callers (dashboard) scope by `dashboard_user_id` (+ `agent_id`).
@@ -53,10 +54,31 @@ List the caller's mandates. Merchant keys pass `customer_id`; control-plane call
 curl "https://sandbox.api.prava.space/v1/mandates?customer_id=user_123&standing_only=true" \
   -H "Authorization: Bearer sk_test_..."
 ```
+
+```python Python
+import requests
+
+resp = requests.get(
+    "https://sandbox.api.prava.space/v1/mandates",
+    headers={"Authorization": "Bearer sk_test_..."},
+    params={"customer_id": "user_123", "standing_only": "true"},
+)
+```
+
+```javascript JavaScript
+const resp = await fetch(
+  "https://sandbox.api.prava.space/v1/mandates?customer_id=user_123&standing_only=true",
+  {
+    headers: {
+      Authorization: "Bearer sk_test_...",
+    },
+  }
+);
+```
 </RequestExample>
 
 <ResponseExample>
-```json 200
+```json 200 Success
 {
   "mandates": [
     {
@@ -76,6 +98,18 @@ curl "https://sandbox.api.prava.space/v1/mandates?customer_id=user_123&standing_
       "updatedAt": "2026-07-26T00:00:00Z"
     }
   ]
+}
+```
+
+```json 401 Unauthorized
+{
+  "error": { "code": "AUTH_REQUIRED", "message": "Missing or invalid credentials" }
+}
+```
+
+```json 403 Forbidden
+{
+  "error": { "code": "FORBIDDEN", "message": "Caller may not list these mandates" }
 }
 ```
 </ResponseExample>

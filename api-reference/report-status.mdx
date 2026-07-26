@@ -2,6 +2,7 @@
 title: 'Report Status'
 description: 'Report payment execution outcome back to Prava'
 icon: 'flag'
+tag: 'POST'
 ---
 
 Report the payment execution outcome back to Prava. Always report after you attempt the charge with the credentials — it updates transaction records and relays the outcome to the card network.
@@ -66,10 +67,53 @@ curl -X POST https://sandbox.api.prava.space/v1/sessions/sess_123/report-status 
   -H "Content-Type: application/json" \
   -d '{ "txn_ref_id": "tli_1", "txn_status": "APPROVED", "authorization_code": "OK123", "response_code": "00" }'
 ```
+
+```python Python
+import requests
+
+resp = requests.post(
+    "https://sandbox.api.prava.space/v1/sessions/sess_123/report-status",
+    headers={"Authorization": "Bearer sk_test_..."},
+    json={
+        "txn_ref_id": "tli_1",
+        "txn_status": "APPROVED",
+        "authorization_code": "OK123",
+        "response_code": "00",
+    },
+)
+```
+
+```javascript JavaScript
+const resp = await fetch("https://sandbox.api.prava.space/v1/sessions/sess_123/report-status", {
+  method: "POST",
+  headers: {
+    Authorization: "Bearer sk_test_...",
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    txn_ref_id: "tli_1",
+    txn_status: "APPROVED",
+    authorization_code: "OK123",
+    response_code: "00",
+  }),
+});
+```
 </RequestExample>
 
 <ResponseExample>
-```json 200
+```json 200 Success
 { "status": "confirmed", "txn_ref_id": "tli_1", "txn_status": "APPROVED", "visa_confirmation": "SUCCESS" }
+```
+
+```json 400 Invalid State
+{
+  "error": { "code": "INVALID_STATE", "message": "No transaction awaiting payment result" }
+}
+```
+
+```json 404 Not Found
+{
+  "error": { "code": "NOT_FOUND", "message": "Session or txn_ref_id not found" }
+}
 ```
 </ResponseExample>

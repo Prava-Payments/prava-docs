@@ -2,6 +2,7 @@
 title: 'Report a Mandate Charge'
 description: 'Settle a mandate charge outcome (APPROVED / DECLINED) with the card network.'
 icon: 'clipboard-check'
+tag: 'POST'
 ---
 
 Reconcile a mandate charge outcome and settle it with the card network. Call this after checking out with the credentials from [Charge a Mandate](/api-reference/mandate-charge).
@@ -53,10 +54,46 @@ curl -X POST https://sandbox.api.prava.space/v1/mandates/mdt_123/charges/txn_9/r
   -H "Content-Type: application/json" \
   -d '{ "txn_status": "APPROVED", "txn_type": "PURCHASE", "authorization_code": "OK123", "response_code": "00", "amount_paid": "40.00" }'
 ```
+
+```python Python
+import requests
+
+resp = requests.post(
+    "https://sandbox.api.prava.space/v1/mandates/mdt_123/charges/txn_9/report",
+    headers={"Authorization": "Bearer sk_test_..."},
+    json={
+        "txn_status": "APPROVED",
+        "txn_type": "PURCHASE",
+        "authorization_code": "OK123",
+        "response_code": "00",
+        "amount_paid": "40.00",
+    },
+)
+```
+
+```javascript JavaScript
+const resp = await fetch(
+  "https://sandbox.api.prava.space/v1/mandates/mdt_123/charges/txn_9/report",
+  {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer sk_test_...",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      txn_status: "APPROVED",
+      txn_type: "PURCHASE",
+      authorization_code: "OK123",
+      response_code: "00",
+      amount_paid: "40.00",
+    }),
+  }
+);
+```
 </RequestExample>
 
 <ResponseExample>
-```json 200
+```json 200 Success
 {
   "mandateId": "mdt_123",
   "transactionId": "txn_9",
@@ -64,6 +101,18 @@ curl -X POST https://sandbox.api.prava.space/v1/mandates/mdt_123/charges/txn_9/r
   "status": "completed",
   "mandateStatus": "active",
   "visaConfirmation": "SUCCESS"
+}
+```
+
+```json 404 Not Found
+{
+  "error": { "code": "CHARGE_NOT_FOUND", "message": "Charge not found" }
+}
+```
+
+```json 409 Not Reportable
+{
+  "error": { "code": "CHARGE_NOT_REPORTABLE", "message": "Charge is not in a reportable state" }
 }
 ```
 </ResponseExample>
