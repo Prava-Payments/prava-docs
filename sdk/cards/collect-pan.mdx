@@ -21,11 +21,14 @@ prava.collectPAN(options: CollectPANOptions): Promise<CollectPANResult>
 
   <Expandable title="properties">
     <ParamField path="sessionToken" type="string" required>
-      Session token obtained from your backend
+      The `session_token` (JWT) from your backend session response — it authenticates in-session SDK
+      calls. Note: the session identifier the iframe loads is already embedded in `iframe_url`
+      (`?session=<session_id>`); you never build that URL yourself.
     </ParamField>
 
     <ParamField path="iframeUrl" type="string" required>
-      Iframe URL from your backend session response
+      The `iframe_url` from your backend session response — pass it **verbatim**. It already contains
+      the `?session=<session_id>` identifier; do not rebuild it or add your own query params.
     </ParamField>
 
     <ParamField path="container" type="string | HTMLElement" required>
@@ -255,6 +258,7 @@ onChange: (state) => {
 | `SDK_ALREADY_ACTIVE` | `collectPAN` called while another collection is in progress | Call `destroy()` first |
 | `INVALID_CONFIG` | Missing `iframeUrl` (or a bad `publishableKey`) | Pass the `iframe_url` from your backend session response |
 | `IFRAME_LOAD_ERROR` | Iframe failed to load | Check network, verify `iframeUrl` |
+| `Session preview failed: 404` | The `?session=` value isn't a valid `session_id` (e.g. the `session_token`/JWT was passed instead) | Pass `iframe_url` verbatim; don't set your own `session`/`session_token` param; verify sandbox vs prod host |
 | `SDK_INIT_ERROR` | SDK initialization failed | Verify browser compatibility and config |
 
 ## Security Notes

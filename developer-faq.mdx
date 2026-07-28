@@ -38,6 +38,12 @@ approval (Touch ID / Face ID) on the Prava surface. Confirm they opened the `ifr
 response, and that your page's domain is in **allowed domains** in the dashboard; other origins are
 rejected.
 
+**`Session preview failed: 404`.** The `?session=` value in the iframe URL isn't a valid `session_id`.
+Two causes: (a) you rebuilt the URL and passed the `session_token` (JWT) instead of using `iframe_url`
+verbatim — the identifier in `?session=` must be the `session_id` (`sess_…`); (b) environment mismatch,
+e.g. a **sandbox** session opened on the **prod** collect host (or vice-versa). This is **not** a
+domain-allowlist problem — a disallowed origin returns `403`, not `404`.
+
 **Can I style the card form?** The card fields live inside Prava's PCI-scoped iframe and aren't
 arbitrarily styleable from your page. Position and size the container; the iframe handles the rest.
 

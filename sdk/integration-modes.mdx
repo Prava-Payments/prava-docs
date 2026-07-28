@@ -37,6 +37,13 @@ one field, `integration_type`, on the session.
 
 Both modes use the **same session** and the **same `iframe_url`** — embed it, or open it directly.
 
+<Warning>
+  **Use `iframe_url` exactly as returned.** It already carries the `?session=` identifier. Don't
+  rebuild the URL or add your own `session` / `session_token` query params — the value in `?session=`
+  must be the **`session_id`** (`sess_…`), never the `session_token` (the JWT). Passing the token there
+  makes the iframe report `Session preview failed: 404`.
+</Warning>
+
 ## Embedded mode
 
 Create the session with `integration_type: "embedding"`, then mount the card UI with the SDK.
@@ -82,10 +89,9 @@ const session = await createSession({
   callback_url: 'https://yourapp.com/checkout/complete', // must be https
 });
 
-// 2. Frontend: send the user to the hosted page
-const url = new URL(session.iframe_url);
-url.searchParams.set('session_token', session.session_token);
-window.location.href = url.toString(); // or window.open(url, '_blank')
+// 2. Frontend: send the user to the hosted page.
+// iframe_url already contains ?session=<session_id> — use it verbatim.
+window.location.href = session.iframe_url; // or window.open(session.iframe_url, '_blank')
 ```
 
 When the cardholder finishes, Prava redirects them back to your `callback_url`. Your backend then reads
