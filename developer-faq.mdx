@@ -28,6 +28,11 @@ when the user is ready to pay; once expired, create a new one rather than reusin
 **Can I create multiple sessions per user?** Technically yes, but create one per checkout flow and
 complete or [revoke](/api-reference/revoke-session) it before starting another.
 
+**Does the session `currency` have to match the card's country?** No. `currency` is your pricing
+currency and is independent of where the card was issued — a US-issued card can pay an INR-denominated
+session, and the network settles the conversion. `country_code_iso2` on the session is the
+**merchant's** location, not the cardholder's. Price in your own currency; no re-denomination needed.
+
 **`payment-result` stays `pending` forever.** The cardholder hasn't completed card entry + passkey
 approval (Touch ID / Face ID) on the Prava surface. Confirm they opened the `iframe_url` (hosted) or that
 [`collectPAN`](/sdk/cards/collect-pan) mounted without errors (embedded).

@@ -106,7 +106,7 @@ function CardEnrollment({ session }: { session: { session_token: string; iframe_
   const [enrolled, setEnrolled] = useState<CollectPANResult | null>(null);
 
   useEffect(() => {
-    const sdk = new PravaSDK({ publishableKey: 'pk_live_xxx' });
+    const sdk = new PravaSDK({ publishableKey: 'pk_test_xxx' });
     sdkRef.current = sdk;
     return () => sdk.destroy();
   }, []);
@@ -143,7 +143,7 @@ function CardEnrollment({ session }: { session: { session_token: string; iframe_
 ```typescript Vanilla JavaScript
 import { PravaSDK } from '@prava-sdk/core';
 
-const prava = new PravaSDK({ publishableKey: 'pk_live_xxx' });
+const prava = new PravaSDK({ publishableKey: 'pk_test_xxx' });
 
 // Get session from your backend
 const session = await fetch('/api/session').then(r => r.json());

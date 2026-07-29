@@ -60,6 +60,13 @@ approve with a **passkey** (Touch ID / Face ID); Prava then redirects them to yo
 code, no card data anywhere near you.
 
 <Note>
+  On a **new browser/device** the cardholder is first asked for an **issuer OTP** (one-time code) and
+  then to **register a passkey** — in that order (this is device binding). On a **returning** browser
+  they just verify their existing passkey, with no OTP. In sandbox the test OTP is `456789`. Full
+  sequence: [Anatomy of a Checkout](/concepts/checkout-flow).
+</Note>
+
+<Note>
   Behind the scenes Prava runs authentication, mandate registration (recording the cardholder's
   permission to pay), and tokenization (swapping the real card for one-time credentials):
   [what Prava does for you](/concepts/payments#what-prava-does-for-you-in-the-middle).

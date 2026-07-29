@@ -64,7 +64,7 @@ pnpm add @prava-sdk/core
 import { PravaSDK } from '@prava-sdk/core';
 
 const prava = new PravaSDK({
-  publishableKey: 'pk_live_xxx', // from the Prava Dashboard
+  publishableKey: 'pk_test_xxx', // from the Prava Dashboard (sandbox key)
 });
 ```
 
@@ -78,7 +78,7 @@ to your frontend:
 
 ```typescript
 // Server-side (never expose your secret key to the browser)
-const session = await fetch('https://api.prava.space/v1/sessions', {
+const session = await fetch('https://sandbox.api.prava.space/v1/sessions', {
   method: 'POST',
   headers: {
     Authorization: `Bearer ${SECRET_KEY}`,

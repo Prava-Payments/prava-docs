@@ -40,6 +40,8 @@ Create a short-lived, single-use session tied to one merchant, customer, and ord
 
 <ParamField body="currency" type="string" required>
   ISO 4217 code — 3 uppercase letters — and must be a **supported currency**. Supported: USD, EUR, GBP, INR, CAD, AUD, JPY, SGD, AED, HKD, MXN, BRL, CHF, CNY, NZD, SEK, NOK, DKK, ZAR, THB, KRW, PLN, TWD, PHP, IDR, MYR, CZK, ILS, CLP, ARS, COP, PEN, SAR, QAR, KWD, BHD, OMR, EGP, NGN, KES, GHS, TZS, UGX, PKR, BDT, LKR, VND, MMK, NPR. Other codes are rejected.
+
+  This is your **pricing currency** and is independent of the card's issuing country: there is no requirement that it match `country_code_iso2` (the merchant's location) or the cardholder's country. A US-issued card can pay an INR-denominated session; the card network settles the cross-currency conversion. Price in whatever currency your product uses — you don't need to re-denominate.
 </ParamField>
 
 <ParamField body="purchase_context" type="object[]" required>

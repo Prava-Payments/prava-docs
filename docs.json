@@ -162,6 +162,7 @@
             "group": "Core Concepts",
             "pages": [
               "concepts/payments",
+              "concepts/checkout-flow",
               "concepts/mandates",
               "concepts/accounts",
               "concepts/guardrails",
