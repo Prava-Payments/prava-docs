@@ -33,10 +33,6 @@ You've completed the flow in sandbox ([tutorial](/guides/add-payments-to-your-ai
 
   Keys are environment-bound: a `sk_test_*` key against the production host fails with `AUTH_1001`.
 </Step>
-<Step title="Verify allowed domains">
-  Your production frontend domain(s) must be in **allowed domains** in the dashboard; the iframe and
-  session middleware reject other origins.
-</Step>
 <Step title="Lock down your secret key">
   `sk_live_*` lives only in server-side env/secret storage, never in client code, version control,
   or logs. Rotate immediately if exposed.
@@ -55,7 +51,6 @@ You've completed the flow in sandbox ([tutorial](/guides/add-payments-to-your-ai
 | One full sandbox payment reached `completed` | [Testing in Sandbox](/api-reference/testing) |
 | Production enabled + entity verified | dashboard.prava.space |
 | Live keys deployed server-side only | your infra |
-| Production domains allowlisted | dashboard.prava.space |
 | Declines and expiry handled + reported | your code |
 
 Questions at any step: [support@prava.space](mailto:support@prava.space). Include the
