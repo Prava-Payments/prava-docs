@@ -20,6 +20,12 @@ Create a short-lived, single-use session tied to one merchant, customer, and ord
   </Tab>
 </Tabs>
 
+## Mandate setup
+
+**Mandate creation is part of the Session APIs — this endpoint is how mandates are created.** Send a `mandate_setup` block (see [Body](#body)) with `intent: "mandate_setup"` and the session becomes authorize-only: the response carries an `iframe_url` where the owner approves **once** with their passkey, `authorizeOnly: true`, and no credentials. Once the mandate is `active`, charge it any time with [Charge a Mandate](/api-reference/mandate-charge) — no further passkey needed.
+
+The `mandate_setup` field reference below covers `recurring_frequency`, `merchant_scope`, `max_charges`, and `valid_until`; see [Mandates](/concepts/mandates) for the concept and guardrails.
+
 <Note>
   **Choosing a card source.** Omit `card` to let the cardholder select or enter a card in the collection surface. Send `card.card_id` to pre-select an already-enrolled card, or `card.vault_ref_id` (a Skyflow UUID) for the vault-ref flow. Send **exactly one** — if both are present, `card_id` wins.
 </Note>

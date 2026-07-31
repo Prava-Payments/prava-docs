@@ -9,6 +9,8 @@ List the caller's mandates. Merchant keys pass `customer_id`; control-plane call
 
 `GET /v1/mandates` · Authenticated with your secret key.
 
+Need to **create** a mandate? Mandate creation is part of the Session APIs — [create a mandate](/api-reference/create-session#mandate-setup) with a `mandate_setup` block on Create Session.
+
 ## Query parameters
 
 <ParamField query="customer_id" type="string">Filter to one customer — the `external_user_id` (the `user_id` used at session creation) or a `cus_` id.</ParamField>

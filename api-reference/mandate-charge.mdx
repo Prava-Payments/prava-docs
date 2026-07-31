@@ -9,6 +9,8 @@ Mint fresh single-use card credentials against an active mandate — **no passke
 
 `POST /v1/mandates/{id}/charge` · Authenticated with your secret key (merchants) or Ed25519 signature (agents).
 
+Need to **create** a mandate first? Mandate creation is part of the Session APIs — [create a mandate](/api-reference/create-session#mandate-setup) with a `mandate_setup` block on Create Session.
+
 <Note>
   Charging is available to **merchants** (secret key) and **agents** (Ed25519
   signature). It is deliberately **not** exposed over [MCP](/mcp/tools#mandates).
