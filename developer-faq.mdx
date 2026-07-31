@@ -25,6 +25,11 @@ see the [Quickstart](/quickstart). No invite or waiting.
 **How long does a session last?** 15 minutes (`expires_at` in the create response). Create sessions
 when the user is ready to pay; once expired, create a new one rather than reusing it.
 
+**The checkout page says "Authentication Failed" out of nowhere.** Check `expires_at` first — a
+session that expires mid-flow can surface as a generic authentication error instead of a
+"Session Expired" screen. If the session is past its 15 minutes, it isn't an auth problem:
+create a fresh session and retry before debugging keys or passkeys.
+
 **Can I create multiple sessions per user?** Technically yes, but create one per checkout flow and
 complete or [revoke](/api-reference/revoke-session) it before starting another.
 

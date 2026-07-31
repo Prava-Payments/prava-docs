@@ -56,7 +56,7 @@ export async function POST(req: Request) {
       currency: 'USD',
       integration_type: 'embedding',   // card UI inside your page
       purchase_context: [{
-        merchant_details: merchant,    // { name, url, country_code_iso2 }
+        merchant_details: merchant,    // destination merchant, not your app: { name, url, country_code_iso2 }
         product_details: items,        // [{ description, unit_price, quantity }]
       }],
     }),

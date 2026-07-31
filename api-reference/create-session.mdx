@@ -49,6 +49,9 @@ Create a short-lived, single-use session tied to one merchant, customer, and ord
 
   <Expandable title="purchase_context[] properties">
     <ParamField body="merchant_details" type="object" required>
+      The **destination merchant** — the business the cardholder is buying from, **not your
+      application**. The `name` renders as the header on the checkout page and is forwarded to
+      Visa as the merchant of record for the token.
       <Expandable title="merchant_details properties">
         <ParamField body="name" type="string" required>
           Merchant display name. Sanitized to a Visa-safe character set (e.g. `H&M` → `HM`); must contain at least one usable character.
