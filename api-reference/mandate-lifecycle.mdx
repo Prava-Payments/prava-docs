@@ -9,6 +9,8 @@ Three lifecycle actions change a mandate's status. Each is a `POST` to the manda
 
 `POST /v1/mandates/{id}/pause` · `/resume` · `/cancel` — control-plane operations.
 
+Need to **create** a mandate? Mandate creation is part of the Session APIs — [create a mandate](/api-reference/create-session#mandate-setup) with a `mandate_setup` block on Create Session.
+
 ## Endpoints
 
 | Action | Endpoint | Allowed from | Result |

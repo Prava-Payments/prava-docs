@@ -20,7 +20,9 @@ A mandate has two phases, and only the first involves the human.
 
 **Setup (once, with a passkey).** A mandate is created through a payment
 **session** carrying a `mandate_setup` block — there is no standalone create
-endpoint. The response is an approval URL; the owner opens it and confirms with
+endpoint. Over REST, that's
+[Create Session → Mandate setup](/api-reference/create-session#mandate-setup).
+The response is an approval URL; the owner opens it and confirms with
 their passkey. That single approval is the standing consent.
 
 **Charge (later, no passkey).** Against an active mandate, an agent mints fresh
@@ -89,5 +91,9 @@ single-use credential each charge produces.
 |---------|-----------|-----------|
 | **CLI** | Set up, charge, and settle mandates from an agent | [Mandates (CLI)](/prava-pay/mandates) |
 | **MCP** | Create, list, and manage mandates from an MCP client (no charging) | [Mandate tools](/mcp/tools#mandates) |
-| **REST API** | Server-side charge, reporting, and lifecycle management | [Charge a mandate](/api-reference/mandate-charge) |
+| **REST API** | Create (through session creation), charge, report, and manage server-side | [Create a mandate](/api-reference/create-session#mandate-setup) · [Charge a mandate](/api-reference/mandate-charge) |
 | **Dashboard** | View mandates, spend, and charge history; pause / resume / cancel | [pay.prava.space](https://pay.prava.space) |
+
+Over REST, mandate creation is part of the Session APIs — create one through
+[Create Session](/api-reference/create-session#mandate-setup) with a
+`mandate_setup` block.

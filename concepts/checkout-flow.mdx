@@ -44,6 +44,12 @@ What the cardholder sees between "enter card" and "credential issued" depends on
 browser/device has been used with this card before**. A passkey (WebAuthn / FIDO — Touch ID, Face ID)
 is always the final gate; the one-time OTP only appears the first time.
 
+<Info>
+  Passkey registration and verification happen on **Card Network's own hosted page**. The cardholder authenticates with Card Network directly;
+  neither you nor Prava render that page. Expect the hand-off — seeing Card Network's domain is what makes
+  the approval verifiable rather than claimed.
+</Info>
+
 **Returning browser/device.** A passkey is already bound to this browser for this card, so the
 cardholder just **verifies with the existing passkey** — one biometric prompt, no OTP. This is the
 common case on repeat purchases.

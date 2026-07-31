@@ -9,6 +9,8 @@ Retrieve one mandate with its derived balance and full charge history.
 
 `GET /v1/mandates/{id}` · Authenticated with your secret key.
 
+Need to **create** a mandate? Mandate creation is part of the Session APIs — [create a mandate](/api-reference/create-session#mandate-setup) with a `mandate_setup` block on Create Session.
+
 ## Path parameters
 
 <ParamField path="id" type="string" required>The mandate id.</ParamField>
