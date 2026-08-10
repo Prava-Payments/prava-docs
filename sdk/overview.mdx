@@ -89,10 +89,12 @@ const session = await fetch('https://sandbox.api.prava.space/v1/sessions', {
     user_email: 'user@example.com',
     total_amount: '49.99',
     currency: 'USD',
-    purchase_context: [{
-      merchant_details: { name: 'Amazon', url: 'https://amazon.com', country_code_iso2: 'US' },
-      product_details: [{ description: 'Wireless Headphones', unit_price: '49.99', quantity: 1 }],
-    }],
+    purchase_context: {
+      custom: [{
+        merchant_details: { name: 'Amazon', url: 'https://amazon.com', country_code_iso2: 'US' },
+        product_details: [{ description: 'Wireless Headphones', unit_price: '49.99', quantity: 1 }],
+      }],
+    },
   }),
 }).then((r) => r.json());
 // → { session_id, session_token, iframe_url, expires_at, order_id }
