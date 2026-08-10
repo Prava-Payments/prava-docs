@@ -752,8 +752,8 @@
           "reference": { "type": "string", "description": "Idempotency key. The same mandate id + reference returns the original charge." },
           "purchase_context": {
             "type": "array",
-            "description": "Optional per-charge product details.",
-            "items": { "type": "object" }
+            "description": "Optional per-charge product details — same shape as purchase_context.custom in Create Session.",
+            "items": { "$ref": "#/components/schemas/CustomPurchaseContext" }
           }
         }
       },
@@ -853,13 +853,7 @@
             "description": "ISO 4217 currency code \u2014 exactly 3 uppercase letters, and one of Prava's supported currencies (e.g. USD, EUR, GBP, INR) - other codes are rejected"
           },
           "purchase_context": {
-            "type": "array",
-            "minItems": 1,
-            "maxItems": 1,
-            "description": "Exactly one purchase context object. Multi-merchant sessions are not currently supported.",
-            "items": {
-              "$ref": "#/components/schemas/PurchaseContext"
-            }
+            "$ref": "#/components/schemas/PurchaseContext"
           },
           "user_phone": {
             "type": "string",
@@ -940,6 +934,30 @@
         }
       },
       "PurchaseContext": {
+        "type": "object",
+        "description": "What is being bought. Two modes — send exactly one: quote: true + quote_id (session built from an existing quote), or custom (describe the merchant and products yourself).",
+        "properties": {
+          "quote": {
+            "type": "boolean",
+            "default": false,
+            "description": "true = build the session from an existing quote; pass quote_id and nothing else. false/omitted = describe the purchase in custom."
+          },
+          "quote_id": {
+            "type": "string",
+            "description": "Required when quote is true. The id of the quote from the shopping flow (checkout-session-id, e.g. ches_...). Merchant and product details come from the quote."
+          },
+          "custom": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 1,
+            "description": "Required when quote is not true. Exactly one entry — multi-merchant sessions are not currently supported.",
+            "items": {
+              "$ref": "#/components/schemas/CustomPurchaseContext"
+            }
+          }
+        }
+      },
+      "CustomPurchaseContext": {
         "type": "object",
         "required": [
           "merchant_details",

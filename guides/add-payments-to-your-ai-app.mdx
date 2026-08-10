@@ -55,10 +55,12 @@ export async function POST(req: Request) {
       total_amount: amount,            // e.g. "49.99"
       currency: 'USD',
       integration_type: 'embedding',   // card UI inside your page
-      purchase_context: [{
-        merchant_details: merchant,    // destination merchant, not your app: { name, url, country_code_iso2 }
-        product_details: items,        // [{ description, unit_price, quantity }]
-      }],
+      purchase_context: {
+        custom: [{
+          merchant_details: merchant,  // destination merchant, not your app: { name, url, country_code_iso2 }
+          product_details: items,      // [{ description, unit_price, quantity }]
+        }],
+      },
     }),
   });
 
@@ -93,10 +95,12 @@ app.post('/api/prava/session', async (req, res) => {
       total_amount: amount,
       currency: 'USD',
       integration_type: 'embedding',
-      purchase_context: [{
-        merchant_details: merchant,
-        product_details: items,
-      }],
+      purchase_context: {
+        custom: [{
+          merchant_details: merchant,
+          product_details: items,
+        }],
+      },
     }),
   });
 

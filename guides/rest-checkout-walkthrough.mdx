@@ -21,18 +21,20 @@ curl -X POST https://sandbox.api.prava.space/v1/sessions \
     "currency": "USD",
     "integration_type": "full_checkout",
     "callback_url": "https://yourapp.com/payment-done",
-    "purchase_context": [{
-      "merchant_details": {
-        "name": "Example Store",
-        "url": "https://examplestore.com",
-        "country_code_iso2": "US"
-      },
-      "product_details": [{
-        "description": "Wireless Headphones",
-        "unit_price": "49.99",
-        "quantity": 1
+    "purchase_context": {
+      "custom": [{
+        "merchant_details": {
+          "name": "Example Store",
+          "url": "https://examplestore.com",
+          "country_code_iso2": "US"
+        },
+        "product_details": [{
+          "description": "Wireless Headphones",
+          "unit_price": "49.99",
+          "quantity": 1
+        }]
       }]
-    }]
+    }
   }'
 ```
 
