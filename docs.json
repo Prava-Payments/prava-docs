@@ -144,7 +144,15 @@
               "api-reference/mandate-report",
               "api-reference/mandate-list",
               "api-reference/mandate-get",
-              "api-reference/mandate-lifecycle"
+              {
+                "group": "Mandate lifecycle",
+                "expanded": true,
+                "pages": [
+                  "api-reference/mandate-lifecycle",
+                  "api-reference/mandate-resume",
+                  "api-reference/mandate-cancel"
+                ]
+              }
             ]
           },
           {

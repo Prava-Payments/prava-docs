@@ -811,6 +811,7 @@
     },
     "schemas": {
       "MerchantProvisionOnlyEnrollCardRequest": {
+        "title": "Provision only",
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -852,6 +853,7 @@
         }
       },
       "MerchantFullEnrollCardRequest": {
+        "title": "Full enrollment",
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -907,6 +909,7 @@
         }
       },
       "MerchantProvisionOnlyEnrollCardResponse": {
+        "title": "Provision only",
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -920,6 +923,7 @@
         }
       },
       "MerchantFullEnrollCardResponse": {
+        "title": "Full enrollment",
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -1051,7 +1055,7 @@
           "agentId": { "type": "string" },
           "customerId": { "type": "string" },
           "externalUserId": { "type": "string" },
-          "state": { "type": "string", "enum": ["available", "consumed", "expired"], "description": "Display-derived usability." },
+          "state": { "type": "string", "enum": ["available", "consumed", "expired", "paused", "cancelled", "pending"], "description": "Display-derived usability." },
           "status": { "type": "string", "enum": ["pending", "active", "paused", "consumed", "cancelled", "expired"] },
           "recurringFrequency": { "type": "string", "enum": ["one_time", "weekly", "monthly", "yearly"] },
           "merchantScope": { "type": "string", "enum": ["any", "listed"] },
@@ -1105,10 +1109,12 @@
         "type": "object",
         "required": ["amount"],
         "properties": {
-          "amount": { "type": "string", "description": "Charge amount as a decimal string, e.g. \"40.00\". Must be within the mandate cap." },
-          "reference": { "type": "string", "description": "Idempotency key. The same mandate id + reference returns the original charge." },
+          "amount": { "type": "string", "pattern": "^\\d+(\\.\\d{1,2})?$", "description": "Charge amount as a decimal string, e.g. \"40.00\". Must be within the mandate cap." },
+          "reference": { "type": "string", "maxLength": 255, "description": "Idempotency key. The same mandate id + reference returns the original charge." },
           "purchase_context": {
             "type": "array",
+            "minItems": 1,
+            "maxItems": 1,
             "description": "Optional per-charge product details — same shape as purchase_context.custom in Create Session.",
             "items": { "$ref": "#/components/schemas/CustomPurchaseContext" }
           }
@@ -1150,13 +1156,13 @@
       },
       "MandateReportRequest": {
         "type": "object",
-        "required": ["txn_status", "txn_type"],
+        "required": ["txn_status"],
         "properties": {
           "txn_status": { "type": "string", "enum": ["APPROVED", "DECLINED"] },
-          "txn_type": { "type": "string", "enum": ["PURCHASE"] },
-          "authorization_code": { "type": "string" },
-          "response_code": { "type": "string" },
-          "amount_paid": { "type": "string" }
+          "txn_type": { "type": "string", "enum": ["PURCHASE"], "default": "PURCHASE" },
+          "authorization_code": { "type": "string", "maxLength": 128 },
+          "response_code": { "type": "string", "maxLength": 2 },
+          "amount_paid": { "type": "string", "pattern": "^\\d+(\\.\\d{1,2})?$" }
         }
       },
       "Error": {
@@ -1183,6 +1189,7 @@
       },
       "CreateSessionRequest": {
         "type": "object",
+        "additionalProperties": false,
         "required": [
           "user_id",
           "user_email",
@@ -1193,20 +1200,27 @@
         "properties": {
           "user_id": {
             "type": "string",
+            "minLength": 1,
             "maxLength": 255,
             "description": "Unique identifier for the customer in your system"
           },
           "user_email": {
             "type": "string",
             "format": "email",
+            "maxLength": 320,
             "description": "Customer's email address"
           },
           "total_amount": {
             "type": "string",
+            "minLength": 1,
+            "pattern": "^\\d+(\\.\\d{1,2})?$",
             "description": "Total order amount in decimal format (e.g. \"49.99\")"
           },
           "currency": {
             "type": "string",
+            "minLength": 3,
+            "maxLength": 3,
+            "pattern": "^[A-Z]{3}$",
             "description": "ISO 4217 currency code \u2014 exactly 3 uppercase letters, and one of Prava's supported currencies (e.g. USD, EUR, GBP, INR) - other codes are rejected"
           },
           "purchase_context": {
@@ -1218,6 +1232,9 @@
           },
           "user_country_code_iso2": {
             "type": "string",
+            "minLength": 2,
+            "maxLength": 2,
+            "pattern": "^[A-Z]{2}$",
             "description": "Customer's country \u2014 2 uppercase ISO 3166-1 letters"
           },
           "external_order_ref": {
@@ -1240,6 +1257,8 @@
           },
           "callback_url": {
             "type": "string",
+            "format": "uri",
+            "pattern": "^https://",
             "maxLength": 2048,
             "description": "For hosted checkout: the https URL Prava redirects the cardholder to after they finish. Optional for all integration types."
           },
@@ -1249,6 +1268,7 @@
             "properties": {
               "card_id": {
                 "type": "string",
+                "minLength": 1,
                 "description": "An existing enrolled card ID"
               },
               "vault_ref_id": {
@@ -1283,6 +1303,7 @@
               },
               "max_charges": {
                 "type": "integer",
+                "minimum": 1,
                 "default": 1,
                 "description": "Positive integer; per-charge cap is network-enforced."
               }
@@ -1291,28 +1312,54 @@
         }
       },
       "PurchaseContext": {
-        "type": "object",
         "description": "What is being bought. Two modes — send exactly one: quote: true + quote_id (session built from an existing quote), or custom (describe the merchant and products yourself).",
-        "properties": {
-          "quote": {
-            "type": "boolean",
-            "default": false,
-            "description": "true = build the session from an existing quote; pass quote_id and nothing else. false/omitted = describe the purchase in custom."
+        "oneOf": [
+          {
+            "title": "Custom checkout",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "custom"
+            ],
+            "properties": {
+              "quote": {
+                "type": "boolean",
+                "const": false,
+                "description": "Omit or set to false when describing the purchase in custom."
+              },
+              "custom": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 1,
+                "description": "Exactly one entry — multi-merchant sessions are not currently supported.",
+                "items": {
+                  "$ref": "#/components/schemas/CustomPurchaseContext"
+                }
+              }
+            }
           },
-          "quote_id": {
-            "type": "string",
-            "description": "Required when quote is true. The opaque public quote ID returned by quote creation (for example, qte_...). Do not send a merchant checkout-session ID. Merchant and product details come from the quote."
-          },
-          "custom": {
-            "type": "array",
-            "minItems": 1,
-            "maxItems": 1,
-            "description": "Required when quote is not true. Exactly one entry — multi-merchant sessions are not currently supported.",
-            "items": {
-              "$ref": "#/components/schemas/CustomPurchaseContext"
+          {
+            "title": "Quote checkout",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "quote",
+              "quote_id"
+            ],
+            "properties": {
+              "quote": {
+                "type": "boolean",
+                "const": true,
+                "description": "Build the session from an existing quote."
+              },
+              "quote_id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The opaque public quote ID returned by quote creation (for example, qte_...). Do not send a merchant checkout-session ID. Merchant and product details come from the quote."
+              }
             }
           }
-        }
+        ]
       },
       "CustomPurchaseContext": {
         "type": "object",
@@ -1331,14 +1378,20 @@
             "properties": {
               "name": {
                 "type": "string",
+                "minLength": 1,
                 "description": "Merchant display name"
               },
               "url": {
                 "type": "string",
+                "format": "uri",
+                "pattern": "^https://",
                 "description": "Merchant website URL. Must use https - the URL is forwarded to Visa."
               },
               "country_code_iso2": {
                 "type": "string",
+                "minLength": 2,
+                "maxLength": 2,
+                "pattern": "^[A-Z]{2}$",
                 "description": "Two uppercase ISO 3166-1 country code (e.g. \"US\")"
               },
               "category_code": {
@@ -1365,10 +1418,12 @@
               "properties": {
                 "description": {
                   "type": "string",
+                  "minLength": 1,
                   "description": "Product description"
                 },
                 "unit_price": {
                   "type": "string",
+                  "minLength": 1,
                   "description": "Unit price as a string (no fixed decimal format enforced)"
                 },
                 "product_id": {
@@ -1378,6 +1433,7 @@
                 },
                 "quantity": {
                   "type": "integer",
+                  "minimum": 1,
                   "default": 1,
                   "description": "Quantity of this product"
                 }
@@ -1386,6 +1442,7 @@
           },
           "effective_until_minutes": {
             "type": "integer",
+            "minimum": 1,
             "default": 15,
             "description": "How long the mandate remains effective, in minutes. Positive integer, no maximum."
           }
@@ -1739,6 +1796,20 @@
               "type": "object",
               "required": [
                 "status"
+              ],
+              "anyOf": [
+                {
+                  "title": "By merchant product ID",
+                  "required": [
+                    "product_id"
+                  ]
+                },
+                {
+                  "title": "By Prava product reference",
+                  "required": [
+                    "product_ref_id"
+                  ]
+                }
               ],
               "properties": {
                 "product_id": {

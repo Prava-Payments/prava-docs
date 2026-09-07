@@ -2,7 +2,8 @@
 title: 'Enroll Card'
 description: 'Provision a card only, or run the complete card-and-passkey enrollment flow without creating a payment.'
 icon: 'credit-card'
-api: 'POST /v1/sessions/enroll-card'
+openapi: '/api-reference/openapi.json POST /v1/sessions/enroll-card'
+playground: 'interactive'
 ---
 
 Register a card for a merchant-scoped customer without creating an order, transaction, mandate, cryptogram, or payment credential.
@@ -47,7 +48,7 @@ curl -X POST https://sandbox.api.prava.space/v1/sessions/enroll-card \
   }'
 ```
 
-```bash Embedded + card
+```bash Embedded + card entry
 curl -X POST https://sandbox.api.prava.space/v1/sessions/enroll-card \
   -H "Authorization: Bearer sk_test_..." \
   -H "Content-Type: application/json" \
@@ -60,7 +61,7 @@ curl -X POST https://sandbox.api.prava.space/v1/sessions/enroll-card \
   }'
 ```
 
-```bash Embedded + vault
+```bash Embedded + vault reference
 curl -X POST https://sandbox.api.prava.space/v1/sessions/enroll-card \
   -H "Authorization: Bearer sk_test_..." \
   -H "Content-Type: application/json" \
@@ -74,7 +75,7 @@ curl -X POST https://sandbox.api.prava.space/v1/sessions/enroll-card \
   }'
 ```
 
-```bash Hosted + card
+```bash Hosted + card entry
 curl -X POST https://sandbox.api.prava.space/v1/sessions/enroll-card \
   -H "Authorization: Bearer sk_test_..." \
   -H "Content-Type: application/json" \
@@ -88,7 +89,7 @@ curl -X POST https://sandbox.api.prava.space/v1/sessions/enroll-card \
   }'
 ```
 
-```bash Hosted + vault
+```bash Hosted + vault reference
 curl -X POST https://sandbox.api.prava.space/v1/sessions/enroll-card \
   -H "Authorization: Bearer sk_test_..." \
   -H "Content-Type: application/json" \

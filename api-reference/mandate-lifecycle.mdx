@@ -1,24 +1,16 @@
 ---
-title: 'Pause, Resume & Cancel'
-description: 'Lifecycle actions for a mandate — suspend, reactivate, or revoke.'
+title: 'Pause a Mandate'
+description: 'Suspend future charges on an active mandate.'
 icon: 'sliders'
-api: 'POST /v1/mandates/{id}/pause'
+openapi: '/api-reference/openapi.json POST /v1/mandates/{id}/pause'
 playground: 'interactive'
 ---
 
-Three lifecycle actions change a mandate's status. Each is a `POST` to the mandate by id, takes no body (dashboard callers pass `dashboard_user_id`), and returns the updated [mandate](/api-reference/mandate-list).
+Pause an active mandate so no new charges can be created until it is resumed. The request takes no body and returns the updated [mandate](/api-reference/mandate-list).
 
-`POST /v1/mandates/{id}/pause` · `/resume` · `/cancel` — control-plane operations.
+`POST /v1/mandates/{id}/pause`
 
 Need to **create** a mandate? Mandate creation is part of the Session APIs — [create a mandate](/api-reference/create-session#mandate-setup) with a `mandate_setup` block on Create Session.
-
-## Endpoints
-
-| Action | Endpoint | Allowed from | Result |
-|--------|----------|--------------|--------|
-| **Pause** | `POST /v1/mandates/{id}/pause` | `active` | `paused` — no charges until resumed |
-| **Resume** | `POST /v1/mandates/{id}/resume` | `paused` | `active` |
-| **Cancel** | `POST /v1/mandates/{id}/cancel` | `active`, `paused` | `cancelled` (terminal) — stops all future charges |
 
 ## Path parameters
 
@@ -30,10 +22,9 @@ Returns the updated mandate object (see [List Mandates](/api-reference/mandate-l
 
 ## Notes
 
-- Legal transitions only: pause from `active`, resume from `paused`, cancel from `active` or `paused`. Any other transition returns `409 MANDATE_INVALID_TRANSITION`.
-- `cancel` is terminal and local to Prava — it revokes the authorization so no further charges can be minted. **Past charges are unaffected.**
+- Only an `active` mandate can be paused. Any other transition returns `409 MANDATE_INVALID_TRANSITION`.
 - Only the mandate's owner can act on it — a mismatched caller gets `403 MANDATE_FORBIDDEN`.
-- The same actions are available to owners in the dashboard at [pay.prava.space](https://pay.prava.space) and to agents via [`prava mandate cancel`](/prava-pay/mandates#prava-mandate-cancel) / the [MCP tools](/mcp/tools#mandates).
+- To reactivate or permanently stop the mandate, use [Resume a Mandate](/api-reference/mandate-resume) or [Cancel a Mandate](/api-reference/mandate-cancel).
 
 ## Error responses
 
@@ -43,18 +34,8 @@ Returns the updated mandate object (see [List Mandates](/api-reference/mandate-l
 | 409 | `MANDATE_INVALID_TRANSITION` | The mandate's current status forbids this action |
 
 <RequestExample>
-```bash Pause
+```bash cURL
 curl -X POST https://sandbox.api.prava.space/v1/mandates/mdt_123/pause \
-  -H "Authorization: Bearer sk_test_..."
-```
-
-```bash Resume
-curl -X POST https://sandbox.api.prava.space/v1/mandates/mdt_123/resume \
-  -H "Authorization: Bearer sk_test_..."
-```
-
-```bash Cancel
-curl -X POST https://sandbox.api.prava.space/v1/mandates/mdt_123/cancel \
   -H "Authorization: Bearer sk_test_..."
 ```
 
@@ -79,7 +60,7 @@ const resp = await fetch("https://sandbox.api.prava.space/v1/mandates/mdt_123/pa
 
 <ResponseExample>
 ```json 200 Success
-{ "id": "mdt_123", "status": "paused", "state": "available", "merchantScope": "listed", "approvedAmount": "40.00", "currency": "USD" }
+{ "id": "mdt_123", "status": "paused", "state": "paused", "merchantScope": "listed", "approvedAmount": "40.00", "currency": "USD" }
 ```
 
 ```json 403 Forbidden
