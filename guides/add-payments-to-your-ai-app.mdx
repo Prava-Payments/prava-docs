@@ -209,8 +209,10 @@ async function getCredentials(sessionId: string) {
 
   if (result.status !== 'awaiting_result') return null; // keep polling ('pending')
 
-  const li = result.transactions[0].line_items[0];
+  const transaction = result.transactions[0];
+  const li = transaction.line_items[0];
   return {
+    cardId: transaction.card_id, // source-of-truth card bound to this transaction
     txnRefId: li.txn_ref_id,
     cardNumber: li.token,        // one-time virtual card number
     cvv: li.dynamic_cvv,         // single-use CVV

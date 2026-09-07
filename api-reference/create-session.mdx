@@ -29,6 +29,8 @@ The `mandate_setup` field reference below covers `recurring_frequency`, `merchan
 
 <Note>
   **Choosing a card source.** Omit `card` to let the cardholder select or enter a card in the collection surface. Send `card.card_id` to pre-select an already-enrolled card, or `card.vault_ref_id` (a Skyflow UUID) for the vault-ref flow. Send **exactly one** — if both are present, `card_id` wins.
+  After collection, [Get Payment Result](/api-reference/get-payment-result) returns the card bound to
+  each transaction as `transactions[].card_id`.
 </Note>
 
 ## Body
@@ -54,8 +56,8 @@ The `mandate_setup` field reference below covers `recurring_frequency`, `merchan
 <ParamField body="purchase_context" type="object" required>
   What is being bought. Two modes — pick **one**:
 
-  - **From a quote** — send `quote: true` and a `quote_id`. Merchant and product details come from the
-    /quote endpoint, so nothing else is needed.
+  - **From a quote** — send `quote: true` and the opaque `quote_id` (`qte_…`) returned when the quote
+    was created. Merchant and product details come from that quote, so nothing else is needed.
   - **Custom** — omit `quote` (or send `false`) and describe the merchant and products yourself in `custom`.
 
   <Expandable title="purchase_context properties">
@@ -66,9 +68,9 @@ The `mandate_setup` field reference below covers `recurring_frequency`, `merchan
     </ParamField>
 
     <ParamField body="quote_id" type="string">
-      **Required when `quote` is `true`.** The id of the quote from the
-      [shopping flow](/prava-pay/shopping) (`checkout-session-id`, e.g. `ches_…`). The quote carries the
-      merchant, products, and locked price — note that quotes expire (~15 minutes).
+      **Required when `quote` is `true`.** The opaque public quote id returned by quote creation
+      (for example, `qte_…`). The quote carries the merchant, products, and locked price and expires
+      after about 15 minutes. Do not send a merchant checkout-session id.
     </ParamField>
 
     <ParamField body="custom" type="object[]">
@@ -243,7 +245,7 @@ curl -X POST https://sandbox.api.prava.space/v1/sessions \
     "currency": "USD",
     "purchase_context": {
       "quote": true,
-      "quote_id": "ches_9f2c..."
+      "quote_id": "qte_9f2c..."
     }
   }'
 ```

@@ -4,6 +4,15 @@ description: "What's new in Prava and these docs."
 icon: 'clock-rotate-left'
 ---
 
+<Update label="September 2026" description="Payment-result card identity and quote context">
+  **API**
+  - `GET /v1/sessions/{sessionId}/payment-result` now returns `transactions[].card_id`, the source
+    of truth for the card bound to the transaction whether preselected or chosen during collection.
+  - Quote-backed results return credential-free transaction summaries and expose merchant checkout
+    lifecycle context as `merchant_res`. Non-quote and no-order responses omit the lifecycle field.
+  - Quote integrations that previously read `shop_pay` must now read `merchant_res`.
+</Update>
+
 <Update label="July 2026" description="Prava MCP launch + docs revamp">
   **Prava MCP is live**
   - Connect any MCP client to `https://mcp.pay.prava.space/mcp` and your agent can pay and shop

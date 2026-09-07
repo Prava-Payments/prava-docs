@@ -186,7 +186,7 @@
     "/v1/sessions/{sessionId}/payment-result": {
       "get": {
         "summary": "Get Payment Result",
-        "description": "Retrieve payment credentials and transaction status for a session. This is a polling endpoint \u2014 call it after the user completes authentication to retrieve payment credentials.",
+        "description": "Retrieve transaction status, card identity, and payment credentials for a session. Non-quote checkouts return credentials after authentication; quote-backed checkouts return credential-free transaction summaries and merchant lifecycle context.",
         "operationId": "getPaymentResult",
         "parameters": [
           {
@@ -944,7 +944,7 @@
           },
           "quote_id": {
             "type": "string",
-            "description": "Required when quote is true. The id of the quote from the shopping flow (checkout-session-id, e.g. ches_...). Merchant and product details come from the quote."
+            "description": "Required when quote is true. The opaque public quote ID returned by quote creation (for example, qte_...). Do not send a merchant checkout-session ID. Merchant and product details come from the quote."
           },
           "custom": {
             "type": "array",
@@ -1138,6 +1138,12 @@
       },
       "PaymentResult": {
         "type": "object",
+        "required": [
+          "session_id",
+          "order_id",
+          "status",
+          "transactions"
+        ],
         "properties": {
           "session_id": {
             "type": "string"
@@ -1157,20 +1163,32 @@
               "completed",
               "failed"
             ],
-            "description": "Overall session status. `processing` = a transaction exists and is in flight (authenticating / tokenizing) but credentials are not yet available."
+            "description": "Overall session status. `processing` means the payment operation is still in flight: a non-quote checkout is authenticating or tokenizing, or a quote-backed merchant checkout has not reached a terminal outcome."
           },
           "transactions": {
             "type": "array",
             "items": {
               "type": "object",
+              "required": [
+                "txn_id",
+                "card_id",
+                "status"
+              ],
               "properties": {
                 "txn_id": {
                   "type": "string"
                 },
+                "card_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "The card bound to this transaction and the source of truth whether it was preselected or selected or entered on the collection surface. Null when no card is bound."
+                },
                 "status": {
                   "type": "string",
                   "enum": [
-                    "pending",
+                    "initiated",
                     "awaiting_result",
                     "completed",
                     "failed"
@@ -1178,6 +1196,7 @@
                 },
                 "line_items": {
                   "type": "array",
+                  "description": "Credential-bearing line items for non-quote checkouts. Omitted from quote-backed results.",
                   "items": {
                     "type": "object",
                     "properties": {
@@ -1201,21 +1220,27 @@
                         "type": "string"
                       },
                       "status": {
-                        "type": "string"
+                        "type": "string",
+                        "enum": [
+                          "pending",
+                          "credentials_generated",
+                          "completed",
+                          "failed"
+                        ]
                       },
                       "token": {
                         "type": [
                           "string",
                           "null"
                         ],
-                        "description": "Virtual card number (network token). Only present when status is awaiting_result."
+                        "description": "Virtual card number (network token). Non-null after credentials are generated."
                       },
                       "dynamic_cvv": {
                         "type": [
                           "string",
                           "null"
                         ],
-                        "description": "Single-use CVV. Only present when status is awaiting_result."
+                        "description": "Single-use CVV. Non-null after credentials are generated."
                       },
                       "expiry_month": {
                         "type": [
@@ -1270,6 +1295,43 @@
                     }
                   }
                 }
+              }
+            }
+          },
+          "merchant_res": {
+            "type": "object",
+            "description": "Merchant checkout lifecycle context. Present only for quote-backed sessions; omitted for non-quote sessions and before an order exists. Use the top-level status as the normalized payment outcome.",
+            "required": [
+              "status"
+            ],
+            "properties": {
+              "status": {
+                "type": "string",
+                "description": "Merchant lifecycle status. Examples include pending, prepared, paid, failed, prepare_failed, needs_human, and unknown."
+              },
+              "orderId": {
+                "type": "string",
+                "description": "Merchant checkout order ID, when available."
+              },
+              "code": {
+                "type": "string",
+                "description": "Safe merchant error code, when available."
+              },
+              "message": {
+                "type": "string",
+                "description": "Safe merchant error message, when available."
+              }
+            }
+          },
+          "error": {
+            "type": "object",
+            "description": "May be present when a quote-backed checkout fails.",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
               }
             }
           }

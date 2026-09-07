@@ -1,12 +1,12 @@
 ---
 title: 'Get Payment Result'
-description: 'Retrieve payment credentials and transaction status for a session'
+description: 'Retrieve transaction status, card identity, and payment credentials for a session'
 icon: 'receipt'
 api: 'GET /v1/sessions/{sessionId}/payment-result'
 playground: 'interactive'
 ---
 
-A polling endpoint: after the cardholder completes card entry and passkey approval on Prava's secure surface, poll it to read the outcome and, when ready, the single-use credentials.
+A polling endpoint: after the cardholder completes card entry and passkey approval on Prava's secure surface, poll it to read the outcome and, for non-quote checkouts, the single-use credentials.
 
 `GET /v1/sessions/{sessionId}/payment-result` · Authenticated with your secret key.
 
@@ -18,20 +18,21 @@ A polling endpoint: after the cardholder completes card entry and passkey approv
 
 <ResponseField name="session_id" type="string" />
 <ResponseField name="order_id" type="string | null" />
-<ResponseField name="status" type="string">Overall session status: `pending`, `awaiting_result`, `completed`, or `failed`.</ResponseField>
+<ResponseField name="status" type="string">Overall session status: `pending`, `processing`, `awaiting_result`, `completed`, or `failed`. `processing` means authentication or tokenization is in flight, or a quote-backed merchant checkout is not yet terminal.</ResponseField>
 <ResponseField name="transactions" type="object[]">
   <Expandable title="transaction properties">
     <ResponseField name="txn_id" type="string" />
-    <ResponseField name="status" type="string">`pending` | `awaiting_result` | `completed` | `failed`.</ResponseField>
-    <ResponseField name="line_items" type="object[]">
+    <ResponseField name="card_id" type="string | null">The card bound to this transaction—the source of truth whether it was preselected or selected or entered on the collection surface. `null` when no card is bound.</ResponseField>
+    <ResponseField name="status" type="string">`initiated` | `awaiting_result` | `completed` | `failed`.</ResponseField>
+    <ResponseField name="line_items" type="object[]">Omitted from credential-free quote-backed results.
       <Expandable title="line_item properties">
         <ResponseField name="txn_ref_id" type="string">Line-item reference — pass this to [Report Status](/api-reference/report-status).</ResponseField>
         <ResponseField name="merchant_name" type="string | null" />
         <ResponseField name="merchant_url" type="string | null" />
         <ResponseField name="total_amount" type="string" />
-        <ResponseField name="status" type="string" />
-        <ResponseField name="token" type="string | null">Virtual card number (network token) your agent uses at checkout. **Only present when `status` is `awaiting_result`.**</ResponseField>
-        <ResponseField name="dynamic_cvv" type="string | null">Single-use CVV. **Only present when `status` is `awaiting_result`.**</ResponseField>
+        <ResponseField name="status" type="string">`pending` | `credentials_generated` | `completed` | `failed`.</ResponseField>
+        <ResponseField name="token" type="string | null">Virtual card number (network token) your agent uses at checkout. Non-null after credentials are generated.</ResponseField>
+        <ResponseField name="dynamic_cvv" type="string | null">Single-use CVV. Non-null after credentials are generated.</ResponseField>
         <ResponseField name="expiry_month" type="string | null" />
         <ResponseField name="expiry_year" type="string | null" />
         <ResponseField name="products" type="object[]">
@@ -48,12 +49,26 @@ A polling endpoint: after the cardholder completes card entry and passkey approv
     <ResponseField name="error" type="object">Present only when the transaction failed: `{ code, message }`.</ResponseField>
   </Expandable>
 </ResponseField>
+<ResponseField name="merchant_res" type="object">
+  Present only for quote-backed checkout sessions. Reports the merchant checkout lifecycle.
+  <Expandable title="merchant_res properties">
+    <ResponseField name="status" type="string">Merchant lifecycle status. Examples include `pending`, `prepared`, `paid`, `failed`, `prepare_failed`, `needs_human`, and `unknown`.</ResponseField>
+    <ResponseField name="orderId" type="string">Merchant checkout order id, when available.</ResponseField>
+    <ResponseField name="code" type="string">Safe merchant error code, when available.</ResponseField>
+    <ResponseField name="message" type="string">Safe merchant error message, when available.</ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="error" type="object">May be present when a quote-backed checkout fails: `{ code, message }`.</ResponseField>
 
 ## Notes
 
-- The `token` and `dynamic_cvv` fields contain the virtual card credentials your agent uses at checkout.
+- For non-quote checkouts, `token` and `dynamic_cvv` contain the virtual card credentials your agent uses at checkout.
+- Read `transactions[].card_id` as the source of truth for the card bound to the transaction, whether it was preselected or chosen on the collection surface.
+- For quote-backed checkouts, Prava completes the merchant checkout. Results contain credential-free transaction summaries (`txn_id`, `card_id`, and `status`) and expose the checkout lifecycle as `merchant_res`; they never include token, CVV, expiry, or line-item credentials.
+- Use the top-level `status` as the normalized payment outcome. `merchant_res.status` provides lifecycle context and uses merchant terms such as `prepared` and `paid`.
+- `merchant_res` is omitted for non-quote sessions and before an order exists; it is not returned as `null`.
 - Prava performs a lazy mandate expiry check on every request — expired mandates are reflected in the status.
-- After using the credentials at checkout, report the outcome via [Report Status](/api-reference/report-status).
+- After using non-quote checkout credentials, report the outcome via [Report Status](/api-reference/report-status).
 
 ## Error responses
 
@@ -96,13 +111,14 @@ const resp = await fetch("https://sandbox.api.prava.space/v1/sessions/sess_123/p
   "transactions": [
     {
       "txn_id": "txn_1",
+      "card_id": "card_42",
       "status": "awaiting_result",
       "line_items": [
         {
           "txn_ref_id": "tli_1",
           "merchant_name": "Acme Store",
           "total_amount": "49.99",
-          "status": "awaiting_result",
+          "status": "credentials_generated",
           "token": "4111111111111111",
           "dynamic_cvv": "123",
           "expiry_month": "12",
@@ -112,6 +128,24 @@ const resp = await fetch("https://sandbox.api.prava.space/v1/sessions/sess_123/p
       ]
     }
   ]
+}
+```
+
+```json 200 Quote-backed
+{
+  "session_id": "sess_123",
+  "order_id": "ord_4a1b",
+  "status": "processing",
+  "transactions": [
+    {
+      "txn_id": "txn_1",
+      "card_id": "card_42",
+      "status": "awaiting_result"
+    }
+  ],
+  "merchant_res": {
+    "status": "prepared"
+  }
 }
 ```
 
