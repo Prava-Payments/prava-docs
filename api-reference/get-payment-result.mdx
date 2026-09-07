@@ -24,7 +24,8 @@ A polling endpoint: after the cardholder completes card entry and passkey approv
     <ResponseField name="txn_id" type="string" />
     <ResponseField name="card_id" type="string | null">The card bound to this transaction—the source of truth whether it was preselected or selected or entered on the collection surface. `null` when no card is bound.</ResponseField>
     <ResponseField name="status" type="string">`initiated` | `awaiting_result` | `completed` | `failed`.</ResponseField>
-    <ResponseField name="line_items" type="object[]">Omitted from credential-free quote-backed results.
+    <ResponseField name="line_items" type="object[]">
+      Omitted from credential-free quote-backed results.
       <Expandable title="line_item properties">
         <ResponseField name="txn_ref_id" type="string">Line-item reference — pass this to [Report Status](/api-reference/report-status).</ResponseField>
         <ResponseField name="merchant_name" type="string | null" />
