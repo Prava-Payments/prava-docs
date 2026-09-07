@@ -1322,6 +1322,11 @@
               "custom"
             ],
             "properties": {
+              "quote": {
+                "type": "boolean",
+                "const": false,
+                "description": "Omit or set to false when describing the purchase in custom."
+              },
               "custom": {
                 "type": "array",
                 "minItems": 1,
