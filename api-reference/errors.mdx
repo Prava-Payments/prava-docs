@@ -49,6 +49,21 @@ These can occur on **any** endpoint:
 | Status | Code | Cause | Recovery |
 |--------|------|-------|----------|
 | 404 | `NOT_FOUND` | Session not found, or it belongs to another merchant | Verify the session ID and which key created it |
+| 409 | `PAYMENT_RESULT_UNSUPPORTED` | The session is an enrollment-only flow | Use [Get Card Enrollment Status](/api-reference/get-card-enrollment-status) |
+
+## Card Enrollment — `POST /v1/sessions/enroll-card` · `GET /v1/sessions/{sessionId}/status`
+
+| Status | Code | Cause | Recovery |
+|--------|------|-------|----------|
+| 400 | `ENROLL_USER_EMAIL_REQUIRED` | No email was supplied or previously stored for this merchant's `user_id` | Supply `user_email` |
+| 400 | `BIN_COUNTRY_NOT_ALLOWED` / `BIN_ISSUER_NOT_ALLOWED` | The card is not eligible for provisioning | Ask the cardholder for another eligible card |
+| 404 | `NOT_FOUND` | Session not found, or it belongs to another merchant | Verify the session ID, environment, and key |
+| 409 | `SESSION_STATUS_UNSUPPORTED` | The status endpoint received a payment or another unsupported session | Use that flow's result endpoint |
+| 409 | `ENROLLMENT_ACTION_NOT_FOUND` | The enrollment session is missing its linked action | Contact support with the `X-Response-ID` |
+
+Failures after a `full_enrollment` session is created normally use HTTP `200` with the stable
+status body. When `error.retryable` is true, the cardholder retries inside the same iframe; the
+merchant does not call another API or create another session.
 
 ## Report Status — `POST /v1/sessions/{sessionId}/report-status`
 

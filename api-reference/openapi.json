@@ -62,6 +62,116 @@
         }
       }
     },
+    "/v1/sessions/enroll-card": {
+      "post": {
+        "summary": "Enroll Card",
+        "description": "Provision an already-vaulted card synchronously, or create an interactive card-and-passkey enrollment session. Neither mode creates a payment, order, transaction, mandate, cryptogram, or payment credential.",
+        "operationId": "enrollCard",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/MerchantProvisionOnlyEnrollCardRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/MerchantFullEnrollCardRequest"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Card provisioned or full-enrollment session created",
+            "headers": {
+              "X-Response-ID": {
+                "$ref": "#/components/headers/XResponseId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/MerchantProvisionOnlyEnrollCardResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MerchantFullEnrollCardResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/sessions/{sessionId}/status": {
+      "get": {
+        "summary": "Get Card Enrollment Status",
+        "description": "Poll the fixed-shape lifecycle and durable outcome of a full card-enrollment session. Payment sessions are not supported by this resource.",
+        "operationId": "getCardEnrollmentStatus",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "description": "The session_id returned for a full_enrollment request",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current card-enrollment lifecycle",
+            "headers": {
+              "X-Response-ID": {
+                "$ref": "#/components/headers/XResponseId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardEnrollmentSessionStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
     "/v1/sessions/{id}/revoke": {
       "post": {
         "summary": "Revoke Session",
@@ -673,9 +783,23 @@
         "description": "Your secret key: sk_test_* (sandbox) or sk_live_* (production)."
       }
     },
+    "headers": {
+      "XResponseId": {
+        "description": "UUID correlation identifier for this response. Include it when contacting Prava support.",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
     "responses": {
       "Error": {
         "description": "Error response",
+        "headers": {
+          "X-Response-ID": {
+            "$ref": "#/components/headers/XResponseId"
+          }
+        },
         "content": {
           "application/json": {
             "schema": {
@@ -686,6 +810,239 @@
       }
     },
     "schemas": {
+      "MerchantProvisionOnlyEnrollCardRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "user_id",
+          "vault_ref_id"
+        ],
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "The merchant's stable identifier for this customer."
+          },
+          "user_email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 320,
+            "description": "Required when Prava does not already have an email for this merchant-scoped user."
+          },
+          "consent_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Optional reference to the merchant's consent record."
+          },
+          "enrollment_mode": {
+            "type": "string",
+            "enum": [
+              "provision_only"
+            ],
+            "default": "provision_only",
+            "description": "May be omitted to preserve the existing synchronous behavior."
+          },
+          "vault_ref_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Skyflow record UUID for the card to provision."
+          }
+        }
+      },
+      "MerchantFullEnrollCardRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "enrollment_mode",
+          "user_id"
+        ],
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "The merchant's stable identifier for this customer."
+          },
+          "user_email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 320,
+            "description": "Required when Prava does not already have an email for this merchant-scoped user."
+          },
+          "consent_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Optional reference to the merchant's consent record."
+          },
+          "enrollment_mode": {
+            "type": "string",
+            "enum": [
+              "full_enrollment"
+            ]
+          },
+          "vault_ref_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Optional existing Skyflow record UUID. Omit it to collect the card in Prava's secure surface."
+          },
+          "integration_type": {
+            "type": "string",
+            "enum": [
+              "embedding",
+              "full_checkout"
+            ],
+            "default": "full_checkout",
+            "description": "Whether to embed Prava's secure surface or open the hosted flow."
+          },
+          "callback_url": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https://",
+            "maxLength": 2048,
+            "description": "Optional HTTPS completion URL for the hosted flow."
+          }
+        }
+      },
+      "MerchantProvisionOnlyEnrollCardResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "card_id"
+        ],
+        "properties": {
+          "card_id": {
+            "type": "string",
+            "description": "Merchant-scoped identifier for the provisioned card."
+          }
+        }
+      },
+      "MerchantFullEnrollCardResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "session_id",
+          "session_token",
+          "expires_at",
+          "iframe_url"
+        ],
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "description": "Identifier used to poll card-enrollment status."
+          },
+          "session_token": {
+            "type": "string",
+            "description": "Short-lived iframe authentication token."
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Expiry of the enrollment session."
+          },
+          "iframe_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Prava secure-surface URL to embed or open."
+          }
+        }
+      },
+      "CardEnrollmentSessionStatus": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "session_id",
+          "status",
+          "outcome",
+          "card_id",
+          "passkey",
+          "consent_status",
+          "error"
+        ],
+        "properties": {
+          "session_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "requires_action",
+              "processing",
+              "completed",
+              "failed",
+              "cancelled",
+              "expired"
+            ],
+            "description": "Lifecycle state of the interactive session."
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "not_started",
+              "card_provisioned",
+              "fully_enrolled"
+            ],
+            "description": "The durable enrollment work that has completed."
+          },
+          "card_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Merchant-scoped card identifier after provisioning."
+          },
+          "passkey": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "registered",
+              "existing",
+              null
+            ],
+            "description": "Whether this flow registered a passkey, verified an existing one, or has not completed passkey readiness."
+          },
+          "consent_status": {
+            "type": "string",
+            "enum": [
+              "provided",
+              "not_provided"
+            ],
+            "description": "Whether consent_id was supplied on session creation."
+          },
+          "error": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "message",
+                  "retryable"
+                ],
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "retryable": {
+                    "type": "boolean",
+                    "description": "True when the cardholder can retry inside the same iframe and session."
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
       "Mandate": {
         "type": "object",
         "description": "A standing spending authorization (list view).",

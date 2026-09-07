@@ -9,6 +9,13 @@ Every card collection starts the same way: your backend creates a **session**
 `iframe_url`. From there you choose **how** the cardholder enters their card — and you pick by setting
 one field, `integration_type`, on the session.
 
+<Note>
+  Enrollment-only sessions created by
+  [`POST /v1/sessions/enroll-card`](/api-reference/enroll-card) use these same two presentation
+  modes. Their backend result comes from
+  [Get Card Enrollment Status](/api-reference/get-card-enrollment-status), not Payment Result.
+</Note>
+
 <CardGroup cols={2}>
 <Card title="Embedded" icon="window-maximize">
   Prava's card UI runs **inside your app** via the [SDK](/sdk/overview). You control the surrounding
@@ -32,10 +39,12 @@ one field, `integration_type`, on the session.
 | SDK required | Yes (`@prava-sdk/core`) | No |
 | Where the card UI renders | An iframe inside your page | A full Prava-hosted page you redirect to |
 | What you build | A container + SDK wiring | A redirect + a `callback_url` route |
-| How you get the result | `onSuccess` callback, in-app | Prava redirects the user to your `callback_url` |
+| How you get the result | Payments: `onSuccess`; full enrollment: `onEnrollmentComplete` | Payments: `callback_url`; full enrollment: callback or final screen |
 | Best when | You want the flow to feel native to your product | You want the fastest, lowest-maintenance integration |
 
 Both modes use the **same session** and the **same `iframe_url`** — embed it, or open it directly.
+For full enrollment, your backend confirms either UI result by polling
+[Get Card Enrollment Status](/api-reference/get-card-enrollment-status).
 
 <Warning>
   **Use `iframe_url` exactly as returned.** It already carries the `?session=` identifier. Don't
@@ -100,6 +109,8 @@ with [Report Status](/api-reference/report-status).
 
 <Warning>
   `callback_url` must be an **https** URL. Without it, a hosted checkout has nowhere to return the user.
+  A hosted **card-enrollment-only** session is the exception: its callback is optional, and without
+  one Prava keeps the completion screen visible so the cardholder can safely close the window.
 </Warning>
 
 ## Which should I use?

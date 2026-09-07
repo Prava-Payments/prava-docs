@@ -1,0 +1,312 @@
+---
+title: 'Enroll Card'
+description: 'Provision a card only, or run the complete card-and-passkey enrollment flow without creating a payment.'
+icon: 'credit-card'
+api: 'POST /v1/sessions/enroll-card'
+---
+
+Register a card for a merchant-scoped customer without creating an order, transaction, mandate, cryptogram, or payment credential.
+
+`POST /v1/sessions/enroll-card` · Authenticated with your secret key.
+
+<Note>
+  This endpoint has two deliberately different contracts. `provision_only` is a synchronous,
+  server-to-server operation. `full_enrollment` creates an interactive session that the cardholder
+  completes on Prava's secure surface.
+</Note>
+
+## Choose the request shape
+
+| Goal | `enrollment_mode` | `vault_ref_id` | Cardholder UI | Response | Poll status |
+|---|---|---|---|---|---|
+| Provision an already-vaulted card | Omit or `provision_only` | Required | None | `card_id` | No |
+| Full enrollment with card entry | `full_enrollment` | Omit | Embedded or hosted | Session artifacts | Yes |
+| Full enrollment with an already-vaulted card | `full_enrollment` | Include | Embedded or hosted passkey flow | Session artifacts | Yes |
+
+<Warning>
+  Do not send iframe-only fields with `provision_only`. The request schemas are strict:
+  `integration_type` and `callback_url` are accepted only with `full_enrollment`, and unknown
+  fields return `400 VAL_2001`.
+</Warning>
+
+## Request examples by use case
+
+Choose the example that matches both where the card comes from and how Prava's secure surface
+should open.
+
+<RequestExample>
+```bash Provision only
+curl -X POST https://sandbox.api.prava.space/v1/sessions/enroll-card \
+  -H "Authorization: Bearer sk_test_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "customer_123",
+    "user_email": "customer@example.com",
+    "vault_ref_id": "0b92f9d9-16ca-4a8e-ae75-2a4061cda90c",
+    "consent_id": "consent_123"
+  }'
+```
+
+```bash Embedded + card
+curl -X POST https://sandbox.api.prava.space/v1/sessions/enroll-card \
+  -H "Authorization: Bearer sk_test_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "enrollment_mode": "full_enrollment",
+    "user_id": "customer_123",
+    "user_email": "customer@example.com",
+    "integration_type": "embedding",
+    "consent_id": "consent_123"
+  }'
+```
+
+```bash Embedded + vault
+curl -X POST https://sandbox.api.prava.space/v1/sessions/enroll-card \
+  -H "Authorization: Bearer sk_test_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "enrollment_mode": "full_enrollment",
+    "user_id": "customer_123",
+    "user_email": "customer@example.com",
+    "vault_ref_id": "0b92f9d9-16ca-4a8e-ae75-2a4061cda90c",
+    "integration_type": "embedding",
+    "consent_id": "consent_123"
+  }'
+```
+
+```bash Hosted + card
+curl -X POST https://sandbox.api.prava.space/v1/sessions/enroll-card \
+  -H "Authorization: Bearer sk_test_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "enrollment_mode": "full_enrollment",
+    "user_id": "customer_123",
+    "user_email": "customer@example.com",
+    "integration_type": "full_checkout",
+    "callback_url": "https://merchant.example/card-setup/complete",
+    "consent_id": "consent_123"
+  }'
+```
+
+```bash Hosted + vault
+curl -X POST https://sandbox.api.prava.space/v1/sessions/enroll-card \
+  -H "Authorization: Bearer sk_test_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "enrollment_mode": "full_enrollment",
+    "user_id": "customer_123",
+    "user_email": "customer@example.com",
+    "vault_ref_id": "0b92f9d9-16ca-4a8e-ae75-2a4061cda90c",
+    "integration_type": "full_checkout",
+    "callback_url": "https://merchant.example/card-setup/complete",
+    "consent_id": "consent_123"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Provision-only response
+{
+  "card_id": "card_123"
+}
+```
+
+```json Full-enrollment response
+{
+  "session_id": "ses_123",
+  "session_token": "eyJhbGciOi...",
+  "expires_at": "2026-09-05T12:30:00.000Z",
+  "iframe_url": "https://sandbox.collect.prava.space/?session=ses_123"
+}
+```
+</ResponseExample>
+
+## Body
+
+### Common fields
+
+<ParamField body="user_id" type="string" required>
+  Your stable identifier for this customer. It is scoped to the merchant account authenticated by
+  your secret key. Must be non-blank and no longer than 255 characters.
+</ParamField>
+
+<ParamField body="user_email" type="string">
+  Customer email, maximum 320 characters. It is optional only when Prava already has an email for
+  this merchant's `user_id`; otherwise the request returns `400 ENROLL_USER_EMAIL_REQUIRED`.
+</ParamField>
+
+<ParamField body="consent_id" type="string">
+  Optional reference to the consent record in your system, maximum 255 characters. When present it
+  must be non-blank and contain no control characters. Prava records whether this reference was
+  supplied; it does not independently validate the underlying consent.
+</ParamField>
+
+<ParamField body="enrollment_mode" type="string" default="provision_only">
+  `provision_only` or `full_enrollment`. Omitting the field preserves the existing
+  `provision_only` behavior.
+</ParamField>
+
+### Mode-specific fields
+
+<ParamField body="vault_ref_id" type="string">
+  Skyflow record UUID created using your configured card-collection credentials. Required for
+  `provision_only`. Optional for `full_enrollment`: include it to skip card entry, or omit it to
+  let the cardholder enter a card in Prava's iframe.
+</ParamField>
+
+<ParamField body="integration_type" type="string" default="full_checkout">
+  Full enrollment only. Use `embedding` to mount the secure surface inside your application, or
+  `full_checkout` to open the Prava-hosted flow.
+</ParamField>
+
+<ParamField body="callback_url" type="string">
+  Full enrollment only. Optional HTTPS URL, maximum 2048 characters. In hosted mode Prava redirects
+  the cardholder here after completion. If omitted, the final screen remains visible and tells the
+  cardholder they may safely close it.
+</ParamField>
+
+## Provision only
+
+Use this mode when you already have a valid `vault_ref_id` and only need the card provisioned.
+The call completes synchronously and returns the merchant-scoped card identifier.
+
+Do not call the enrollment-status endpoint for this mode. The `201` response is the result.
+
+## Full enrollment
+
+Full enrollment makes the card and passkey ready for later use. It creates an orderless session and
+returns the same client artifacts used by other Prava interactive surfaces:
+
+<ResponseField name="session_id" type="string">Identifier used when polling enrollment status.</ResponseField>
+<ResponseField name="session_token" type="string">Short-lived token passed to the SDK for iframe authentication.</ResponseField>
+<ResponseField name="expires_at" type="string">ISO 8601 expiry. Treat this returned value as authoritative.</ResponseField>
+<ResponseField name="iframe_url" type="string">Secure Prava URL. Pass or open it exactly as returned.</ResponseField>
+
+There is no `order_id`, transaction identifier, payment token, dynamic CVV, or cryptogram in this
+response.
+
+<Tabs>
+  <Tab title="Card entry in Prava">
+    Omit `vault_ref_id`. The cardholder enters the card on Prava's secure surface, then completes
+    passkey setup or verifies an existing passkey.
+
+```json
+{
+  "enrollment_mode": "full_enrollment",
+  "user_id": "customer_123",
+  "user_email": "customer@example.com",
+  "integration_type": "embedding",
+  "consent_id": "consent_123"
+}
+```
+  </Tab>
+  <Tab title="Existing vault reference">
+    Include `vault_ref_id`. Card entry is skipped, but the interactive surface still opens so the
+    cardholder can complete passkey setup or verification.
+
+```json
+{
+  "enrollment_mode": "full_enrollment",
+  "user_id": "customer_123",
+  "user_email": "customer@example.com",
+  "vault_ref_id": "0b92f9d9-16ca-4a8e-ae75-2a4061cda90c",
+  "integration_type": "full_checkout",
+  "callback_url": "https://merchant.example/card-setup/complete"
+}
+```
+  </Tab>
+</Tabs>
+
+## Integration types
+
+<Tabs>
+  <Tab title="Embedded">
+    Set `integration_type: "embedding"`, return the session artifacts from your backend to your
+    frontend, and mount the returned `iframe_url` using the SDK.
+
+```typescript
+import { PravaSDK } from '@prava-sdk/core';
+
+const prava = new PravaSDK({ publishableKey: 'pk_test_...' });
+
+void prava.collectPAN({
+  sessionToken: session.session_token,
+  iframeUrl: session.iframe_url,
+  container: '#card-setup',
+
+  // Card provisioning completed. Full enrollment may still be in progress.
+  onSuccess: (card) => console.log(card.enrollmentId),
+
+  // Card provisioning and passkey readiness are both complete.
+  onEnrollmentComplete: (result) => {
+    console.log(result.card_id, result.passkey);
+  },
+
+  onEnrollmentCancelled: ({ card_id }) => {
+    console.log('Enrollment cancelled', card_id);
+  },
+
+  onError: (error) => console.error(error.code, error.message),
+});
+```
+
+    Keep the SDK mounted after `onSuccess`. For a full-enrollment session, completion is signaled by
+    `onEnrollmentComplete`, and your backend should confirm it through
+    [Get Card Enrollment Status](/api-reference/get-card-enrollment-status).
+  </Tab>
+  <Tab title="Hosted">
+    Use `full_checkout` (the default) and redirect or open the returned URL. No frontend SDK is
+    required.
+
+```javascript
+window.location.href = session.iframe_url;
+```
+
+    With `callback_url`, Prava redirects after completion. Without one, Prava keeps the completion
+    result visible and tells the cardholder they can safely close the window. In both cases your
+    backend determines the result by polling the status endpoint.
+  </Tab>
+</Tabs>
+
+## Complete integration sequence
+
+<Steps>
+  <Step title="Create the session on your backend">
+    Call this endpoint with your secret key. Never expose the secret key in browser code.
+  </Step>
+  <Step title="Open Prava's secure surface">
+    Embed or navigate to `iframe_url`. Pass it exactly as returned; it already contains the
+    `session_id`.
+  </Step>
+  <Step title="Poll from your backend">
+    Poll `GET /v1/sessions/{sessionId}/status`. Do not send your secret key from the browser.
+  </Step>
+  <Step title="Accept the terminal result">
+    Enrollment succeeded only when `status` is `completed` and `outcome` is
+    `fully_enrolled`.
+  </Step>
+</Steps>
+
+<Note>
+  Retries happen inside the same iframe. If the status response contains
+  `error.retryable: true`, do not create a new session and do not call a retry endpoint. Keep the
+  current iframe available while the cardholder selects **Try again**; Prava reuses the already
+  selected or provisioned card.
+</Note>
+
+## Error responses
+
+| Status | Code | Cause | Recovery |
+|---|---|---|---|
+| 400 | `VAL_2001` | Missing, incompatible, unknown, or invalid request field | Correct the request using the mode rules above |
+| 400 | `ENROLL_USER_EMAIL_REQUIRED` | No email was supplied or previously stored for this `user_id` | Supply `user_email` |
+| 400 | `BIN_COUNTRY_NOT_ALLOWED` / `BIN_ISSUER_NOT_ALLOWED` | Card is not eligible for provisioning | Ask the cardholder for another eligible card |
+| 401 | `AUTH_1001` / `AUTH_1002` | Missing or invalid secret key | Use the correct environment's secret key |
+| 429 | Rate limited | Too many enrollment requests | Back off before retrying |
+| 500 | `MERCHANT_LOOKUP_ERROR` / `CONFIG_ERROR` | Merchant configuration could not be resolved | Contact support with the `X-Response-ID` |
+
+Full-enrollment failures that occur after the session is created are returned through the status
+resource, not by changing this create response.
+
+Every response includes an `X-Response-ID` header. Include it when contacting
+[support@prava.space](mailto:support@prava.space).

@@ -1,0 +1,237 @@
+---
+title: 'Get Card Enrollment Status'
+description: 'Poll the outcome of a full card-enrollment session without exposing payment credentials.'
+icon: 'rotate'
+api: 'GET /v1/sessions/{sessionId}/status'
+---
+
+Poll the lifecycle of a `full_enrollment` session created by
+[Enroll Card](/api-reference/enroll-card). This endpoint is server-to-server and returns no payment
+token, dynamic CVV, cryptogram, order, or transaction.
+
+`GET /v1/sessions/{sessionId}/status` · Authenticated with the same merchant secret key that
+created the session.
+
+<Warning>
+  This endpoint supports only `full_enrollment` card sessions. Payment sessions must use
+  [Get Payment Result](/api-reference/get-payment-result); calling the wrong status resource
+  returns `409`.
+</Warning>
+
+## Path parameters
+
+<ParamField path="sessionId" type="string" required>
+  The `session_id` returned by `POST /v1/sessions/enroll-card` when
+  `enrollment_mode` is `full_enrollment`.
+</ParamField>
+
+## Response
+
+The JSON shape is stable across pending work, recoverable failures, success, cancellation, and
+expiry.
+
+<ResponseField name="session_id" type="string">
+  Enrollment session identifier.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Session lifecycle: `requires_action`, `processing`, `completed`, `failed`,
+  `cancelled`, or `expired`.
+</ResponseField>
+
+<ResponseField name="outcome" type="string">
+  Durable work completed: `not_started`, `card_provisioned`, or `fully_enrolled`.
+</ResponseField>
+
+<ResponseField name="card_id" type="string | null">
+  Merchant-scoped card identifier. It becomes non-null after card provisioning succeeds, even if
+  later passkey work is incomplete or fails.
+</ResponseField>
+
+<ResponseField name="passkey" type="string | null">
+  `registered` when this flow created a passkey, `existing` when it verified an already
+  available passkey, or `null` before passkey completion.
+</ResponseField>
+
+<ResponseField name="consent_status" type="string">
+  `provided` when the create request included `consent_id`; otherwise `not_provided`. This
+  reports reference presence, not independent proof of consent.
+</ResponseField>
+
+<ResponseField name="error" type="object | null">
+  Safe failure information: `code`, `message`, and `retryable`. It is `null` when no
+  failure is active and after completion or cancellation.
+</ResponseField>
+
+## How to interpret status and outcome
+
+| `status` | Typical `outcome` | Meaning | Integrator action |
+|---|---|---|---|
+| `requires_action` | `not_started` | The cardholder must continue in the iframe | Keep the iframe open and continue polling |
+| `requires_action` | `card_provisioned` | The card is saved; passkey work still needs user action | Keep the same iframe and card |
+| `processing` | `not_started` or `card_provisioned` | Prava or the card network is processing | Continue polling |
+| `completed` | `fully_enrolled` | Card enrollment and passkey readiness are complete | Stop polling and store `card_id` |
+| `failed` | `not_started` or `card_provisioned` | A non-recoverable step failed | Stop polling; inspect how much completed |
+| `cancelled` | `not_started` or `card_provisioned` | The cardholder cancelled | Stop polling |
+| `expired` | `not_started` or `card_provisioned` | The session expired before completion | Stop polling and create a new session if the user wants to continue |
+
+<Note>
+  Enrollment success is exactly `status: "completed"` together with
+  `outcome: "fully_enrolled"`. Do not infer full enrollment from a non-null `card_id`:
+  `card_id` proves only that card provisioning completed.
+</Note>
+
+## Retry behavior
+
+When `error.retryable` is `true`, the cardholder retries inside the existing iframe:
+
+- Do not call a retry API—there is no public retry endpoint.
+- Do not create another enrollment session.
+- Do not ask the cardholder to select or enter the card again after `card_id` exists.
+- Keep polling this same `session_id` while the cardholder selects **Try again**.
+
+Prava retains the selected/provisioned card and restarts only the recoverable enrollment step.
+Incorrect OTP attempts remain inside the card-network experience and do not require merchant-side
+state.
+
+## Examples
+
+<RequestExample>
+```bash cURL
+curl "https://sandbox.api.prava.space/v1/sessions/ses_123/status" \
+  -H "Authorization: Bearer sk_test_..."
+```
+
+```javascript JavaScript
+const response = await fetch(
+  `https://sandbox.api.prava.space/v1/sessions/${sessionId}/status`,
+  {
+    headers: {
+      Authorization: `Bearer ${process.env.PRAVA_SECRET_KEY}`,
+    },
+  },
+);
+
+const enrollment = await response.json();
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Awaiting cardholder
+{
+  "session_id": "ses_123",
+  "status": "requires_action",
+  "outcome": "not_started",
+  "card_id": null,
+  "passkey": null,
+  "consent_status": "not_provided",
+  "error": null
+}
+```
+
+```json 200 Recoverable failure after provisioning
+{
+  "session_id": "ses_123",
+  "status": "requires_action",
+  "outcome": "card_provisioned",
+  "card_id": "card_123",
+  "passkey": null,
+  "consent_status": "provided",
+  "error": {
+    "code": "DEVICE_BINDING_FAILED",
+    "message": "Secure verification could not be completed. Try again.",
+    "retryable": true
+  }
+}
+```
+
+```json 200 Completed with a new passkey
+{
+  "session_id": "ses_123",
+  "status": "completed",
+  "outcome": "fully_enrolled",
+  "card_id": "card_123",
+  "passkey": "registered",
+  "consent_status": "provided",
+  "error": null
+}
+```
+
+```json 200 Completed with an existing passkey
+{
+  "session_id": "ses_456",
+  "status": "completed",
+  "outcome": "fully_enrolled",
+  "card_id": "card_456",
+  "passkey": "existing",
+  "consent_status": "not_provided",
+  "error": null
+}
+```
+
+```json 200 Terminal failure before provisioning
+{
+  "session_id": "ses_789",
+  "status": "failed",
+  "outcome": "not_started",
+  "card_id": null,
+  "passkey": null,
+  "consent_status": "not_provided",
+  "error": {
+    "code": "BIN_COUNTRY_NOT_ALLOWED",
+    "message": "Card is not eligible",
+    "retryable": false
+  }
+}
+```
+</ResponseExample>
+
+## Polling example
+
+Poll from your backend, not the browser. A practical starting cadence is once per second while the
+cardholder is active, backing off toward five seconds during longer processing. The endpoint is
+limited to 120 requests per minute.
+
+```typescript
+const terminal = new Set(['completed', 'failed', 'cancelled', 'expired']);
+
+async function waitForEnrollment(sessionId: string) {
+  let delayMs = 1_000;
+
+  while (true) {
+    const response = await fetch(
+      `https://sandbox.api.prava.space/v1/sessions/${sessionId}/status`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.PRAVA_SECRET_KEY}`,
+        },
+      },
+    );
+
+    if (!response.ok) throw new Error(`Status request failed: ${response.status}`);
+
+    const result = await response.json();
+    if (terminal.has(result.status)) return result;
+
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+    delayMs = Math.min(delayMs * 1.5, 5_000);
+  }
+}
+```
+
+## Error responses
+
+Enrollment lifecycle failures use HTTP `200` with the stable response above. HTTP errors mean the
+status request itself could not be served.
+
+| Status | Code | Cause | Recovery |
+|---|---|---|---|
+| 401 | `AUTH_1001` / `AUTH_1002` | Missing or invalid secret key | Use the key that created the session |
+| 404 | `NOT_FOUND` | Session not found or owned by another merchant | Verify the session and environment |
+| 409 | `SESSION_STATUS_UNSUPPORTED` | The session is a payment or another unsupported flow | Use that flow's result endpoint |
+| 409 | `ENROLLMENT_ACTION_NOT_FOUND` | Enrollment action is not linked correctly | Contact support with the `X-Response-ID` |
+| 429 | Rate limited | Polling exceeded the endpoint limit | Back off before retrying |
+
+Every response includes an `X-Response-ID` header. Include it when contacting
+[support@prava.space](mailto:support@prava.space).
+

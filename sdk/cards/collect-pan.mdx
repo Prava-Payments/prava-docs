@@ -44,7 +44,20 @@ prava.collectPAN(options: CollectPANOptions): Promise<CollectPANResult>
     </ParamField>
 
     <ParamField path="onSuccess" type="(result: CollectPANResult) => void">
-      Called on successful card enrollment
+      Called when card provisioning succeeds. In a `full_enrollment` session, passkey work may
+      still be in progress; use `onEnrollmentComplete` for the final enrollment result.
+    </ParamField>
+
+    <ParamField path="onEnrollmentComplete" type="(payload: CardEnrollmentCompletePayload) => void">
+      Called only for an enrollment-only session after the card and passkey are ready. The payload
+      contains `session_id`, `card_id`, `status: "completed"`,
+      `outcome: "fully_enrolled"`, `passkey: "registered" | "existing"`, and
+      `callback_url`.
+    </ParamField>
+
+    <ParamField path="onEnrollmentCancelled" type="(payload: { session_id: string; card_id: string | null }) => void">
+      Called when the cardholder cancels an enrollment-only session. `card_id` can be non-null
+      when card provisioning completed before cancellation.
     </ParamField>
 
     <ParamField path="onError" type="(error: PravaError) => void">
@@ -91,6 +104,33 @@ prava.collectPAN(options: CollectPANOptions): Promise<CollectPANResult>
 The `enrollmentId` identifies the collected card on the server side. Use your backend and the
 [API Reference](/api-reference/overview) to read payment results and report status for that card.
 </Note>
+
+## Full card-enrollment sessions
+
+When `collectPAN()` receives a session created by
+[Enroll Card](/api-reference/enroll-card) with `enrollment_mode: "full_enrollment"`, its normal
+`onSuccess` callback still reports the earlier card-provisioning milestone. Keep the SDK and iframe
+mounted until `onEnrollmentComplete` or `onEnrollmentCancelled`.
+
+```typescript
+void prava.collectPAN({
+  sessionToken: session.session_token,
+  iframeUrl: session.iframe_url,
+  container: '#card-form',
+  onSuccess: (card) => console.log('Card provisioned', card.enrollmentId),
+  onEnrollmentComplete: (result) => {
+    console.log('Full enrollment complete', result.card_id, result.passkey);
+  },
+  onEnrollmentCancelled: (result) => {
+    console.log('Enrollment cancelled', result.card_id);
+  },
+  onError: (error) => console.error(error.code, error.message),
+});
+```
+
+Use the callback for frontend coordination, but confirm the durable server-side result with
+[Get Card Enrollment Status](/api-reference/get-card-enrollment-status). A retryable iframe error
+does not require a new SDK call: leave the iframe mounted while the cardholder selects **Try again**.
 
 ## Example
 
@@ -274,6 +314,9 @@ PostMessage communication is origin-locked. The iframe resolves its backend from
 ## Next Steps
 
 <CardGroup cols={2}>
+<Card title="Enroll Card (API)" icon="credit-card" href="/api-reference/enroll-card">
+  Create a provision-only or full card-enrollment session
+</Card>
 <Card title="List Cards (API)" icon="list" href="/api-reference/list-cards">
   Retrieve a customer's enrolled cards server-side
 </Card>

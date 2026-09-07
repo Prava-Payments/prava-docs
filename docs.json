@@ -133,6 +133,8 @@
             "pages": [
               "api-reference/overview",
               "api-reference/create-session",
+              "api-reference/enroll-card",
+              "api-reference/get-card-enrollment-status",
               "api-reference/revoke-session",
               "api-reference/list-cards",
               "api-reference/delete-card",

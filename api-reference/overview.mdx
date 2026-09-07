@@ -44,7 +44,7 @@ Authorization: Bearer sk_test_xxx
 All requests and responses are JSON. Monetary amounts are always decimal strings (e.g. `"49.99"`), never numbers. Every response includes an `X-Response-ID` header for debugging:
 
 ```
-X-Response-ID: resp_a1b2c3d4e5f6
+X-Response-ID: 8b74ce32-4682-4b17-b51f-d57808f99061
 ```
 
 Include this ID when contacting support to help trace issues.
@@ -108,6 +108,12 @@ A complete payment is **three API calls and one non-API step**. Nothing else is 
 ### Supporting endpoints
 
 <CardGroup cols={2}>
+<Card title="Enroll Card" icon="credit-card" href="/api-reference/enroll-card">
+  Provision a card only, or create an interactive card-and-passkey enrollment session
+</Card>
+<Card title="Card Enrollment Status" icon="rotate" href="/api-reference/get-card-enrollment-status">
+  Poll an interactive card-enrollment session without exposing payment credentials
+</Card>
 <Card title="Revoke Session" icon="ban" href="/api-reference/revoke-session">
   Cancel a session before it's used
 </Card>
