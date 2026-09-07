@@ -49,7 +49,8 @@ Test card numbers and the test OTP live on their own reference page, organized b
 6. Verify the final state: payment result `status` becomes `completed` (or `failed`).
 
 For a quote-backed session, poll the same result endpoint until its top-level status is terminal.
-The response contains `transactions[].card_id` and `merchant_res`, but no token, CVV, expiry, or
-line-item credentials; Prava performs the merchant checkout, so you do not call Report Status.
+When a transaction exists, the response contains `transactions[].card_id`; it also contains
+`merchant_res`, but no token, CVV, expiry, or line-item credentials. Prava performs the merchant
+checkout, so you do not call Report Status.
 
 Anything unexpected? Check [Errors](/api-reference/errors).

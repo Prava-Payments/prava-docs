@@ -1138,6 +1138,12 @@
       },
       "PaymentResult": {
         "type": "object",
+        "required": [
+          "session_id",
+          "order_id",
+          "status",
+          "transactions"
+        ],
         "properties": {
           "session_id": {
             "type": "string"
@@ -1163,6 +1169,11 @@
             "type": "array",
             "items": {
               "type": "object",
+              "required": [
+                "txn_id",
+                "card_id",
+                "status"
+              ],
               "properties": {
                 "txn_id": {
                   "type": "string"
@@ -1178,7 +1189,6 @@
                   "type": "string",
                   "enum": [
                     "initiated",
-                    "pending",
                     "awaiting_result",
                     "completed",
                     "failed"
@@ -1210,21 +1220,27 @@
                         "type": "string"
                       },
                       "status": {
-                        "type": "string"
+                        "type": "string",
+                        "enum": [
+                          "pending",
+                          "credentials_generated",
+                          "completed",
+                          "failed"
+                        ]
                       },
                       "token": {
                         "type": [
                           "string",
                           "null"
                         ],
-                        "description": "Virtual card number (network token). Only present when status is awaiting_result."
+                        "description": "Virtual card number (network token). Non-null after credentials are generated."
                       },
                       "dynamic_cvv": {
                         "type": [
                           "string",
                           "null"
                         ],
-                        "description": "Single-use CVV. Only present when status is awaiting_result."
+                        "description": "Single-use CVV. Non-null after credentials are generated."
                       },
                       "expiry_month": {
                         "type": [
@@ -1285,6 +1301,9 @@
           "merchant_res": {
             "type": "object",
             "description": "Merchant checkout lifecycle context. Present only for quote-backed sessions; omitted for non-quote sessions and before an order exists. Use the top-level status as the normalized payment outcome.",
+            "required": [
+              "status"
+            ],
             "properties": {
               "status": {
                 "type": "string",
