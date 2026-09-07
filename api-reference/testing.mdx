@@ -37,7 +37,7 @@ Test card numbers and the test OTP live on their own reference page, organized b
   payments use real cards. Sandbox environments apply to the **SDK/API integration path**.
 </Note>
 
-## A full sandbox test run
+## A non-quote checkout sandbox test run
 
 1. [Create a session](/api-reference/create-session) with your `sk_test_*` key.
 2. Open the returned `iframe_url` (hosted) or mount [`collectPAN`](/sdk/cards/collect-pan) (embedded)
@@ -47,5 +47,9 @@ Test card numbers and the test OTP live on their own reference page, organized b
    the line items now carry `token` + `dynamic_cvv`.
 5. [Report Status](/api-reference/report-status) with `APPROVED` or `DECLINED`.
 6. Verify the final state: payment result `status` becomes `completed` (or `failed`).
+
+For a quote-backed session, poll the same result endpoint until its top-level status is terminal.
+The response contains `transactions[].card_id` and `merchant_res`, but no token, CVV, expiry, or
+line-item credentials; Prava performs the merchant checkout, so you do not call Report Status.
 
 Anything unexpected? Check [Errors](/api-reference/errors).

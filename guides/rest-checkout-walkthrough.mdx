@@ -90,6 +90,7 @@ While the cardholder is still on the hosted page you'll see `"status": "pending"
   "status": "awaiting_result",
   "transactions": [{
     "txn_id": "txn_001",
+    "card_id": "card_42",
     "status": "awaiting_result",
     "line_items": [{
       "txn_ref_id": "tli_001",
@@ -113,6 +114,8 @@ While the cardholder is still on the hosted page you'll see `"status": "pending"
 }
 ```
 
+`card_id` is the source of truth for the card bound to the transaction, whether it was preselected
+or chosen by the cardholder.
 `token` + `dynamic_cvv` + expiry are the **one-time card credentials**. Use them at the merchant's
 checkout like a normal card; they're single-use, merchant-locked, and amount-scoped.
 
