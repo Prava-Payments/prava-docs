@@ -3,6 +3,7 @@ title: 'Charge a Mandate'
 description: 'Mint single-use card credentials against an active mandate — no passkey.'
 icon: 'bolt'
 api: 'POST /v1/mandates/{id}/charge'
+playground: 'interactive'
 ---
 
 Mint fresh single-use card credentials against an active mandate — **no passkey**. Merchant callers receive plaintext `credentials`; agent callers receive an `encrypted_payload` (credentials encrypted to the agent's public key).
@@ -30,7 +31,7 @@ Need to **create** a mandate first? Mandate creation is part of the Session APIs
   Idempotency key (max 255). The same mandate id + `reference` returns the original charge (`deduplicated: true`) instead of minting again. Omit it and every call is a distinct charge. A *failed* charge clears its key, so a retry after failure is not deduplicated.
 </ParamField>
 <ParamField body="purchase_context" type="object[]">
-  Optional per-charge product details (exactly one entry, same shape as [Create Session](/api-reference/create-session)). Omit to reuse the mandate's setup context. Currency always comes from the mandate, never the charge.
+  Optional per-charge product details (exactly one entry, same shape as the `purchase_context.custom` entries in [Create Session](/api-reference/create-session)). Omit to reuse the mandate's setup context. Currency always comes from the mandate, never the charge.
 </ParamField>
 
 ## Response

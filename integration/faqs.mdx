@@ -45,7 +45,7 @@ A: Prava supports 47+ currencies including USD, EUR, GBP, INR, CAD, AUD, JPY, SG
 
 **Q: How long does a session last?**
 
-A: Sessions expire after **15 minutes** by default. The `expires_at` field in the [Create Session](/api-reference/create-session) response tells you exactly when. Once expired, the session token can no longer be used for any SDK operations. You can also configure mandate duration using the `effective_until_minutes` field in `purchase_context` (also defaults to 15 minutes).
+A: Sessions expire after **15 minutes** by default. The `expires_at` field in the [Create Session](/api-reference/create-session) response tells you exactly when. Once expired, the session token can no longer be used for any SDK operations. You can also configure mandate duration using the `effective_until_minutes` field in `purchase_context.custom` (also defaults to 15 minutes).
 
 **Q: What happens if the user closes the browser mid-flow?**
 
@@ -73,7 +73,7 @@ A: Yes. Each transaction gets a deterministic idempotency key derived from the o
 
 **Q: What is the maximum number of products per session?**
 
-A: There is no hard upper limit. You must include at least 1 product in the `product_details` array. However, only 1 `purchase_context` entry (i.e., one merchant) is supported per session; multi-merchant sessions are not currently available.
+A: There is no hard upper limit. You must include at least 1 product in the `product_details` array. However, only 1 entry in `purchase_context.custom` (i.e., one merchant) is supported per session; multi-merchant sessions are not currently available.
 
 ## Merchants
 

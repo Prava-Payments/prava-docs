@@ -54,10 +54,12 @@ export async function POST(req: Request) {
       total_amount: amount,            // e.g. "49.99"
       currency: 'USD',
       integration_type: 'embedding',   // card UI inside your page
-      purchase_context: [{
-        merchant_details: merchant,    // destination merchant, not your app: { name, url, country_code_iso2 }
-        product_details: items,        // [{ description, unit_price, quantity }]
-      }],
+      purchase_context: {
+        custom: [{
+          merchant_details: merchant,  // destination merchant, not your app: { name, url, country_code_iso2 }
+          product_details: items,      // [{ description, unit_price, quantity }]
+        }],
+      },
     }),
   });
 
@@ -92,10 +94,12 @@ app.post('/api/prava/session', async (req, res) => {
       total_amount: amount,
       currency: 'USD',
       integration_type: 'embedding',
-      purchase_context: [{
-        merchant_details: merchant,
-        product_details: items,
-      }],
+      purchase_context: {
+        custom: [{
+          merchant_details: merchant,
+          product_details: items,
+        }],
+      },
     }),
   });
 
@@ -205,8 +209,10 @@ async function getCredentials(sessionId: string) {
 
   if (result.status !== 'awaiting_result') return null; // keep polling ('pending')
 
-  const li = result.transactions[0].line_items[0];
+  const transaction = result.transactions[0];
+  const li = transaction.line_items[0];
   return {
+    cardId: transaction.card_id, // source-of-truth card bound to this transaction
     txnRefId: li.txn_ref_id,
     cardNumber: li.token,        // one-time virtual card number
     cvv: li.dynamic_cvv,         // single-use CVV

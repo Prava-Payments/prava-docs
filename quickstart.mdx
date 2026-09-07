@@ -51,18 +51,20 @@ curl -X POST https://sandbox.api.prava.space/v1/sessions \
     "user_email": "user@example.com",
     "total_amount": "49.99",
     "currency": "USD",
-    "purchase_context": [{
-      "merchant_details": {
-        "name": "Your Store",
-        "url": "https://yourstore.com",
-        "country_code_iso2": "US"
-      },
-      "product_details": [{
-        "description": "Example Product",
-        "unit_price": "49.99",
-        "quantity": 1
+    "purchase_context": {
+      "custom": [{
+        "merchant_details": {
+          "name": "Your Store",
+          "url": "https://yourstore.com",
+          "country_code_iso2": "US"
+        },
+        "product_details": [{
+          "description": "Example Product",
+          "unit_price": "49.99",
+          "quantity": 1
+        }]
       }]
-    }]
+    }
   }'
 ```
 

@@ -46,8 +46,14 @@ These can occur on **any** endpoint:
 
 ## Payment Result — `GET /v1/sessions/{sessionId}/payment-result`
 
+Quote checkout failures are polling outcomes, so the endpoint still returns HTTP `200` with
+top-level `status: "failed"` and may include one of these `error.code` values.
+
 | Status | Code | Cause | Recovery |
 |--------|------|-------|----------|
+| 200 | `MERCHANT_CHECKOUT_FAILED` | The merchant checkout failed | Inspect the merchant result and create a fresh quote if retrying |
+| 200 | `MERCHANT_PREPARE_FAILED` | The merchant checkout could not be prepared | Create a fresh quote and session |
+| 200 | `MERCHANT_ACTION_REQUIRED` | The merchant requires additional verification | Contact support or complete the required merchant action |
 | 404 | `NOT_FOUND` | Session not found, or it belongs to another merchant | Verify the session ID and which key created it |
 | 409 | `PAYMENT_RESULT_UNSUPPORTED` | The session is an enrollment-only flow | Use [Get Card Enrollment Status](/api-reference/get-card-enrollment-status) |
 

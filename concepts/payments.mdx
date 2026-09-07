@@ -6,10 +6,10 @@ icon: 'money-bill'
 
 import NeedsPrava from '/snippets/needs-prava.mdx';
 
-## The lifecycle you drive
+## The non-quote checkout lifecycle you drive
 
-From your side, a complete payment is **three API calls and one hand-off**. This is the entire public
-surface; everything else on this page is what Prava does for you in between:
+For a non-quote checkout, a complete payment is **three API calls and one hand-off**.
+Everything else on this page is what Prava does for you in between:
 
 ```mermaid
 flowchart LR
@@ -26,6 +26,13 @@ flowchart LR
 | **3. Payment result** | Receive the one-time credentials (`token` + `dynamic_cvv`) | Your backend ([Get Payment Result](/api-reference/get-payment-result)) |
 | **4. Checkout** | Use the credentials like a normal card at the merchant | Your app / AI agent |
 | **5. Report status** | Tell Prava the outcome (`APPROVED` / `DECLINED`) | Your backend ([Report Status](/api-reference/report-status)) |
+
+<Note>
+  In a quote-backed checkout, Prava performs the merchant checkout. Poll the same payment-result
+  endpoint for the normalized outcome, `transactions[].card_id`, and quote lifecycle context in
+  `merchant_res`; token, CVV, expiry, and line-item credentials are not returned, and quote callers
+  do not call the public Report Status endpoint.
+</Note>
 
 ### How a payment starts: two examples
 
@@ -71,15 +78,19 @@ A **transaction** represents a single payment attempt within a session. It can b
 Each transaction is deduplicated using a deterministic idempotency key derived from the order, flow
 type, and card fingerprint, so retrying the same request cannot cause a double charge.
 
-**Transaction statuses** (reflected in the [payment result](/api-reference/get-payment-result)):
+**Top-level payment-result statuses:**
 
 | Status | Meaning |
 |--------|---------|
 | `pending` | Session created; no transaction started yet |
-| `processing` | Transaction in flight — authenticating / tokenizing; credentials not yet available |
-| `awaiting_result` | Credentials issued; checkout in progress, awaiting your [status report](/api-reference/report-status) |
+| `processing` | Payment in flight — a non-quote checkout is authenticating or tokenizing, or a quote-backed merchant checkout is not yet terminal |
+| `awaiting_result` | Non-quote checkout credentials issued; awaiting your [status report](/api-reference/report-status) |
 | `completed` | Payment authorized and completed |
 | `failed` | Payment failed (declined, timeout, or error) |
+
+In a quote-backed result, `transactions[].status` can remain `awaiting_result` while the top-level
+status is `processing`, `completed`, or `failed`; the top-level status is the normalized checkout
+outcome.
 
 ### Authentication (FIDO / Passkey)
 
@@ -115,10 +126,10 @@ For **standing** mandates — approve once, then charge repeatedly within caps �
 | `cancelled` | Revoked by user or system |
 | `expired` | Past its effective date |
 
-### Payment tokens — the credential you receive
+### Payment tokens — the non-quote checkout credential you receive
 
 Against an active mandate, Prava generates **payment tokens**: a virtual card number (PAN), expiry,
-and CVV, scoped to the mandate constraints. These are what step 3 hands back to you:
+and CVV, scoped to the mandate constraints. These are what step 3 hands back for non-quote checkouts:
 
 *   **Single-use**: each token can only be used once
 *   **Merchant-locked & amount-scoped**: enforced at the network level and by Prava; transactions

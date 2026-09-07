@@ -21,18 +21,20 @@ curl -X POST https://sandbox.api.prava.space/v1/sessions \
     "currency": "USD",
     "integration_type": "full_checkout",
     "callback_url": "https://yourapp.com/payment-done",
-    "purchase_context": [{
-      "merchant_details": {
-        "name": "Example Store",
-        "url": "https://examplestore.com",
-        "country_code_iso2": "US"
-      },
-      "product_details": [{
-        "description": "Wireless Headphones",
-        "unit_price": "49.99",
-        "quantity": 1
+    "purchase_context": {
+      "custom": [{
+        "merchant_details": {
+          "name": "Example Store",
+          "url": "https://examplestore.com",
+          "country_code_iso2": "US"
+        },
+        "product_details": [{
+          "description": "Wireless Headphones",
+          "unit_price": "49.99",
+          "quantity": 1
+        }]
       }]
-    }]
+    }
   }'
 ```
 
@@ -88,13 +90,14 @@ While the cardholder is still on the hosted page you'll see `"status": "pending"
   "status": "awaiting_result",
   "transactions": [{
     "txn_id": "txn_001",
+    "card_id": "card_42",
     "status": "awaiting_result",
     "line_items": [{
       "txn_ref_id": "tli_001",
       "merchant_name": "Example Store",
       "merchant_url": "https://examplestore.com",
       "total_amount": "49.99",
-      "status": "awaiting_result",
+      "status": "credentials_generated",
       "token": "4323126882557932",
       "dynamic_cvv": "957",
       "expiry_month": "12",
@@ -111,6 +114,8 @@ While the cardholder is still on the hosted page you'll see `"status": "pending"
 }
 ```
 
+`card_id` is the source of truth for the card bound to the transaction, whether it was preselected
+or chosen by the cardholder.
 `token` + `dynamic_cvv` + expiry are the **one-time card credentials**. Use them at the merchant's
 checkout like a normal card; they're single-use, merchant-locked, and amount-scoped.
 

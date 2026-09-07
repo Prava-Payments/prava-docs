@@ -79,7 +79,8 @@ The full catalog (every code, per endpoint, with recovery steps) is on the
 
 ## The payment journey
 
-A complete payment is **three API calls and one non-API step**. Nothing else is required:
+A non-quote payment is **three API calls and one non-API step**. Quote-backed checkouts use the same
+session and polling endpoints, but Prava completes the merchant checkout for you:
 
 <Steps>
 <Step title="Create a session — POST /v1/sessions">
@@ -95,13 +96,15 @@ A complete payment is **three API calls and one non-API step**. Nothing else is 
   the card number for a secure stand-in) for you.
 </Step>
 <Step title="Poll the result — GET /v1/sessions/{sessionId}/payment-result">
-  Once the cardholder finishes, this returns the one-time credentials: `token` (virtual card number)
-  and `dynamic_cvv`. Use them at the merchant checkout like a normal card.
+  For a non-quote checkout, this returns one-time `token` and `dynamic_cvv` credentials. For a
+  quote-backed checkout, it returns a credential-free transaction summary with the card actually
+  used and the merchant lifecycle in `merchant_res`.
   → [Get Payment Result](/api-reference/get-payment-result)
 </Step>
 <Step title="Report the outcome — POST /v1/sessions/{sessionId}/report-status">
-  Tell Prava whether the checkout succeeded (`APPROVED`) or failed (`DECLINED`) so transaction records
-  and the card network stay in sync. → [Report Status](/api-reference/report-status)
+  For non-quote checkouts, tell Prava whether checkout succeeded (`APPROVED`) or failed (`DECLINED`)
+  so transaction records and the card network stay in sync. Quote callers do not call this public
+  endpoint; poll their normalized payment result instead. → [Report Status](/api-reference/report-status)
 </Step>
 </Steps>
 

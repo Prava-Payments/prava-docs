@@ -3,6 +3,7 @@ title: 'Create Session'
 description: 'Create a payment session for a customer and order — standard checkout or mandate setup.'
 icon: 'plus'
 api: 'POST /v1/sessions'
+playground: 'interactive'
 ---
 
 Create a short-lived, single-use session tied to one merchant, customer, and order. The response gives you a `session_token` + `iframe_url` for the frontend — embed the iframe via the [SDK](/sdk/overview) or open the [hosted checkout](/sdk/integration-modes) directly.
@@ -28,6 +29,8 @@ The `mandate_setup` field reference below covers `recurring_frequency`, `merchan
 
 <Note>
   **Choosing a card source.** Omit `card` to let the cardholder select or enter a card in the collection surface. Send `card.card_id` to pre-select an already-enrolled card, or `card.vault_ref_id` (a Skyflow UUID) for the vault-ref flow. Send **exactly one** — if both are present, `card_id` wins.
+  After collection, [Get Payment Result](/api-reference/get-payment-result) returns the card bound to
+  each transaction as `transactions[].card_id`.
 </Note>
 
 ## Body
@@ -50,53 +53,76 @@ The `mandate_setup` field reference below covers `recurring_frequency`, `merchan
   This is your **pricing currency** and is independent of the card's issuing country: there is no requirement that it match `country_code_iso2` (the merchant's location) or the cardholder's country. A US-issued card can pay an INR-denominated session; the card network settles the cross-currency conversion. Price in whatever currency your product uses — you don't need to re-denominate.
 </ParamField>
 
-<ParamField body="purchase_context" type="object[]" required>
-  Exactly one entry — multi-merchant sessions are not yet supported.
+<ParamField body="purchase_context" type="object" required>
+  What is being bought. Two modes — pick **one**:
 
-  <Expandable title="purchase_context[] properties">
-    <ParamField body="merchant_details" type="object" required>
-      The **destination merchant** — the business the cardholder is buying from, **not your
-      application**. The `name` renders as the header on the checkout page and is forwarded to
-      Visa as the merchant of record for the token.
-      <Expandable title="merchant_details properties">
-        <ParamField body="name" type="string" required>
-          Merchant display name. Sanitized to a Visa-safe character set (e.g. `H&M` → `HM`); must contain at least one usable character.
-        </ParamField>
-        <ParamField body="url" type="string" required>
-          Merchant website URL. **Must use `https`** — the URL is forwarded to Visa.
-        </ParamField>
-        <ParamField body="country_code_iso2" type="string" required>
-          Merchant country — 2 uppercase ISO 3166-1 letters, e.g. `"US"`.
-        </ParamField>
-        <ParamField body="category_code" type="string">
-          Merchant category code (MCC). Free-form string, max 10 characters.
-        </ParamField>
-        <ParamField body="category" type="string">
-          Merchant category description, max 100 characters.
-        </ParamField>
-      </Expandable>
+  - **From a quote** — send `quote: true` and the opaque `quote_id` (`qte_…`) returned when the quote
+    was created. Merchant and product details come from that quote, so nothing else is needed.
+  - **Custom** — omit `quote` (or send `false`) and describe the merchant and products yourself in `custom`.
+
+  <Expandable title="purchase_context properties">
+    <ParamField body="quote" type="boolean" default={false}>
+      Set `true` to build the session from an existing quote. When `true`, pass `quote_id` and
+      nothing else — `custom` must be omitted. When `false` or absent, `custom` is required and
+      `quote_id` must be omitted.
     </ParamField>
 
-    <ParamField body="product_details" type="object[]" required>
-      At least one product.
-      <Expandable title="product_details[] properties">
-        <ParamField body="description" type="string" required>
-          Product description.
-        </ParamField>
-        <ParamField body="unit_price" type="string" required>
-          Unit price as a string, e.g. `"24.99"`.
-        </ParamField>
-        <ParamField body="product_id" type="string">
-          Your external product identifier, max 50 characters.
-        </ParamField>
-        <ParamField body="quantity" type="integer" default={1}>
-          Quantity of this product. Positive integer.
-        </ParamField>
-      </Expandable>
+    <ParamField body="quote_id" type="string">
+      **Required when `quote` is `true`.** The opaque public quote id returned by quote creation
+      (for example, `qte_…`). The quote carries the merchant, products, and locked price and expires
+      after about 15 minutes. Do not send a merchant checkout-session id.
     </ParamField>
 
-    <ParamField body="effective_until_minutes" type="integer" default={15}>
-      How long the resulting mandate stays effective, in minutes. Positive integer.
+    <ParamField body="custom" type="object[]">
+      **Required when `quote` is not `true`.** Exactly one entry — multi-merchant sessions are not
+      yet supported.
+
+      <Expandable title="custom[] properties">
+        <ParamField body="merchant_details" type="object" required>
+          The **destination merchant** — the business the cardholder is buying from, **not your
+          application**. The `name` renders as the header on the checkout page and is forwarded to
+          Visa as the merchant of record for the token.
+          <Expandable title="merchant_details properties">
+            <ParamField body="name" type="string" required>
+              Merchant display name. Sanitized to a Visa-safe character set (e.g. `H&M` → `HM`); must contain at least one usable character.
+            </ParamField>
+            <ParamField body="url" type="string" required>
+              Merchant website URL. **Must use `https`** — the URL is forwarded to Visa.
+            </ParamField>
+            <ParamField body="country_code_iso2" type="string" required>
+              Merchant country — 2 uppercase ISO 3166-1 letters, e.g. `"US"`.
+            </ParamField>
+            <ParamField body="category_code" type="string">
+              Merchant category code (MCC). Free-form string, max 10 characters.
+            </ParamField>
+            <ParamField body="category" type="string">
+              Merchant category description, max 100 characters.
+            </ParamField>
+          </Expandable>
+        </ParamField>
+
+        <ParamField body="product_details" type="object[]" required>
+          At least one product.
+          <Expandable title="product_details[] properties">
+            <ParamField body="description" type="string" required>
+              Product description.
+            </ParamField>
+            <ParamField body="unit_price" type="string" required>
+              Unit price as a string, e.g. `"24.99"`.
+            </ParamField>
+            <ParamField body="product_id" type="string">
+              Your external product identifier, max 50 characters.
+            </ParamField>
+            <ParamField body="quantity" type="integer" default={1}>
+              Quantity of this product. Positive integer.
+            </ParamField>
+          </Expandable>
+        </ParamField>
+
+        <ParamField body="effective_until_minutes" type="integer" default={15}>
+          How long the resulting mandate stays effective, in minutes. Positive integer.
+        </ParamField>
+      </Expandable>
     </ParamField>
   </Expandable>
 </ParamField>
@@ -177,7 +203,7 @@ The `mandate_setup` field reference below covers `recurring_frequency`, `merchan
 
 | Status | Code | Cause |
 |--------|------|-------|
-| 400 | `VAL_2001` | Validation error (missing/invalid fields; `user_id`/`user_email` missing on a merchant session). `details` names the fields. |
+| 400 | `VAL_2001` | Validation error (missing/invalid fields; `user_id`/`user_email` missing on a merchant session; `quote: true` without a `quote_id`; `custom` missing when `quote` is not true). `details` names the fields. |
 | 400 | `CARD_NOT_FOUND` | Pre-selected `card_id` does not exist for this customer + merchant |
 | 400 | `CARD_INACTIVE` | Pre-selected card is not active |
 | 400 | `MANDATE_RECURRING_MUST_BE_SCOPED` | Recurring frequency sent with `merchant_scope: "any"` |
@@ -197,12 +223,30 @@ curl -X POST https://sandbox.api.prava.space/v1/sessions \
     "user_email": "jane@example.com",
     "total_amount": "49.99",
     "currency": "USD",
-    "purchase_context": [{
-      "merchant_details": { "name": "Acme Store", "url": "https://acme.example.com", "country_code_iso2": "US" },
-      "product_details": [{ "description": "Widget", "unit_price": "24.99", "quantity": 2 }]
-    }],
+    "purchase_context": {
+      "custom": [{
+        "merchant_details": { "name": "Acme Store", "url": "https://acme.example.com", "country_code_iso2": "US" },
+        "product_details": [{ "description": "Widget", "unit_price": "24.99", "quantity": 2 }]
+      }]
+    },
     "integration_type": "full_checkout",
     "callback_url": "https://acme.example.com/return"
+  }'
+```
+
+```bash cURL · From a quote
+curl -X POST https://sandbox.api.prava.space/v1/sessions \
+  -H "Authorization: Bearer sk_test_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "user_123",
+    "user_email": "jane@example.com",
+    "total_amount": "22.45",
+    "currency": "USD",
+    "purchase_context": {
+      "quote": true,
+      "quote_id": "qte_9f2c..."
+    }
   }'
 ```
 
@@ -217,10 +261,12 @@ resp = requests.post(
         "user_email": "jane@example.com",
         "total_amount": "49.99",
         "currency": "USD",
-        "purchase_context": [{
-            "merchant_details": {"name": "Acme Store", "url": "https://acme.example.com", "country_code_iso2": "US"},
-            "product_details": [{"description": "Widget", "unit_price": "24.99", "quantity": 2}],
-        }],
+        "purchase_context": {
+            "custom": [{
+                "merchant_details": {"name": "Acme Store", "url": "https://acme.example.com", "country_code_iso2": "US"},
+                "product_details": [{"description": "Widget", "unit_price": "24.99", "quantity": 2}],
+            }],
+        },
         "integration_type": "full_checkout",
         "callback_url": "https://acme.example.com/return",
     },
@@ -239,10 +285,12 @@ const resp = await fetch("https://sandbox.api.prava.space/v1/sessions", {
     user_email: "jane@example.com",
     total_amount: "49.99",
     currency: "USD",
-    purchase_context: [{
-      merchant_details: { name: "Acme Store", url: "https://acme.example.com", country_code_iso2: "US" },
-      product_details: [{ description: "Widget", unit_price: "24.99", quantity: 2 }],
-    }],
+    purchase_context: {
+      custom: [{
+        merchant_details: { name: "Acme Store", url: "https://acme.example.com", country_code_iso2: "US" },
+        product_details: [{ description: "Widget", unit_price: "24.99", quantity: 2 }],
+      }],
+    },
     integration_type: "full_checkout",
     callback_url: "https://acme.example.com/return",
   }),
@@ -258,10 +306,12 @@ curl -X POST https://sandbox.api.prava.space/v1/sessions \
     "user_email": "jane@example.com",
     "total_amount": "40.00",
     "currency": "USD",
-    "purchase_context": [{
-      "merchant_details": { "name": "Acme Store", "url": "https://acme.example.com", "country_code_iso2": "US" },
-      "product_details": [{ "description": "Monthly plan", "unit_price": "40.00" }]
-    }],
+    "purchase_context": {
+      "custom": [{
+        "merchant_details": { "name": "Acme Store", "url": "https://acme.example.com", "country_code_iso2": "US" },
+        "product_details": [{ "description": "Monthly plan", "unit_price": "40.00" }]
+      }]
+    },
     "mandate_setup": {
       "intent": "mandate_setup",
       "recurring_frequency": "monthly",
