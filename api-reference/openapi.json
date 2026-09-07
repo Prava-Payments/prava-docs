@@ -1051,7 +1051,7 @@
           "agentId": { "type": "string" },
           "customerId": { "type": "string" },
           "externalUserId": { "type": "string" },
-          "state": { "type": "string", "enum": ["available", "consumed", "expired"], "description": "Display-derived usability." },
+          "state": { "type": "string", "enum": ["available", "consumed", "expired", "paused", "cancelled", "pending"], "description": "Display-derived usability." },
           "status": { "type": "string", "enum": ["pending", "active", "paused", "consumed", "cancelled", "expired"] },
           "recurringFrequency": { "type": "string", "enum": ["one_time", "weekly", "monthly", "yearly"] },
           "merchantScope": { "type": "string", "enum": ["any", "listed"] },

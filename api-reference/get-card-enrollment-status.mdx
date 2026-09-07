@@ -2,7 +2,8 @@
 title: 'Get Card Enrollment Status'
 description: 'Poll the outcome of a full card-enrollment session without exposing payment credentials.'
 icon: 'rotate'
-api: 'GET /v1/sessions/{sessionId}/status'
+openapi: '/api-reference/openapi.json GET /v1/sessions/{sessionId}/status'
+playground: 'interactive'
 ---
 
 Poll the lifecycle of a `full_enrollment` session created by
@@ -100,6 +101,16 @@ state.
 ```bash cURL
 curl "https://sandbox.api.prava.space/v1/sessions/ses_123/status" \
   -H "Authorization: Bearer sk_test_..."
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    "https://sandbox.api.prava.space/v1/sessions/ses_123/status",
+    headers={"Authorization": "Bearer sk_test_..."},
+)
+enrollment = response.json()
 ```
 
 ```javascript JavaScript
@@ -234,4 +245,3 @@ status request itself could not be served.
 
 Every response includes an `X-Response-ID` header. Include it when contacting
 [support@prava.space](mailto:support@prava.space).
-

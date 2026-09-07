@@ -2,7 +2,7 @@
 title: 'List Mandates'
 description: 'List the standing mandates on an account, with approved and remaining amounts.'
 icon: 'list'
-api: 'GET /v1/mandates'
+openapi: '/api-reference/openapi.json GET /v1/mandates'
 playground: 'interactive'
 ---
 
@@ -25,7 +25,7 @@ Need to **create** a mandate? Mandate creation is part of the Session APIs — [
     <ResponseField name="agentId" type="string" />
     <ResponseField name="customerId" type="string" />
     <ResponseField name="externalUserId" type="string" />
-    <ResponseField name="state" type="string">Display-derived usability: `available`, `consumed`, or `expired`.</ResponseField>
+    <ResponseField name="state" type="string">Display-derived usability: `available`, `consumed`, `expired`, `paused`, `cancelled`, or `pending`.</ResponseField>
     <ResponseField name="status" type="string">`pending`, `active`, `paused`, `consumed`, `cancelled`, or `expired`.</ResponseField>
     <ResponseField name="recurringFrequency" type="string">`one_time`, `weekly`, `monthly`, `yearly`.</ResponseField>
     <ResponseField name="merchantScope" type="string">`any` or `listed`.</ResponseField>

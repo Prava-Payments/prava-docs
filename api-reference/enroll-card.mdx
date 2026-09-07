@@ -2,7 +2,8 @@
 title: 'Enroll Card'
 description: 'Provision a card only, or run the complete card-and-passkey enrollment flow without creating a payment.'
 icon: 'credit-card'
-api: 'POST /v1/sessions/enroll-card'
+openapi: '/api-reference/openapi.json POST /v1/sessions/enroll-card'
+playground: 'interactive'
 ---
 
 Register a card for a merchant-scoped customer without creating an order, transaction, mandate, cryptogram, or payment credential.
@@ -35,19 +36,7 @@ Choose the example that matches both where the card comes from and how Prava's s
 should open.
 
 <RequestExample>
-```bash Provision only
-curl -X POST https://sandbox.api.prava.space/v1/sessions/enroll-card \
-  -H "Authorization: Bearer sk_test_..." \
-  -H "Content-Type: application/json" \
-  -d '{
-    "user_id": "customer_123",
-    "user_email": "customer@example.com",
-    "vault_ref_id": "0b92f9d9-16ca-4a8e-ae75-2a4061cda90c",
-    "consent_id": "consent_123"
-  }'
-```
-
-```bash Embedded + card
+```bash cURL
 curl -X POST https://sandbox.api.prava.space/v1/sessions/enroll-card \
   -H "Authorization: Bearer sk_test_..." \
   -H "Content-Type: application/json" \
@@ -55,52 +44,42 @@ curl -X POST https://sandbox.api.prava.space/v1/sessions/enroll-card \
     "enrollment_mode": "full_enrollment",
     "user_id": "customer_123",
     "user_email": "customer@example.com",
-    "integration_type": "embedding",
-    "consent_id": "consent_123"
+    "integration_type": "embedding"
   }'
 ```
 
-```bash Embedded + vault
-curl -X POST https://sandbox.api.prava.space/v1/sessions/enroll-card \
-  -H "Authorization: Bearer sk_test_..." \
-  -H "Content-Type: application/json" \
-  -d '{
-    "enrollment_mode": "full_enrollment",
-    "user_id": "customer_123",
-    "user_email": "customer@example.com",
-    "vault_ref_id": "0b92f9d9-16ca-4a8e-ae75-2a4061cda90c",
-    "integration_type": "embedding",
-    "consent_id": "consent_123"
-  }'
+```python Python
+import requests
+
+response = requests.post(
+    "https://sandbox.api.prava.space/v1/sessions/enroll-card",
+    headers={"Authorization": "Bearer sk_test_..."},
+    json={
+        "enrollment_mode": "full_enrollment",
+        "user_id": "customer_123",
+        "user_email": "customer@example.com",
+        "integration_type": "embedding",
+    },
+)
 ```
 
-```bash Hosted + card
-curl -X POST https://sandbox.api.prava.space/v1/sessions/enroll-card \
-  -H "Authorization: Bearer sk_test_..." \
-  -H "Content-Type: application/json" \
-  -d '{
-    "enrollment_mode": "full_enrollment",
-    "user_id": "customer_123",
-    "user_email": "customer@example.com",
-    "integration_type": "full_checkout",
-    "callback_url": "https://merchant.example/card-setup/complete",
-    "consent_id": "consent_123"
-  }'
-```
-
-```bash Hosted + vault
-curl -X POST https://sandbox.api.prava.space/v1/sessions/enroll-card \
-  -H "Authorization: Bearer sk_test_..." \
-  -H "Content-Type: application/json" \
-  -d '{
-    "enrollment_mode": "full_enrollment",
-    "user_id": "customer_123",
-    "user_email": "customer@example.com",
-    "vault_ref_id": "0b92f9d9-16ca-4a8e-ae75-2a4061cda90c",
-    "integration_type": "full_checkout",
-    "callback_url": "https://merchant.example/card-setup/complete",
-    "consent_id": "consent_123"
-  }'
+```javascript JavaScript
+const response = await fetch(
+  "https://sandbox.api.prava.space/v1/sessions/enroll-card",
+  {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer sk_test_...",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      enrollment_mode: "full_enrollment",
+      user_id: "customer_123",
+      user_email: "customer@example.com",
+      integration_type: "embedding",
+    }),
+  },
+);
 ```
 </RequestExample>
 

@@ -1,0 +1,59 @@
+---
+title: 'Resume a Mandate'
+description: 'Reactivate a paused mandate.'
+icon: 'play'
+openapi: '/api-reference/openapi.json POST /v1/mandates/{id}/resume'
+playground: 'interactive'
+---
+
+Resume a paused mandate so it can create new charges again. The request takes no body and returns the updated [mandate](/api-reference/mandate-list).
+
+`POST /v1/mandates/{id}/resume`
+
+## Path parameters
+
+<ParamField path="id" type="string" required>The mandate id.</ParamField>
+
+## Response
+
+Returns the updated mandate with `status: "active"`.
+
+## Notes
+
+- Only a `paused` mandate can be resumed. Any other transition returns `409 MANDATE_INVALID_TRANSITION`.
+- Only the mandate's owner can act on it; a mismatched caller gets `403 MANDATE_FORBIDDEN`.
+
+<RequestExample>
+```bash cURL
+curl -X POST https://sandbox.api.prava.space/v1/mandates/mdt_123/resume \
+  -H "Authorization: Bearer sk_test_..."
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    "https://sandbox.api.prava.space/v1/mandates/mdt_123/resume",
+    headers={"Authorization": "Bearer sk_test_..."},
+)
+```
+
+```javascript JavaScript
+const response = await fetch("https://sandbox.api.prava.space/v1/mandates/mdt_123/resume", {
+  method: "POST",
+  headers: { Authorization: "Bearer sk_test_..." },
+});
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Success
+{ "id": "mdt_123", "status": "active", "state": "available", "merchantScope": "listed", "approvedAmount": "40.00", "currency": "USD" }
+```
+
+```json 409 Invalid Transition
+{
+  "error": { "code": "MANDATE_INVALID_TRANSITION", "message": "The mandate's current status forbids this action" }
+}
+```
+</ResponseExample>
