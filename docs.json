@@ -146,6 +146,7 @@
               "api-reference/mandate-get",
               {
                 "group": "Mandate lifecycle",
+                "expanded": true,
                 "pages": [
                   "api-reference/mandate-lifecycle",
                   "api-reference/mandate-resume",
