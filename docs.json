@@ -119,7 +119,6 @@
           {
             "group": "Resources",
             "pages": [
-              "changelog",
               "ai"
             ]
           }
@@ -201,6 +200,10 @@
             ]
           }
         ]
+      },
+      {
+        "tab": "Changelog",
+        "pages": ["changelog"]
       },
       {
         "tab": "FAQ",
