@@ -2,10 +2,40 @@
 title: 'Changelog'
 description: "What's new in Prava and these docs."
 icon: 'clock-rotate-left'
+rss: true
 ---
 
-<Update label="September 2026" description="Payment-result card identity and quote context">
-  **API**
+<Update
+  label="September 8, 2026"
+  tags={["Improvements", "Fixes", "API"]}
+  rss={{
+    title: "Mexico-issued cards and enrollment retry improvements",
+    description: "Production card eligibility now includes Mexico, subject to existing issuer restrictions. Full card enrollment can retry Visa initialization failures before a card has been provisioned."
+  }}
+>
+  ## Mexico-issued cards and enrollment retry improvements
+
+  - **Card eligibility:** Mexico-issued cards now pass Prava's issuing-country check. Existing
+    issuer restrictions still apply.
+  - **Enrollment retries:** If Visa verification fails to initialize before a card is provisioned,
+    **Try again** now starts a fresh readiness cycle in the same enrollment session.
+  - **Card artwork:** Full-enrollment completion can display the card artwork when it is available.
+
+  These improvements are available in production.
+
+  [Integrate card enrollment →](/api-reference/enroll-card)
+</Update>
+
+<Update
+  label="September 2026"
+  tags={["Improvements", "API"]}
+  rss={{
+    title: "Payment-result card identity and quote context",
+    description: "Payment results identify the transaction card. Quote integrations must read merchant_res instead of shop_pay."
+  }}
+>
+  ## Payment-result card identity and quote context
+
   - `GET /v1/sessions/{sessionId}/payment-result` now returns `transactions[].card_id`, the source
     of truth for the card bound to the transaction whether preselected or chosen during collection.
   - Quote-backed results return credential-free transaction summaries and expose merchant checkout
@@ -13,13 +43,123 @@ icon: 'clock-rotate-left'
   - Quote integrations that previously read `shop_pay` must now read `merchant_res`.
 </Update>
 
-<Update label="July 2026" description="Prava MCP launch + docs revamp">
-  **Prava MCP is live**
+<Update
+  label="September 6, 2026"
+  tags={["New", "API"]}
+  rss={{
+    title: "Enroll a card and set up its passkey without a payment",
+    description: "Merchant full-enrollment sessions collect or reuse a vaulted card and complete passkey setup without creating an order or transaction. Create the session with your secret key, open its hosted URL, and poll for completion."
+  }}
+>
+  ## Enroll a card and set up its passkey without a payment
+
+  Prepare a customer's card for future payments in a dedicated enrollment flow.
+  `POST /v1/sessions/enroll-card` now accepts `enrollment_mode: "full_enrollment"`
+  and returns a session that the customer completes on Prava's secure surface.
+
+  Start with an existing `vault_ref_id`, or omit it to let the customer enter a card.
+  Full enrollment provisions the card and completes its Visa enrollment and passkey setup
+  without creating an order or transaction. The existing `provision_only` mode continues
+  to return a `card_id` directly for an already-vaulted card.
+
+  Create the session on your backend using your secret API key:
+
+  ```json
+  {
+    "enrollment_mode": "full_enrollment",
+    "user_id": "customer_123",
+    "user_email": "customer@example.com",
+    "integration_type": "full_checkout"
+  }
+  ```
+
+  Open the returned `iframe_url` unchanged. Your backend can poll
+  `GET /v1/sessions/{sessionId}/status` to distinguish a provisioned card from completed
+  enrollment. Accept success when `status` is `completed` and `outcome` is `fully_enrolled`.
+  Retryable failures can be retried inside the same session using the selected card.
+
+  [Set up card enrollment →](/api-reference/enroll-card) ·
+  [Poll enrollment status →](/api-reference/get-card-enrollment-status)
+</Update>
+
+<Update
+  label="September 1, 2026"
+  description="Dashboard sandbox deployment"
+  tags={["Improvements"]}
+  rss={{
+    title: "Clearer dashboard environment switching",
+    description: "The sandbox-hosted developer dashboard coordinates environment changes across tabs, shows recoverable switch failures, and checks for unsaved changes before switching."
+  }}
+>
+  ## Clearer dashboard environment switching
+
+  The developer dashboard now coordinates environment changes across open tabs and shows
+  a transition while the selected view refreshes. Failed switches offer a recovery action.
+  Switching checks for unsaved edits and one-time API keys, and entering the production
+  view asks for confirmation.
+
+  This update is deployed to the sandbox-hosted dashboard. The production view is available
+  to accounts with production access.
+
+  [Using dashboard environments →](/dashboard)
+</Update>
+
+<Update
+  label="August 28, 2026"
+  tags={["New", "API"]}
+  rss={{
+    title: "Provision a vaulted card from your backend",
+    description: "Merchant secret keys can call the card-enrollment API to provision an already-vaulted customer card and receive its card_id without creating a payment."
+  }}
+>
+  ## Provision a vaulted card from your backend
+
+  Merchant integrations can now call `POST /v1/sessions/enroll-card` with a secret API key
+  to provision an already-vaulted customer card. Supply the customer identity, `vault_ref_id`,
+  and consent reference; the response returns the resulting `card_id`.
+
+  This server-to-server flow creates no order or transaction. It provisions the card;
+  passkey setup and payment authorization are separate steps.
+
+  [Provision a card →](/api-reference/enroll-card)
+</Update>
+
+<Update
+  label="August 11, 2026"
+  description="@prava-sdk/cli 3.2.0"
+  tags={["Fixes", "CLI"]}
+  rss={{
+    title: "CLI mandate setup uses the agent session API",
+    description: "Prava CLI 3.2.0 fixes mandate creation by using the agent session endpoint and reading its payment URL. Users of CLI 3.1.0 should update before creating a mandate."
+  }}
+>
+  ## CLI mandate setup uses the agent session API
+
+  `@prava-sdk/cli` 3.2.0 fixes `prava mandate create`: it now sends the agent-session
+  request format and displays the returned approval URL. Version 3.1.0 sent the request
+  to the merchant-session endpoint and expected a different response field.
+
+  **Action required:** If you use 3.1.0 to create mandates, update to 3.2.0 or later.
+
+  [Create a mandate with the CLI →](/prava-pay/mandates)
+</Update>
+
+<Update
+  label="July 2026"
+  tags={["New", "MCP", "Docs"]}
+  rss={{
+    title: "Prava MCP and expanded developer documentation",
+    description: "MCP connection instructions, end-to-end guides, API references, agent skills, and AI-assisted documentation access."
+  }}
+>
+  ## Prava MCP is live
+
   - Connect any MCP client to `https://mcp.pay.prava.space/mcp` and your agent can pay and shop
     with your card. One URL, OAuth sign-in, 12 tools, and a credential firewall: payment
     credentials never reach the agent. Start at [Prava MCP](/mcp/overview).
 
-  **Docs**
+  ### Docs
+
   - New end-to-end guides: [Add Payments to Your AI App](/guides/add-payments-to-your-ai-app),
     [REST Checkout Walkthrough](/guides/rest-checkout-walkthrough), and the
     [Go-Live Checklist](/guides/go-live-checklist).
@@ -35,16 +175,109 @@ icon: 'clock-rotate-left'
     Prava does for you — plus a new [Glossary](/concepts/glossary).
   - Fresh visual identity: brand fonts, light theme, imagery, and an interactive API playground
     backed by an OpenAPI spec.
-
-  **API**
-  - `POST /v1/deleteCard` documented in the API reference and OpenAPI spec.
-</Update>
-
-<Update label="June 2026" description="Prava Pay CLI v3">
-  - `@prava-sdk/cli` v3.x — agent linking (`prava setup`), payment sessions, and agentic shopping
-    (`prava shop search → product → quote → checkout`).
   - Agent skills: `prava-pay`, `prava-shopping`, and `prava-sdk-integration` installable via
     `npx skills add`.
   - Docs MCP server at `docs.prava.space/mcp` and `llms.txt` for AI-assisted integration —
     see [Use Prava Docs with AI](/ai).
+
+  ### API
+
+  - `POST /v1/deleteCard` documented in the API reference and OpenAPI spec.
+</Update>
+
+<Update
+  label="July 2, 2026"
+  description="@prava-sdk/cli 3.0.0"
+  tags={["New", "CLI"]}
+  rss={{
+    title: "Shopping commands in Prava CLI v3",
+    description: "Prava CLI 3.0.0 was published on July 2 with product search, product details, quote, checkout, and delivery-address commands."
+  }}
+>
+  <span id="june-2026" />
+
+  ## Shopping commands in Prava CLI v3
+
+  `@prava-sdk/cli` 3.0.0 adds `prava shop search`, `product`, `quote`, and `checkout`
+  commands alongside the existing agent-linking and payment-session commands.
+  The package also includes commands to list, add, and choose a default delivery address.
+
+  [Explore CLI shopping commands →](/prava-pay/shopping)
+</Update>
+
+<Update
+  label="May 30, 2026"
+  description="@prava-sdk/cli 2.0.0"
+  tags={["Improvements", "CLI"]}
+  rss={{
+    title: "Shorter agent approval links and clearer setup recovery",
+    description: "Prava CLI 2.0.0 signs agent registration requests, uses short server-issued approval links, and explains expired links and incorrect system clocks during setup."
+  }}
+>
+  ## Shorter agent approval links and clearer setup recovery
+
+  `@prava-sdk/cli` 2.0.0 updates `prava setup` to register a signed request and print
+  a short approval link containing a server-issued link ID. Agent metadata is submitted
+  during registration instead of being carried in the approval URL.
+
+  Setup reports expired or denied links and explains when an incorrect system clock
+  prevents registration. Polling stops when a link expires and tells you to start setup again.
+
+  [Link an agent →](/prava-pay/linking)
+</Update>
+
+<Update
+  label="May 16, 2026"
+  description="Dashboard sandbox deployment"
+  tags={["Improvements"]}
+  rss={{
+    title: "More visible API-key creation errors",
+    description: "The sandbox-hosted dashboard displays API-key creation failures as notifications in the key-creation flow."
+  }}
+>
+  ## More visible API-key creation errors
+
+  API-key creation failures now appear as notifications in the sandbox-hosted dashboard,
+  making unsuccessful requests easier to spot while the key-creation dialog remains open.
+
+  [Manage API keys →](/dashboard)
+</Update>
+
+<Update
+  label="May 13, 2026"
+  description="Production enrollment milestone"
+  tags={["New", "Fixes", "API"]}
+  rss={{
+    title: "Live card enrollment verified in production",
+    description: "Prava verified its first live cardholder enrollment against production Visa services. Production API connectivity and Visa verification configuration fixes supported this milestone."
+  }}
+>
+  ## Live card enrollment verified in production
+
+  Prava's first live cardholder enrollment was verified against production Visa services.
+  The verified flow covers session creation, hosted card verification, and enrollment
+  for the initial production integration.
+
+  Related fixes restored production API requests that had blocked merchant onboarding
+  and corrected the Visa environment used by hosted verification.
+
+  [Understand the checkout flow →](/concepts/checkout-flow)
+</Update>
+
+<Update
+  label="May 5, 2026"
+  description="@prava-sdk/cli 0.0.1"
+  tags={["New", "CLI"]}
+  rss={{
+    title: "The first Prava CLI package",
+    description: "Prava CLI 0.0.1 was published with commands for agent linking, link-status checks, and creating payment sessions with polling."
+  }}
+>
+  ## The first Prava CLI package
+
+  The first public `@prava-sdk/cli` package introduces the `prava` command for agent
+  integrations. Version 0.0.1 includes `prava setup`, `prava status`, and
+  `prava sessions create`, with polling for the payment-session result.
+
+  [Get started with the current CLI →](/prava-pay/quickstart)
 </Update>
