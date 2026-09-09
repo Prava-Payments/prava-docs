@@ -27,11 +27,243 @@ rss: true
 </Update>
 
 <Update
+  label="September 2026 — Sessions"
+  description="Live API roundup"
+  tags={["New", "Breaking Changes", "API"]}
+  rss={{
+    title: "Create payment sessions from an existing quote",
+    description: "The live session API accepts quote-based purchase context. Custom integrations must wrap their former purchase-context array in a custom object. Quote amounts and currencies must match; invalid merchant URLs and email domains are rejected at creation."
+  }}
+>
+  ## Create payment sessions from an existing quote
+
+  `POST /v1/sessions` supports a quote-based flow: pass the quote ID and Prava resolves
+  its merchant, products, and final total before creating the payment session.
+  From your backend, authenticate with your merchant secret key and send:
+
+  ```json
+  {
+    "user_id": "customer_123",
+    "user_email": "customer@example.com",
+    "total_amount": "49.99",
+    "currency": "USD",
+    "purchase_context": {
+      "quote": true,
+      "quote_id": "qte_..."
+    }
+  }
+  ```
+
+  Use the exact final amount and currency of your quote. A mismatch returns
+  `409 QUOTE_SESSION_MISMATCH`; an expired quote returns `410 QUOTE_EXPIRED`.
+  Omit `custom` in quote mode.
+
+  **Action required for custom checkout integrations:** Change
+  `purchase_context: [...]` to `purchase_context: { custom: [...] }` on the same endpoint.
+  Keep your existing merchant and product fields inside that array; one merchant is supported
+  per session. Omit `quote_id` in custom mode.
+
+  Session creation also validates merchant URLs and customer email domains earlier.
+  Supply an HTTPS merchant URL with a valid public domain and a customer email on a
+  routable domain. Merchant URLs are stored as their origin, with paths, queries, and fragments
+  removed; merchant names are normalized to Visa-supported characters.
+
+  [Create a session →](/api-reference/create-session)
+</Update>
+
+<Update
+  label="September 2026 — Mandates"
+  description="Live API roundup"
+  tags={["New", "Breaking Changes", "API"]}
+  rss={{
+    title: "Manage standing mandates and reconcile each charge",
+    description: "Set up mandates through sessions, filter by customer, inspect charge history, and pause, resume, or cancel future charging. Direct agent integrations must decrypt encrypted_payload when charging; merchant secret-key callers still receive credentials."
+  }}
+>
+  ## Manage standing mandates and reconcile each charge
+
+  Add `mandate_setup` with `intent: "mandate_setup"` to a session to collect approval
+  for future charges. After activation, charge the mandate without another passkey prompt.
+  One-time standing mandates are capped at seven days; a later `valid_until` does not extend
+  that window. Check `validUntil` before scheduling a charge.
+
+  - **Find the right mandate:** `GET /v1/mandates` accepts `customer_id` for merchant callers,
+    using either their external customer ID or a Prava customer ID. Add `standing_only=true`
+    to exclude transient checkout mandates. Responses include `approvedAmount`, `remaining`,
+    `validUntil`, `renewsAt`, and `lastCharge`; the detail endpoint includes charge history.
+    Displayed balances are derived from recorded activity; Visa enforces the spending limit.
+  - **Track each charge:** `POST /v1/mandates/{id}/charge` creates its own order and transaction.
+    Send a decimal-string `amount` and an optional `reference` to deduplicate retries within
+    that mandate. Failed charges release the reference for retry. Currency comes from the
+    mandate; an optional per-charge `purchase_context` remains a one-entry array.
+  - **Report the outcome:** Send `txn_status: "APPROVED"` or `"DECLINED"` to
+    `POST /v1/mandates/{id}/charges/{txnId}/report` to reconcile the charge and report to Visa.
+    `txn_type` defaults to `"PURCHASE"`.
+  - **Control future charging:** `POST /v1/mandates/{id}/pause`, `/resume`, and `/cancel`
+    manage the mandate's Prava state. Cancellation is terminal in Prava; these controls
+    do not revoke the underlying Visa instruction.
+
+  **Action required for direct agent charge integrations:** Read and decrypt
+  `encrypted_payload` using the agent's private key instead of reading plaintext
+  `credentials` or `dynamicData`. Merchant secret-key callers still receive `credentials`.
+  Charging and reporting require a merchant secret key or a direct agent signature;
+  charging is not exposed through MCP.
+
+  [Set up a mandate →](/api-reference/create-session#mandate-setup) ·
+  [Charge →](/api-reference/mandate-charge) ·
+  [Report →](/api-reference/mandate-report) ·
+  [Lifecycle controls →](/api-reference/mandate-lifecycle)
+</Update>
+
+<Update
+  label="September 2026 — Saved cards"
+  description="Live API roundup"
+  tags={["New", "Improvements", "API"]}
+  rss={{
+    title: "Saved-card defaults, removal, and passkey reset",
+    description: "Saved-card lists identify the default card. Merchant integrations can change the default, cardholders can reset device bindings while keeping their card, and card removal reports whether its network token was retired."
+  }}
+>
+  ## Saved-card defaults, removal, and passkey reset
+
+  - **Default cards:** `GET /v1/listCards` returns `is_default` and places the default first.
+    Merchant secret-key callers can set it with `PATCH /v1/cards/{id}/default` or clear it
+    with `PATCH /v1/cards/remove-default`, passing the customer's Prava ID in the
+    `customer_id` query parameter. When a card list has no default, the earliest saved card
+    becomes the fallback, including after an explicit clear.
+  - **Reset passkeys:** Cardholder session authentication can call
+    `DELETE /v1/cards/{id}/device-bindings` to remove device bindings while keeping the
+    saved card and network token. Local passkey state is cleared only after removal is
+    verified. Shared-token bindings cannot be reset through this endpoint.
+  - **Remove and re-save cards:** `POST /v1/deleteCard` accepts `CUSTOMER_CONFIRMED` for
+    ordinary customer-requested removal and returns `was_default` and
+    `network_token_deleted`. Shared network tokens are retained for other customers.
+    Re-saving a removed card refreshes reused enrollment and token records for the new saved card.
+  - **Issuing-country coverage:** Canada, Australia, Hong Kong, Japan, Malaysia,
+    New Zealand, Singapore, South Korea, Taiwan, Thailand, and Vietnam pass the
+    issuing-country check alongside the US and its supported territories. Existing
+    issuer restrictions still apply; Mexico is covered in the September 8 update.
+
+  [List cards →](/api-reference/list-cards) ·
+  [Delete a card →](/api-reference/delete-card)
+</Update>
+
+<Update
+  label="September 2026 — Agent sessions"
+  description="Live API roundup"
+  tags={["Improvements", "API", "CLI"]}
+  rss={{
+    title: "Replay agent-session requests and check client compatibility",
+    description: "Agent-session creation accepts an Idempotency-Key and returns the original session on replay. API response headers advertise CLI and per-skill compatibility requirements."
+  }}
+>
+  ## Replay agent-session requests and check client compatibility
+
+  Direct signed-agent integrations can send an `Idempotency-Key` with
+  `POST /v1/sessions/agent`. Reusing it for the same agent returns the original session
+  with HTTP `200`; a new session returns `201`. A concurrent duplicate can return
+  `409 DUPLICATE_EXTERNAL_ORDER_REF`; retry with the same key to retrieve the original.
+
+  This endpoint accepts flat `total_amount`, `currency`, `merchant_name`, `merchant_url`,
+  `merchant_country`, and `products` fields. Read the approval link from `payment_url`.
+  Use a new idempotency key for each new purchase.
+
+  API responses also expose `X-Min-CLI-Version` and `X-Min-Skill-Version`.
+  Set `X-Skill-Name` to receive the requirement for that skill. The current production
+  CLI minimum is `3.2.0`.
+
+  [Use the current CLI →](/prava-pay/quickstart)
+</Update>
+
+<Update
+  label="September 2026 — Checkout"
+  description="Live feature roundup"
+  tags={["Improvements", "Fixes"]}
+  rss={{
+    title: "Branded embedded checkout and clearer payment recovery",
+    description: "Embedded checkout follows merchant branding. Mobile card and verification screens fit more reliably, retries refresh saved cards, and payment authorization uses the full approved total including tax and shipping."
+  }}
+>
+  ## Branded embedded checkout and clearer payment recovery
+
+  Set `integration_type: "embedding"` when creating a session for a full-width checkout
+  that uses your stored merchant brand color. The default `"full_checkout"` mode provides
+  the standalone checkout presentation.
+
+  - Mobile layouts keep expiry fields, card controls, verification steps, and the footer
+    visible, including on iPhones with a bottom safe area.
+  - Retrying checkout refreshes saved cards, restores add-card controls, and clears stale
+    error overlays so newly added cards are available.
+  - Visa verification initialization has timeout and retry handling. Card-vault connection
+    failures have bounded retries before provisioning, and card-art generation has limits
+    to reduce interference with payment requests.
+  - Payment authorization uses the full approved order total, including tax and shipping.
+    Currency handling uses the order's supported currency throughout the payment flow.
+
+  [Choose a checkout presentation →](/api-reference/create-session)
+</Update>
+
+<Update
+  label="September 2026 — Developer dashboard"
+  description="Live sandbox-hosted dashboard roundup"
+  tags={["New", "Improvements"]}
+  rss={{
+    title: "Named API keys, staged rotation, and clearer order history",
+    description: "The sandbox-hosted developer dashboard supports named keys, staged rotation, business-profile and checkout-branding edits, and clearer order history. Production views require production access."
+  }}
+>
+  ## Named API keys, staged rotation, and clearer order history
+
+  The sandbox-hosted developer dashboard now lets you name API keys and see their creation
+  date, last use, and status. New secret keys are shown once. Rotate a key by creating and
+  saving its replacement, updating your integration, and then explicitly revoking the old key.
+  The old key stays active until you revoke it.
+
+  Key creation requires the developer role or higher; revocation requires admin access.
+  Newly issued keys use `pk_test` / `sk_test` prefixes for sandbox and `pk_live` / `sk_live`
+  for production. Production views and actions require production access.
+
+  Order details also show recorded card-check outcomes per payment attempt and a readable
+  activity timeline, making declined and retried attempts easier to follow.
+
+  After setting up a merchant in the selected environment, use **Business Details** to
+  update the application name, website, and embedded-checkout brand color. Production
+  access remains subject to approval.
+
+  [Manage your integration in the dashboard →](/dashboard)
+</Update>
+
+<Update
+  label="September 2026 — Reseller workspaces"
+  description="Live sandbox-hosted dashboard roundup"
+  tags={["New", "Improvements"]}
+  rss={{
+    title: "Manage AI applications in enabled reseller workspaces",
+    description: "Enabled reseller workspaces can track application onboarding, review payment activity, and rotate credentials when the relevant modules are enabled. The Team view lists active members and pending invitations."
+  }}
+>
+  ## Manage AI applications in enabled reseller workspaces
+
+  Enabled reseller workspaces in the sandbox-hosted dashboard have dedicated Overview,
+  Applications, and Team views. With merchant onboarding enabled, submit an application,
+  follow its review status, and respond to requested changes before activation.
+
+  Authorized workspaces can inspect their applications' orders and transactions and,
+  with credential management enabled, create a replacement key before revoking the old one.
+  The read-only Team view lists active members and pending invitations.
+
+  Availability follows the reseller's enabled environment and modules. Each order retains
+  its own currency; application analytics avoid combining amounts across currencies.
+
+  [Open the dashboard →](/dashboard)
+</Update>
+
+<Update
   label="September 2026"
-  tags={["Improvements", "API"]}
+  tags={["Improvements", "Breaking Changes", "API"]}
   rss={{
     title: "Payment-result card identity and quote context",
-    description: "Payment results identify the transaction card. Quote integrations must read merchant_res instead of shop_pay."
+    description: "Payment results identify the transaction card. Quote integrations must read merchant_res instead of shop_pay and keep polling while the result is processing."
   }}
 >
   ## Payment-result card identity and quote context
@@ -40,7 +272,12 @@ rss: true
     of truth for the card bound to the transaction whether preselected or chosen during collection.
   - Quote-backed results return credential-free transaction summaries and expose merchant checkout
     lifecycle context as `merchant_res`. Non-quote and no-order responses omit the lifecycle field.
-  - Quote integrations that previously read `shop_pay` must now read `merchant_res`.
+  - Results can report `status: "processing"` while payment or merchant checkout is still
+    running. For quote-backed sessions, keep polling for the merchant's terminal outcome;
+    credential issuance alone does not mean the merchant order is paid.
+
+  **Action required:** Quote integrations that previously read `shop_pay` must now read
+  `merchant_res`. Treat `processing` as nonterminal and keep polling.
 </Update>
 
 <Update
