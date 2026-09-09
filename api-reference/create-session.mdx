@@ -17,13 +17,13 @@ Create a short-lived, single-use session tied to one merchant, customer, and ord
     Omit `mandate_setup` (or send `intent: "checkout"`). The session collects a card and charges immediately.
   </Tab>
   <Tab title="Mandate setup">
-    Include a `mandate_setup` block with `intent: "mandate_setup"`. The session is **authorize-only**: it returns an `iframe_url` (passkey approval) and `authorizeOnly: true`, and issues **no** credentials. Charge later with [Charge a Mandate](/api-reference/mandate-charge). There is no separate `POST /v1/mandates` create endpoint — a [mandate](/concepts/mandates) is always set up through this endpoint.
+    Include a `mandate_setup` block with `intent: "mandate_setup"`. The session is **authorize-only**: it returns an `iframe_url` for passkey approval, and completing setup issues **no** payment credentials. Charge later with [Charge a Mandate](/api-reference/mandate-charge). There is no separate `POST /v1/mandates` create endpoint — a [mandate](/concepts/mandates) is always set up through this endpoint.
   </Tab>
 </Tabs>
 
 ## Mandate setup
 
-**Mandate creation is part of the Session APIs — this endpoint is how mandates are created.** Send a `mandate_setup` block (see [Body](#body)) with `intent: "mandate_setup"` and the session becomes authorize-only: the response carries an `iframe_url` where the owner approves **once** with their passkey, `authorizeOnly: true`, and no credentials. Once the mandate is `active`, charge it any time with [Charge a Mandate](/api-reference/mandate-charge) — no further passkey needed.
+**Mandate creation is part of the Session APIs — this endpoint is how mandates are created.** Send a `mandate_setup` block (see [Body](#body)) with `intent: "mandate_setup"` and the session becomes authorize-only: the response carries an `iframe_url` where the owner approves **once** with their passkey. Completing setup does not issue payment credentials. Once the mandate is `active`, charge it with [Charge a Mandate](/api-reference/mandate-charge) within its approved terms — no further passkey needed.
 
 The `mandate_setup` field reference below covers `recurring_frequency`, `merchant_scope`, `max_charges`, and `valid_until`; see [Mandates](/concepts/mandates) for the concept and guardrails.
 
@@ -69,8 +69,10 @@ The `mandate_setup` field reference below covers `recurring_frequency`, `merchan
 
     <ParamField body="quote_id" type="string">
       **Required when `quote` is `true`.** The opaque public quote id returned by quote creation
-      (for example, `qte_…`). The quote carries the merchant, products, and locked price and expires
-      after about 15 minutes. Do not send a merchant checkout-session id.
+      (for example, `qte_…`). The quote carries the merchant, products, and locked price.
+      Create the session before the quote expires; its expiry is separate from the session's
+      lifetime. `total_amount` and `currency` must match the quote's final total.
+      Do not send a merchant checkout-session id.
     </ParamField>
 
     <ParamField body="custom" type="object[]">
@@ -191,7 +193,6 @@ The `mandate_setup` field reference below covers `recurring_frequency`, `merchan
 <ResponseField name="iframe_url" type="string">Secure card-collection (or, for mandate setup, passkey-approval) surface.</ResponseField>
 <ResponseField name="order_id" type="string">Internal order identifier.</ResponseField>
 <ResponseField name="expires_at" type="string">ISO 8601 timestamp when the session expires.</ResponseField>
-<ResponseField name="authorizeOnly" type="boolean">Present and `true` for mandate-setup sessions (no credentials issued).</ResponseField>
 
 ## Notes
 
@@ -209,6 +210,8 @@ The `mandate_setup` field reference below covers `recurring_frequency`, `merchan
 | 400 | `MANDATE_RECURRING_MUST_BE_SCOPED` | Recurring frequency sent with `merchant_scope: "any"` |
 | 401 | `AUTH_1001` | Invalid API key |
 | 401 | `AUTH_1002` | Missing or invalid Authorization header |
+| 409 | `QUOTE_SESSION_MISMATCH` | Session amount or currency differs from the quote's final total |
+| 410 | `QUOTE_EXPIRED` | The quote expired before session creation |
 | 429 | `TRIES_EXHAUSTED` | Sandbox test-transaction limit reached for this merchant |
 | 500 | `MERCHANT_LOOKUP_ERROR` | Failed to load the merchant account for the key |
 | 500 | `CONFIG_ERROR` | Server-side configuration issue (Visa or Skyflow not configured) |
@@ -339,8 +342,7 @@ curl -X POST https://sandbox.api.prava.space/v1/sessions \
   "session_token": "eyJhbGciOi...",
   "iframe_url": "https://checkout.prava.space/s/sess_7d1a...",
   "order_id": "ord_88c2...",
-  "expires_at": "2026-07-26T12:15:00Z",
-  "authorizeOnly": true
+  "expires_at": "2026-07-26T12:15:00Z"
 }
 ```
 

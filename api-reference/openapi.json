@@ -1471,10 +1471,6 @@
             "type": "string",
             "format": "date-time",
             "description": "ISO 8601 timestamp when the session expires"
-          },
-          "authorizeOnly": {
-            "type": "boolean",
-            "description": "Present and true for mandate-setup sessions (no credentials issued)."
           }
         }
       },
