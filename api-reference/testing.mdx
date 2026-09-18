@@ -49,8 +49,90 @@ Test card numbers and the test OTP live on their own reference page, organized b
 6. Verify the final state: payment result `status` becomes `completed` (or `failed`).
 
 For a quote-backed session, poll the same result endpoint until its top-level status is terminal.
-When a transaction exists, the response contains `transactions[].card_id`; it also contains
-`merchant_res`, but no token, CVV, expiry, or line-item credentials. Prava performs the merchant
-checkout, so you do not call Report Status.
+When a transaction exists, the response contains `transactions[].card_id`, but no token, CVV,
+expiry, or line-item credentials. Read the top-level `status` and `error`; when merchant
+lifecycle data exists, `merchant_res` adds its normalized status and optional order ID.
+Prava performs the merchant checkout, so you do not call Report Status.
+
+## Simulate successful payment completion
+
+Use sandbox simulation to test your success screen and completed-order handling when a
+quote-backed checkout reaches a confirmed merchant payment failure. Add
+`sandbox_simulation: { stage: "payment", outcome: "success" }` when creating the session.
+The request is fixed for that session; it is not an option on the result-polling request.
+
+Use an owned, unexpired sandbox quote. Replace the example quote ID, amount, and currency
+with its exact final values:
+
+```bash
+curl -X POST https://sandbox.api.prava.space/v1/sessions \
+  -H "Authorization: Bearer $PRAVA_SANDBOX_SECRET_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "customer_123",
+    "user_email": "customer@example.com",
+    "total_amount": "49.99",
+    "currency": "USD",
+    "purchase_context": {
+      "quote": true,
+      "quote_id": "qte_your_sandbox_quote"
+    },
+    "sandbox_simulation": {
+      "stage": "payment",
+      "outcome": "success"
+    }
+  }'
+```
+
+Open the returned `iframe_url`, complete card collection and verification, and poll
+[Get Payment Result](/api-reference/get-payment-result). The normal checkout still runs.
+After an eligible terminal merchant payment outcome, the effective result is `completed`.
+For example, a confirmed card decline can produce:
+
+```json
+{
+  "session_id": "ses_example",
+  "order_id": "ord_example",
+  "status": "completed",
+  "transactions": [
+    {
+      "txn_id": "txn_example",
+      "card_id": "card_example",
+      "status": "completed"
+    }
+  ],
+  "merchant_res": { "status": "paid" },
+  "observed_result": {
+    "stage": "payment",
+    "status": "failed",
+    "error": {
+      "code": "CARD_DECLINED",
+      "message": "The payment was declined by the card issuer."
+    }
+  }
+}
+```
+
+The sandbox transaction, its line items, linked action, and order complete together.
+Associated one-time mandates are consumed; recurring mandates remain active. Repeated
+polling does not apply completion twice. Only after that completion succeeds does the result
+return `merchant_res.status: "paid"`. In a simulation, this is the effective test result;
+`observed_result` still reports what actually happened at the merchant. If the merchant reports success,
+`observed_result` contains `{ "stage": "payment", "status": "completed" }`.
+
+| Case | Behavior |
+|------|----------|
+| Confirmed merchant payment failure | Effective `completed`; actual failure retained in `observed_result` |
+| Confirmed merchant payment success | `completed`; actual success retained in `observed_result` |
+| Pending or unknown payment | No simulated success; continue observation |
+| Preparation failure or additional verification required | Normal failure; simulation does not override it |
+| Production, custom checkout, or mandate setup | `400 SANDBOX_SIMULATION_NOT_ALLOWED` |
+| Unsupported stage, outcome, or extra simulation fields | Request validation error |
+
+<Note>
+  The simulated completion changes only Prava's sandbox lifecycle. It does not settle a real
+  merchant payment, change merchant fulfillment, or emit payment callbacks or webhooks.
+  Use `observed_result` to distinguish the actual payment outcome from the effective test result.
+</Note>
 
 Anything unexpected? Check [Errors](/api-reference/errors).

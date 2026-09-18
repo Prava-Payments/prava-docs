@@ -6,6 +6,249 @@ rss: true
 ---
 
 <Update
+  label="September 18, 2026 — Merchant lifecycle"
+  tags={["New", "API"]}
+  rss={{
+    title: "Payment results include merchant lifecycle status",
+    description: "Quote-backed payment results include merchant_res with a normalized status and optional orderId. Sandbox simulation reports an effective paid status while observed_result retains the actual outcome."
+  }}
+>
+  ## Payment results include merchant lifecycle status
+
+  `GET /v1/sessions/{sessionId}/payment-result` returns `merchant_res` when merchant
+  lifecycle data exists. Merchant and agent results expose a normalized `status` and an
+  optional merchant `orderId`. A completed checkout can include:
+
+   ```json
+   {
+     "status": "completed",
+     "merchant_res": {
+       "status": "paid",
+       "orderId": "merchant_order_123"
+     }
+   }
+   ```
+
+  Lifecycle states such as `pending`, `prepared`, `prepare_failed`, and `needs_human` remain
+  visible. Non-quote results and sessions without merchant lifecycle data omit the field.
+  Continue using the top-level `status` and canonical `error` for outcome handling.
+
+  For [sandbox simulation](/api-reference/testing#simulate-successful-payment-completion),
+  `merchant_res.status` becomes `paid` after sandbox completion succeeds. `observed_result`
+  retains the actual merchant outcome, including a payment failure.
+
+  [Read the payment-result response →](/api-reference/get-payment-result)
+</Update>
+
+<Update
+  label="September 18, 2026 — Merchant checkout"
+  tags={["Improvements", "Fixes"]}
+  rss={{
+    title: "Faster, more reliable merchant checkout",
+    description: "Merchant checkout reuses verified setup when the page has not changed, recognizes more payment flows, and keeps final amount, card-field, and consent checks in place."
+  }}
+>
+  ## Faster, more reliable merchant checkout
+
+  Merchant checkout now reuses verified preparation and card-field checks when the page has
+   not changed, reducing repeated setup before payment. Checkout information is gathered more
+   efficiently, and payment outcome monitoring starts without waiting for unrelated navigation.
+
+   Checkout also recognizes review-then-pay flows and payment buttons that include a currency
+   total. Final amount, card-field, and consent checks still run, including opting out of
+   marketing offers and card saving. Checkout requests human attention when the final payment
+   action is ambiguous.
+</Update>
+
+<Update
+  label="September 17, 2026 — Sandbox simulation"
+  tags={["New", "API"]}
+  rss={{
+    title: "Test successful checkout completion with sandbox simulation",
+    description: "Quote-backed sandbox sessions can simulate successful completion after a confirmed merchant payment failure. Test your success screen and completed order state while preserving the actual payment outcome in observed_result."
+  }}
+>
+  ## Test successful checkout completion with sandbox simulation
+
+  Exercise your application's success screen and completed-order handling even when a sandbox
+  checkout ends in a merchant payment failure. You can now request a successful payment
+  simulation when creating a quote-backed sandbox session.
+
+  Add this field to your existing `POST /v1/sessions` request, using your sandbox secret key:
+
+  ```json
+  {
+    "sandbox_simulation": {
+      "stage": "payment",
+      "outcome": "success"
+    }
+  }
+  ```
+
+  Complete card collection and verification, then poll the payment result as usual. Once an
+  eligible terminal payment outcome is available, Prava returns `status: "completed"` and
+  completes the sandbox order and active transaction together. Any associated one-time mandate
+  is consumed; recurring mandates remain active. Repeated result polling is idempotent.
+
+  `observed_result` preserves the actual payment outcome and its canonical error, so you can
+  distinguish your application's simulated success from what happened at the merchant.
+
+  **Sandbox only:** This supports payment-stage success for quote-backed checkout. It does not
+  turn pending results, preparation failures, or requests for additional verification into
+  success. The simulated completion does not settle a real merchant payment, trigger
+  fulfillment, or emit payment callbacks or webhooks. Production, custom checkout, and
+  mandate-setup sessions reject this option.
+
+  [Try sandbox simulation →](/api-reference/testing#simulate-successful-payment-completion)
+</Update>
+
+<Update
+  label="September 17, 2026 — Payment results"
+  tags={["Improvements", "API"]}
+  rss={{
+    title: "Payment results use consistent error codes",
+    description: "Confirmed payment failures expose canonical error codes and safe messages. Sandbox simulations also preserve the actual payment outcome in observed_result."
+  }}
+>
+  ## Payment results use consistent error codes
+
+  Merchant and agent payment-result responses now use the same terminal outcome format.
+  Confirmed merchant payment failures return `status: "failed"` with a top-level `error`,
+  including codes such as `CARD_DECLINED`, `INSUFFICIENT_FUNDS`, and `EXPIRED_CARD`.
+  Unrecognized payment errors use `PAYMENT_FAILED` and a safe, consistent message.
+
+  Explicit sandbox simulations additionally return `observed_result` for the actual terminal
+  payment outcome. Responses use `Cache-Control: no-store`.
+
+  [Read payment-result handling →](/api-reference/get-payment-result) ·
+  [Payment error codes →](/api-reference/errors)
+</Update>
+
+<Update
+  label="September 14, 2026 — Shopping matches"
+  tags={["Improvements", "Fixes"]}
+  rss={{
+    title: "Match shopping requests to the right product and quantity",
+    description: "Shopping discovery recognizes equivalent measurements and preserves the shopper\u2019s product wording, helping avoid missed matches and unrelated accessories."
+  }}
+>
+  ## Match shopping requests to the right product and quantity
+
+  Shopping discovery now recognizes equivalent measurements such as `0.75 L` and `750 ml`,
+   `425 gm` and `425 g`, and different spellings of pack counts. It also preserves the shopper's
+   product wording when interpreting a request, helping distinguish a feeding bottle from an
+   accessory such as a bottle warmer.
+
+   Results stay within the eligible merchant catalogue, including when broader matching is
+   needed. These changes improve product matching without expanding merchant eligibility.
+</Update>
+
+<Update
+  label="September 14, 2026 — Checkout extras"
+  tags={["Improvements", "Fixes"]}
+  rss={{
+    title: "Remove recognized paid protection add-ons before checkout",
+    description: "Supported merchant checkouts opt out of recognized package-protection and paid-return extras and wait for the updated total before continuing."
+  }}
+>
+  ## Remove recognized paid protection add-ons before checkout
+
+  Supported merchant checkouts now opt out of recognized paid package-protection and
+   return-protection extras. If a charged line remains after opting out, checkout removes
+   that line and waits for the merchant's updated total before continuing.
+
+   The cleanup targets these recognized extras and preserves unrelated billing and required
+   terms controls. This helps keep automatically added protection charges out of the amount
+   presented for payment.
+</Update>
+
+<Update
+  label="September 12, 2026 — Dashboard navigation"
+  tags={["Improvements", "Fixes", "Dashboard"]}
+  rss={{
+    title: "Return to the same place in your dashboard",
+    description: "Dashboard Back navigation restores the source view with its filters, tab, date range, and pagination."
+  }}
+>
+  ## Return to the same place in your dashboard
+
+  Detail-page Back controls restore the view you came from, including its filters, selected
+  tab, date range, and pagination. Browser Back and Forward remain usable, so reviewing an
+  order or application no longer means rebuilding the previous dashboard view.
+</Update>
+
+<Update
+  label="September 10, 2026 — Cardholder names"
+  tags={["Fixes"]}
+  rss={{
+    title: "Fill missing checkout names from verified billing details",
+    description: "Retail checkout preserves a prefilled cardholder name or fills a blank field from visible billing details. A required name that cannot be resolved stops payment for human attention."
+  }}
+>
+  ## Fill missing checkout names from verified billing details
+
+  Retail checkout now preserves a name already filled by the payment provider and can fill
+   a blank cardholder-name field from the checkout's visible billing details. Shipping details
+   are used only when the checkout confirms that shipping is also the billing address.
+
+   If a required name cannot be resolved, checkout requests human attention before clicking
+   Pay. Hidden fields, email-derived names, and placeholder names are not used.
+</Update>
+
+<Update
+  label="September 10, 2026 — Playground shipping"
+  tags={["Improvements", "Demo"]}
+  rss={{
+    title: "Choose shipping before paying in the Playground",
+    description: "Playground shoppers can change an available shipping option during checkout and review the refreshed delivery information and authoritative total before creating a payment session."
+  }}
+>
+  ## Choose shipping before paying in the Playground
+
+  The [Prava Playground](https://playground.prava.space/) now lets you select another available
+  shipping option and review its updated delivery information and final total before paying.
+  The selection is confirmed by the merchant before payment-session creation; checkout does
+  not rely on a locally estimated shipping price.
+</Update>
+
+<Update
+  label="September 9, 2026 — Mastercard demo"
+  tags={["New", "Fixes", "Demo"]}
+  rss={{
+    title: "Try Mastercard enrollment and saved-card authentication in the Playground demo",
+    description: "The Playground demo offers Mastercard alongside Visa, with hosted enrollment, saved-card authentication, and payment-credential preparation."
+  }}
+>
+  ## Try Mastercard enrollment and saved-card authentication in the Playground demo
+
+  The [Prava Playground demo](https://playground.prava.space/demo) now offers a Mastercard
+  sandbox flow alongside Visa. Add the Mastercard test card, complete its hosted authentication
+  flow, and select the saved card to try payment authentication and credential preparation.
+
+  The demo wallet can retain one Visa fixture and one Mastercard fixture for the current
+  browser. Mastercard appears only when its demo configuration is available, and a successful
+  authentication alone does not establish a completed merchant payment.
+
+  This release also fixes Visa sandbox initialization in the demo. These changes apply to the
+  configured demo experience; general Mastercard availability in the Core API is separate.
+</Update>
+
+<Update
+  label="September 9, 2026 — Checkout loading"
+  tags={["Fixes"]}
+  rss={{
+    title: "Prevent cached assets from blocking checkout initialization",
+    description: "The secure checkout iframe now keeps its logger and application bundle in sync, fixing initialization failures caused by an older cached logger."
+  }}
+>
+  ## Prevent cached assets from blocking checkout initialization
+
+  The secure checkout iframe now bundles its logger with the versioned application asset.
+  An older cached logger can no longer cause the `ensureIframeLogger is not defined` error
+  during payment initialization. No integration change is required.
+</Update>
+
+<Update
   label="September 8, 2026"
   tags={["Improvements", "Fixes", "API"]}
   rss={{
@@ -28,26 +271,21 @@ rss: true
 
 <Update
   label="September 7, 2026"
-  tags={["Improvements", "Breaking Changes", "API"]}
+  tags={["Improvements", "API"]}
   rss={{
-    title: "Payment-result card identity and quote context",
-    description: "Payment results identify the transaction card. Quote integrations must read merchant_res instead of shop_pay and keep polling while the result is processing."
+    title: "Payment results identify the card used",
+    description: "Payment results expose transactions[].card_id as the source of truth for the card used and report processing while payment is still running."
   }}
 >
   <span id="september-2026" />
 
-  ## Payment-result card identity and quote context
+  ## Payment results identify the card used
 
   - `GET /v1/sessions/{sessionId}/payment-result` now returns `transactions[].card_id`, the source
     of truth for the card bound to the transaction whether preselected or chosen during collection.
-  - Quote-backed results return credential-free transaction summaries and expose merchant checkout
-    lifecycle context as `merchant_res`. Non-quote and no-order responses omit the lifecycle field.
   - Results can report `status: "processing"` while payment or merchant checkout is still
     running. For quote-backed sessions, keep polling for the merchant's terminal outcome;
     credential issuance alone does not mean the merchant order is paid.
-
-  **Action required:** Quote integrations that previously read `shop_pay` must now read
-  `merchant_res`. Treat `processing` as nonterminal and keep polling.
 </Update>
 
 <Update
@@ -596,6 +834,24 @@ rss: true
 </Update>
 
 <Update
+  label="June 30, 2026 — Checkout totals"
+  tags={["Fixes"]}
+  rss={{
+    title: "Wait for settled shipping and tax before accepting checkout totals",
+    description: "Merchant checkout waits for pending tax and shipping selection to settle, avoiding totals captured before the merchant has finished calculating the order."
+  }}
+>
+  ## Wait for settled shipping and tax before accepting checkout totals
+
+  Merchant checkout now waits while the merchant is still calculating tax or has not yet
+   selected an available shipping method. This avoids accepting a plausible total that later
+   changes when shipping or tax is applied.
+
+   Checkout can also recover displayed information when network data is unavailable, and
+   corrected address-validation errors clear when the merchant accepts the updated details.
+</Update>
+
+<Update
   label="June 20, 2026"
   tags={["Improvements", "Fixes"]}
   rss={{
@@ -629,6 +885,24 @@ rss: true
   Re-saving a removed card refreshes reused enrollment and token records for the new saved card.
 
   [Delete a card →](/api-reference/delete-card)
+</Update>
+
+<Update
+  label="June 16, 2026 — Delivery estimates"
+  tags={["Improvements", "Fixes"]}
+  rss={{
+    title: "Compare delivery estimates across shipping options",
+    description: "Merchant checkout preserves delivery estimates for individual shipping options, including estimates visible on the page but missing from the checkout response."
+  }}
+>
+  ## Compare delivery estimates across shipping options
+
+  Merchant checkout now preserves delivery estimates for individual shipping options,
+   including estimates supplied by merchant delivery-date apps. When an estimate is available
+   only on the page, checkout can fill that missing information for the matching option.
+
+   The selected delivery estimate stays aligned with its shipping method. Merchant-provided
+   prices, tax, and totals remain unchanged by this delivery-information fallback.
 </Update>
 
 <Update

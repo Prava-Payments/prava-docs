@@ -186,6 +186,15 @@ The `mandate_setup` field reference below covers `recurring_frequency`, `merchan
   Human-readable description of the order.
 </ParamField>
 
+<ParamField body="sandbox_simulation" type="object">
+  Optional, sandbox-only payment success simulation for quote-backed checkout. The exact shape
+  is `{ "stage": "payment", "outcome": "success" }`; both fields are required and additional
+  fields are rejected. Custom checkout, production, and mandate-setup sessions cannot use it.
+  Normal card collection and verification still run. An eligible terminal payment result can
+  complete the sandbox lifecycle while `observed_result` retains the actual outcome.
+  See [Sandbox simulation](/api-reference/testing#simulate-successful-payment-completion).
+</ParamField>
+
 ## Response
 
 <ResponseField name="session_id" type="string">Unique session identifier.</ResponseField>
@@ -208,6 +217,7 @@ The `mandate_setup` field reference below covers `recurring_frequency`, `merchan
 | 400 | `CARD_NOT_FOUND` | Pre-selected `card_id` does not exist for this customer + merchant |
 | 400 | `CARD_INACTIVE` | Pre-selected card is not active |
 | 400 | `MANDATE_RECURRING_MUST_BE_SCOPED` | Recurring frequency sent with `merchant_scope: "any"` |
+| 400 | `SANDBOX_SIMULATION_NOT_ALLOWED` | Simulation requested outside sandbox, for a custom checkout, or for mandate setup |
 | 401 | `AUTH_1001` | Invalid API key |
 | 401 | `AUTH_1002` | Missing or invalid Authorization header |
 | 409 | `QUOTE_SESSION_MISMATCH` | Session amount or currency differs from the quote's final total |

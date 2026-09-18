@@ -51,11 +51,28 @@ top-level `status: "failed"` and may include one of these `error.code` values.
 
 | Status | Code | Cause | Recovery |
 |--------|------|-------|----------|
-| 200 | `MERCHANT_CHECKOUT_FAILED` | The merchant checkout failed | Inspect the merchant result and create a fresh quote if retrying |
+| 200 | `CARD_DECLINED` | The issuer declined the payment | Ask the cardholder to check with their issuer or use another card |
+| 200 | `INSUFFICIENT_FUNDS` | The card has insufficient funds | Use another funding source |
+| 200 | `INVALID_CARD_NUMBER` / `INVALID_SECURITY_CODE` / `INVALID_EXPIRY_DATE` | Card details are invalid | Ask the cardholder to correct the relevant details |
+| 200 | `EXPIRED_CARD` | The card has expired | Use a valid card |
+| 200 | `BILLING_DETAILS_MISMATCH` | Billing details could not be verified | Check the billing details |
+| 200 | `CARD_NOT_SUPPORTED` / `PAYMENT_METHOD_UNAVAILABLE` | The selected payment method cannot be used | Choose another supported payment method |
+| 200 | `AUTHENTICATION_FAILED` | Payment authentication failed | Review the failure before starting another attempt |
+| 200 | `PAYMENT_FAILED` | Generic payment failure; no recognized canonical detail is available | Review the result before retrying |
 | 200 | `MERCHANT_PREPARE_FAILED` | The merchant checkout could not be prepared | Create a fresh quote and session |
 | 200 | `MERCHANT_ACTION_REQUIRED` | The merchant requires additional verification | Contact support or complete the required merchant action |
 | 404 | `NOT_FOUND` | Session not found, or it belongs to another merchant | Verify the session ID and which key created it |
 | 409 | `PAYMENT_RESULT_UNSUPPORTED` | The session is an enrollment-only flow | Use [Get Card Enrollment Status](/api-reference/get-card-enrollment-status) |
+
+Read canonical failure details from the top-level `error`. When merchant lifecycle data exists,
+`merchant_res` contains only `status` and optional `orderId`. For an explicitly simulated
+sandbox result, the actual failure can appear under `observed_result.error` while
+the effective top-level status is `completed` and `merchant_res.status` is `paid`.
+
+At session creation, `400 SANDBOX_SIMULATION_NOT_ALLOWED` means simulation was requested for
+production, custom checkout, or mandate setup. Only the exact payment-stage success shape is
+accepted; malformed shapes return a validation error. See
+[Sandbox simulation](/api-reference/testing#simulate-successful-payment-completion).
 
 ## Card Enrollment — `POST /v1/sessions/enroll-card` · `GET /v1/sessions/{sessionId}/status`
 
