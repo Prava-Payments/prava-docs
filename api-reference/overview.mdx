@@ -98,7 +98,8 @@ session and polling endpoints, but Prava completes the merchant checkout for you
 <Step title="Poll the result — GET /v1/sessions/{sessionId}/payment-result">
   For a non-quote checkout, this returns one-time `token` and `dynamic_cvv` credentials. For a
   quote-backed checkout, it returns a credential-free transaction summary with the card actually
-  used and the merchant lifecycle in `merchant_res`.
+  used and the normalized outcome in the top-level `status` and `error`. When merchant lifecycle
+  data exists, `merchant_res` also provides its normalized status and optional merchant order ID.
   → [Get Payment Result](/api-reference/get-payment-result)
 </Step>
 <Step title="Report the outcome — POST /v1/sessions/{sessionId}/report-status">

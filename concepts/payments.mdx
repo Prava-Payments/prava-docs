@@ -29,8 +29,9 @@ flowchart LR
 
 <Note>
   In a quote-backed checkout, Prava performs the merchant checkout. Poll the same payment-result
-  endpoint for the normalized outcome, `transactions[].card_id`, and quote lifecycle context in
-  `merchant_res`; token, CVV, expiry, and line-item credentials are not returned, and quote callers
+  endpoint for the normalized top-level `status`, `error`, and `transactions[].card_id`.
+  When merchant lifecycle data exists, `merchant_res` adds its status and optional merchant order ID;
+  token, CVV, expiry, and line-item credentials are not returned, and quote callers
   do not call the public Report Status endpoint.
 </Note>
 

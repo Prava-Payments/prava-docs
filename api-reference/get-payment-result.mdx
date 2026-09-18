@@ -51,23 +51,33 @@ A polling endpoint: after the cardholder completes card entry and passkey approv
   </Expandable>
 </ResponseField>
 <ResponseField name="merchant_res" type="object">
-  Present only for quote-backed checkout sessions. Reports the merchant checkout lifecycle.
+  Present for quote-backed sessions when merchant lifecycle data exists. Omitted for non-quote
+  checkouts and sessions without that data. This projection contains only a normalized status
+  and an optional merchant order ID.
   <Expandable title="merchant_res properties">
-    <ResponseField name="status" type="string">Merchant lifecycle status. Examples include `pending`, `prepared`, `paid`, `failed`, `prepare_failed`, `needs_human`, and `unknown`.</ResponseField>
-    <ResponseField name="orderId" type="string">Merchant checkout order id, when available.</ResponseField>
-    <ResponseField name="code" type="string">Safe merchant error code, when available.</ResponseField>
-    <ResponseField name="message" type="string">Safe merchant error message, when available.</ResponseField>
+    <ResponseField name="status" type="string">`pending` | `quote_ready` | `prepared` | `prepare_failed` | `paid` | `failed` | `needs_human` | `unknown`. An effective completed result maps to `paid`, including successful sandbox simulation.</ResponseField>
+    <ResponseField name="orderId" type="string">Optional merchant order ID, distinct from Prava's top-level `order_id`. Returned only when it meets the bounded identifier format.</ResponseField>
   </Expandable>
 </ResponseField>
-<ResponseField name="error" type="object">May be present when a quote-backed checkout fails: `{ code, message }`.</ResponseField>
+<ResponseField name="observed_result" type="object">
+  Present for an explicitly simulated sandbox session once an eligible terminal payment outcome
+  is observed. Omitted for ordinary results and outcomes that cannot be simulated.
+  <Expandable title="observed_result properties">
+    <ResponseField name="stage" type="string">Always `payment`.</ResponseField>
+    <ResponseField name="status" type="string">The actual observed outcome: `completed` or `failed`.</ResponseField>
+    <ResponseField name="error" type="object">Present when the observed payment failed: canonical `{ code, message }`.</ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="error" type="object">Present for a terminal quote-backed failure: `{ code, message }`. Confirmed payment failures use canonical codes such as `CARD_DECLINED`, `INSUFFICIENT_FUNDS`, or the fallback `PAYMENT_FAILED`. See [Errors](/api-reference/errors).</ResponseField>
 
 ## Notes
 
 - For non-quote checkouts, `token` and `dynamic_cvv` contain the virtual card credentials your agent uses at checkout.
 - Read `transactions[].card_id` as the source of truth for the card bound to the transaction, whether it was preselected or chosen on the collection surface.
-- For quote-backed checkouts, Prava completes the merchant checkout. Results contain credential-free transaction summaries (`txn_id`, `card_id`, and `status`) and expose the checkout lifecycle as `merchant_res`; they never include token, CVV, expiry, or line-item credentials.
-- Use the top-level `status` as the normalized payment outcome. `merchant_res.status` provides lifecycle context and uses merchant terms such as `prepared` and `paid`.
-- `merchant_res` is omitted for non-quote sessions and before an order exists; it is not returned as `null`.
+- For quote-backed checkouts, Prava performs the merchant checkout. Results contain credential-free transaction summaries (`txn_id`, `card_id`, and `status`); they never include token, CVV, expiry, or line-item credentials.
+- `merchant_res` contains only `status` and optional `orderId`. Read canonical failure details from the top-level `error`. Keep polling while the top-level status is `pending` or `processing`.
+- [Sandbox simulation](/api-reference/testing#simulate-successful-payment-completion) can return effective `completed` and `merchant_res.status: "paid"` while `observed_result.status` is `failed`. Those effective statuses are returned only after Core's sandbox completion succeeds; they do not establish merchant settlement. The simulation request is supplied at session creation and is not echoed as a response-side `sandbox_simulation` object.
+- Responses use `Cache-Control: no-store`.
 - Prava performs a lazy mandate expiry check on every request — expired mandates are reflected in the status.
 - After using non-quote checkout credentials, report the outcome via [Report Status](/api-reference/report-status).
 
@@ -144,8 +154,45 @@ const resp = await fetch("https://sandbox.api.prava.space/v1/sessions/sess_123/p
       "status": "awaiting_result"
     }
   ],
+  "merchant_res": { "status": "prepared" }
+}
+```
+
+```json 200 Quote payment completed
+{
+  "session_id": "sess_123",
+  "order_id": "ord_4a1b",
+  "status": "completed",
+  "transactions": [
+    {
+      "txn_id": "txn_1",
+      "card_id": "card_42",
+      "status": "awaiting_result"
+    }
+  ],
   "merchant_res": {
-    "status": "prepared"
+    "status": "paid",
+    "orderId": "merchant_order_123"
+  }
+}
+```
+
+```json 200 Quote payment failed
+{
+  "session_id": "sess_123",
+  "order_id": "ord_4a1b",
+  "status": "failed",
+  "transactions": [
+    {
+      "txn_id": "txn_1",
+      "card_id": "card_42",
+      "status": "awaiting_result"
+    }
+  ],
+  "merchant_res": { "status": "failed" },
+  "error": {
+    "code": "CARD_DECLINED",
+    "message": "The payment was declined by the card issuer."
   }
 }
 ```
