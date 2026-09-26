@@ -6,6 +6,149 @@ rss: true
 ---
 
 <Update
+  label="September 26, 2026 — Production access"
+  tags={["New", "Dashboard"]}
+  rss={{
+    title: "Request and set up Production access from the dashboard",
+    description: "Developers can submit Production access information, save progress, follow review status, respond to requested corrections, and complete approved setup from the dashboard."
+  }}
+>
+  ## Request and set up Production access from the dashboard
+
+  Developers can now manage the Production access journey in the
+  [Prava Dashboard](https://dashboard.prava.space). The guided request keeps saved progress,
+  shows required business and identity information, and provides a receipt after submission.
+
+  Request history and current status stay visible in the application workspace. If the review
+  needs corrections, the dashboard identifies what to update before resubmission. Approved
+  applications continue into Production setup and credential creation without leaving the
+  dashboard.
+
+  [Prepare your integration for Production →](/guides/go-live-checklist)
+</Update>
+
+<Update
+  label="September 25, 2026 — Reseller analytics"
+  tags={["New", "Improvements", "Dashboard"]}
+  rss={{
+    title: "Explore reseller portfolio analytics and orders",
+    description: "Reseller workspaces now provide portfolio and application analytics, order discovery, date and merchant filters, native-currency volumes, failure insights, and detailed order drill-downs."
+  }}
+>
+  ## Explore reseller portfolio analytics and orders
+
+  Reseller workspaces now bring portfolio analytics, application health, and order discovery
+  into the dashboard. Compare Total, Paid, and Failed orders across a chosen date range and
+  merchant scope, inspect native-currency paid volume and failure rates, and add supporting
+  metrics to the overview when needed.
+
+  The Orders workspace supports order, reference, and session search alongside status,
+  currency, and amount filters. Each ready application has its own Overview, Orders,
+  Analytics, and Integration views, with contextual drill-downs into recent payment activity.
+
+  Comparisons are hidden when historical evidence is incomplete rather than presenting an
+  uncertain zero or trend. Current-period values and unaffected comparisons remain available.
+</Update>
+
+<Update
+  label="September 25, 2026 — Payment finalization"
+  tags={["Improvements", "Fixes", "API"]}
+  rss={{
+    title: "More reliable checkout completion and payment reporting",
+    description: "Payment completion preserves authoritative amounts and outcomes through retries, gives merchant preparation enough time to finish, and returns actionable states when card-network confirmation is pending or needs reconciliation."
+  }}
+>
+  ## More reliable checkout completion and payment reporting
+
+  Payment completion now uses the persisted transaction amount as its source of truth and
+  applies lifecycle changes atomically. Duplicate completion calls, concurrent callbacks, and
+  repeated result polling return the authoritative state without decrementing limits, consuming
+  a mandate, or completing an order more than once.
+
+  Approved totals must match the original payment amount after exact decimal normalization.
+  Quote expiry and confirmed payment failures settle into durable failed results, while a saved
+  successful outcome cannot be downgraded by a later retry or confirmation failure.
+
+  Merchant checkout now gives supported preparation flows enough time to complete before
+  reporting a timeout, reducing premature checkout failures. Card-network confirmation uses a
+  bounded three-attempt delivery budget with shorter per-attempt timeouts, so an uncertain
+  confirmation cannot retry indefinitely or overwrite the saved payment outcome.
+
+  Payment reporting now distinguishes these recovery cases:
+
+  - `PAYMENT_AMOUNT_MISMATCH` - the reported total or product amount differs from the amount
+    persisted for the transaction.
+  - `QUOTE_PAYMENT_CONFLICT` - the submitted report conflicts with the payment attempt already
+    bound to the quote.
+  - `VISA_CONFIRMATION_PENDING` - the payment outcome is saved and card-network confirmation is
+    still pending.
+  - `VISA_CONFIRMATION_RECONCILIATION_REQUIRED` - automatic confirmation attempts are exhausted;
+    the saved payment outcome remains authoritative while confirmation is reconciled.
+
+  [Handle payment results →](/api-reference/get-payment-result) ·
+  [Review error recovery →](/api-reference/errors#report-status-post-v1sessionssessionidreport-status)
+</Update>
+
+<Update
+  label="September 25, 2026 — Card verification"
+  tags={["Improvements", "Fixes"]}
+  rss={{
+    title: "Keep active card verification from restarting",
+    description: "Checkout now gives an active card-verification session time to finish and starts a fresh session only when initialization has actually failed."
+  }}
+>
+  ## Keep active card verification from restarting
+
+  Checkout now distinguishes an active card-verification session from one that failed to
+  initialize. Once verification is ready, it has time to complete instead of being replaced by
+  the shorter loading timeout. This prevents shoppers from being sent back to card selection
+  while authentication is still in progress.
+
+  If initialization actually fails, retrying creates a fresh verification session. Late events
+  from the failed session are ignored, and a repeated failure keeps the error visible so the
+  shopper can retry safely.
+</Update>
+
+<Update
+  label="September 21, 2026 — Offer codes"
+  tags={["New", "Improvements"]}
+  rss={{
+    title: "Apply offer codes while preparing a shopping checkout",
+    description: "Shopping checkout can apply an offer code to a new or active quote, reflect accepted discounts in the final amount, and return a safe warning when a code is invalid or expired."
+  }}
+>
+  ## Apply offer codes while preparing a shopping checkout
+
+  Shopping checkout can now apply an offer code while preparing a product or supported merchant
+  checkout. Accepted reductions appear in the discount breakdown and final amount. A code can
+  also be retried on an active quote without rebuilding the shopping session.
+
+  Invalid or expired codes leave the quote usable and return a safe warning so the shopper can
+  continue without the discount. Raw offer codes are excluded from application logs and API
+  responses.
+
+  [Explore agentic shopping →](/prava-pay/shopping)
+</Update>
+
+<Update
+  label="September 19, 2026 — Dashboard performance"
+  tags={["Improvements", "Fixes", "Dashboard"]}
+  rss={{
+    title: "Move through the dashboard faster without losing your place",
+    description: "Dashboard pages load only the workspace being viewed, keep filters and list context when opening a record, and show focused loading states during navigation."
+  }}
+>
+  ## Move through the dashboard faster without losing your place
+
+  Merchants, applications, orders, and detail pages now open with less unnecessary loading because
+  the dashboard fetches only the workspace being viewed. Returning to a list preserves its filters
+  and navigation context, so users can investigate several records without rebuilding their view.
+
+  Focused loading and error states keep the surrounding workspace visible while the selected view
+  loads. Forms continue to warn before navigation when there are unsaved changes.
+</Update>
+
+<Update
   label="September 18, 2026 — Merchant lifecycle"
   tags={["New", "API"]}
   rss={{
