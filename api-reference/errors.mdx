@@ -96,6 +96,10 @@ merchant does not call another API or create another session.
 | 400 | `INVALID_STATE` | No transaction awaiting a result | It may already be reported, or the cardholder hasn't finished |
 | 400 | `MANDATE_EXPIRED` | The mandate has expired | Create a new session |
 | 400 | `PRODUCT_NOT_FOUND` | Product not found by the given ID | Verify `product_id` / `product_ref_id` |
+| 409 | `PAYMENT_AMOUNT_MISMATCH` | The reported total or product amount differs from the amount stored for the transaction | Report the exact persisted amount; decimal-equivalent values such as `25` and `25.00` are accepted |
+| 409 | `QUOTE_PAYMENT_CONFLICT` | The report conflicts with the payment attempt or outcome already bound to the quote | Stop submitting the conflicting report and retrieve the authoritative payment result |
+| 502 | `VISA_CONFIRMATION_PENDING` | The payment outcome is saved, but card-network confirmation has not completed | Preserve the saved outcome and retry according to your normal reporting policy |
+| 502 | `VISA_CONFIRMATION_RECONCILIATION_REQUIRED` | Automatic card-network confirmation attempts are exhausted | Preserve the saved outcome and contact support with the `X-Response-ID`; do not submit a different outcome |
 | 502 | `VISA_CONFIRMATION_FAILED` | Card-network confirmation failed | Retry; then support |
 | 500 | `REPORT_STATUS_ERROR` | Internal error | Contact support with the `X-Response-ID` |
 
