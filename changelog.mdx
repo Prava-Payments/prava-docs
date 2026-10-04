@@ -6,6 +6,115 @@ rss: true
 ---
 
 <Update
+  label="October 4, 2026 - Shopping search"
+  tags={["Improvements", "Fixes"]}
+  rss={{
+    title: "Find products more reliably during temporary provider issues",
+    description: "Shopping search retries temporary catalog limits and service errors, recovers failed relevance checks without repeating successful work, and uses verified merchant names in results and product details."
+  }}
+>
+  ## Find products more reliably during temporary provider issues
+
+  Shopping search now retries short-lived catalog rate limits and service errors within the
+  existing search deadline. If a relevance provider is temporarily unavailable, only the
+  affected result batch is retried through a fallback model. Successful batches remain
+  available, so a brief provider issue is less likely to interrupt the full search.
+
+  Results and product details also use cached, verified merchant display names where available.
+  This makes merchant choices clearer and keeps the name consistent as shoppers inspect an item.
+</Update>
+
+<Update
+  label="October 3, 2026 - Import duties"
+  tags={["Improvements", "Fixes"]}
+  rss={{
+    title: "See import duties and fees in the checkout total",
+    description: "When a supported merchant reports import duties or duty fees, checkout shows them separately from tax and checks them against the final amount before continuing."
+  }}
+>
+  ## See import duties and fees in the checkout total
+
+  When a supported merchant reports import duties or duty fees, the checkout amount breakdown
+  now separates them from tax. It checks those charges against the merchant's
+  final total before accepting the checkout amount, so cross-border charges are less likely to
+  appear as an unexplained difference at payment.
+</Update>
+
+<Update
+  label="October 3, 2026 - Delivery addresses"
+  tags={["Improvements", "Fixes", "API"]}
+  rss={{
+    title: "Resolve checkout address issues with clearer guidance",
+    description: "Checkout now distinguishes unavailable delivery, unsupported regions, invalid phone numbers, and optional address-unit suggestions so applications can guide shoppers to the right correction."
+  }}
+>
+  ## Resolve checkout address issues with clearer guidance
+
+  Merchant checkout now returns a specific `DELIVERY_UNAVAILABLE_FOR_ADDRESS` error when the
+  selected items cannot be delivered to the supplied address. Applications receive a stable,
+  non-retriable result and a buyer-safe explanation instead of a generic temporary failure.
+
+  Checkout also distinguishes an unsupported state or region with `INVALID_SHIPPING_REGION`.
+  A merchant rejection of the buyer's phone number returns the existing, non-retriable
+  `INVALID_PHONE_NUMBER` code rather than a generic checkout failure.
+  When a merchant recommends adding an apartment or unit number but can still continue, the
+  quote remains usable and carries that suggestion rather than failing the request.
+
+  [Handle checkout errors →](/api-reference/errors)
+</Update>
+
+<Update
+  label="October 3, 2026 - Checkout extras"
+  tags={["Improvements", "Fixes"]}
+  rss={{
+    title: "Remove another recognized paid protection offer before checkout",
+    description: "Supported merchant checkout can now opt out of a paid package-protection offer even when its checkbox omits the price, after confirming the charge in the merchant's proposal."
+  }}
+>
+  ## Remove another recognized paid protection offer before checkout
+
+  Supported merchant checkout now recognizes an additional paid package-protection offer whose
+  checkbox omits the price. It opts out only after the merchant's proposal confirms the charge,
+  then waits for an updated proposal without the add-on before continuing. Other checkout
+  preferences remain untouched.
+</Update>
+
+<Update
+  label="October 1, 2026 - Payment journey"
+  tags={["New", "Dashboard"]}
+  rss={{
+    title: "See where a payment attempt stopped",
+    description: "Reseller order details now separate credential issuance, merchant checkout, and the final recorded payment outcome in a concise payment journey."
+  }}
+>
+  ## See where a payment attempt stopped
+
+  Reseller order details now show a compact payment journey for each attempt. The journey
+  separates Prava credential issuance, the merchant checkout result, and the final recorded
+  outcome, making it easier to identify where an unsuccessful payment stopped.
+
+  Only approved lifecycle facts appear in the dashboard. Payment credentials, provider
+  confirmation details, and internal delivery metadata remain excluded.
+</Update>
+
+<Update
+  label="September 28, 2026 - Production requests"
+  tags={["Fixes", "Dashboard"]}
+  rss={{
+    title: "Open the Production request form from the environment switcher",
+    description: "Merchants without Production access now reach the Production request form directly when they choose Production in the dashboard."
+  }}
+>
+  ## Open the Production request form from the environment switcher
+
+  Choosing Production in the dashboard now takes merchants who need access directly to the
+  Production request form. This fixes a detour to Business Details and makes the next step in
+  going live easier to find.
+
+  [Prepare your integration for Production →](/guides/go-live-checklist)
+</Update>
+
+<Update
   label="September 26, 2026 — Production access"
   tags={["New", "Dashboard"]}
   rss={{
