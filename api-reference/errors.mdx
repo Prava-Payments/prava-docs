@@ -74,6 +74,18 @@ production, custom checkout, or mandate setup. Only the exact payment-stage succ
 accepted; malformed shapes return a validation error. See
 [Sandbox simulation](/api-reference/testing#simulate-successful-payment-completion).
 
+## Shopping checkout address errors
+
+| Status | Code | Cause | Recovery |
+|--------|------|-------|----------|
+| 422 | `DELIVERY_UNAVAILABLE_FOR_ADDRESS` | The merchant cannot deliver the selected items to the supplied address | Ask the shopper to choose another delivery address or item; retrying the same item and address will not help |
+| 422 | `INVALID_SHIPPING_REGION` | The supplied state or region is unavailable for this merchant checkout | Choose a region accepted by the merchant for the destination address |
+| 422 | `INVALID_PHONE_NUMBER` | The merchant rejected the buyer's phone number | Correct the phone number for the destination country before trying again |
+
+An apartment or unit-number suggestion is a non-blocking quote warning,
+`ADDRESS_UNIT_CONFIRMATION_SUGGESTED`, rather than an error. The shopper can confirm or add a
+unit number while keeping the quote usable.
+
 ## Card Enrollment — `POST /v1/sessions/enroll-card` · `GET /v1/sessions/{sessionId}/status`
 
 | Status | Code | Cause | Recovery |
