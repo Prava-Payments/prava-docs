@@ -1,0 +1,37 @@
+---
+title: "Verify webhook signatures"
+description: "Authenticate raw bytes and reject stale or tampered requests."
+---
+
+Every request carries `Prava-Signature`, `Prava-Event-Id`, and `Prava-Delivery-Id`. Use the signed body `id` as your authoritative deduplication key. Delivery IDs identify delivery generations and can change on replay.
+
+`Prava-Signature` has the form `t=UNIX_SECONDS,v1=HEX_DIGEST`. The digest is HMAC-SHA256 over `timestamp + "." + raw_body` with the complete `whsec_...` secret as the UTF-8 key. The header can contain multiple `v1` values during a 24-hour rotation overlap. A matching signature from either active secret is sufficient.
+
+<Warning>Verify before JSON parsing, reserialization, or application processing. Reject missing/malformed signatures, duplicate timestamps, and timestamps more than five minutes in the past or future. Keep your receiver clock synchronized.</Warning>
+
+```javascript
+import { createHmac, timingSafeEqual } from 'node:crypto';
+
+export function verifyWebhook(rawBody, signature, secrets, now = Date.now()) {
+  if (!Buffer.isBuffer(rawBody) || typeof signature !== 'string') return false;
+  const parts = signature.split(',').map(value => value.trim());
+  const timestamps = parts.filter(value => value.startsWith('t='));
+  if (timestamps.length !== 1 || !/^t=\d+$/.test(timestamps[0])) return false;
+  const timestamp = timestamps[0].slice(2);
+  const seconds = Number(timestamp);
+  if (!Number.isSafeInteger(seconds) || Math.abs(now / 1000 - seconds) > 300) return false;
+  const candidates = parts.filter(value => /^v1=[0-9a-f]{64}$/.test(value))
+    .map(value => Buffer.from(value.slice(3), 'hex'));
+  return secrets.some(secret => {
+    const expected = createHmac('sha256', secret)
+      .update(timestamp + '.').update(rawBody).digest();
+    return candidates.some(candidate => timingSafeEqual(candidate, expected));
+  });
+}
+```
+
+After verification, parse the body and check the expected environment/account. Handle `webhook.endpoint_verification` by echoing its challenge as JSON with HTTP 200. Ignore `test: true` events for financial side effects while still acknowledging a successful test.
+
+For a payment event, atomically store its ID and enqueue your work before responding with 2xx. Use a unique database constraint on the event ID. A duplicate already stored event should still receive 2xx. Process slow business logic asynchronously. A receiver timeout is an unknown outcome and Prava may send the same event again.
+
+Administrators can rotate an endpoint secret. Save the new secret when it is shown; Prava dual-signs for 24 hours. Deploy verification with the new secret during that overlap, then retire the old secret. A second rotation is blocked until the overlap ends. The secret cannot be retrieved later; idempotent retries return completion status without disclosing it again.

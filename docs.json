@@ -38,7 +38,11 @@
       "display": "interactive"
     },
     "examples": {
-      "languages": ["curl", "python", "javascript"]
+      "languages": [
+        "curl",
+        "python",
+        "javascript"
+      ]
     },
     "mdx": {
       "server": [
@@ -84,6 +88,16 @@
               "guides/rest-checkout-walkthrough",
               "guides/go-live-checklist",
               "guides/compliance"
+            ]
+          },
+          {
+            "group": "Webhooks",
+            "pages": [
+              "webhooks/overview",
+              "webhooks/events",
+              "webhooks/security",
+              "webhooks/delivery",
+              "webhooks/api"
             ]
           },
           {
@@ -203,7 +217,9 @@
       },
       {
         "tab": "Changelog",
-        "pages": ["changelog"]
+        "pages": [
+          "changelog"
+        ]
       },
       {
         "tab": "FAQ",
@@ -237,15 +253,15 @@
   },
   "contextual": {
     "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
   },
   "footer": {
     "socials": {

@@ -1,0 +1,38 @@
+---
+title: "Webhook event catalog"
+description: "Understand the three merchant payment event types in v1."
+---
+
+| Event | Meaning |
+| --- | --- |
+| `payment.credentials_ready` | Prava issued credentials for this payment attempt. It does **not** mean the merchant charged successfully. |
+| `payment.succeeded` | A credentialed payment attempt was confirmed successful. |
+| `payment.failed` | A credentialed payment attempt was confirmed failed. |
+
+V1 covers supported merchant checkout and mandate charge attempts. Agent sessions, card lifecycle operations, authorize-only setup, failures before credential issuance, and synthetic sandbox simulations are excluded. Enabling webhooks does not reconstruct past events. Only endpoints active, verified, and subscribed when the event is captured are eligible for automatic delivery.
+
+```json
+{
+  "id": "evt_example",
+  "type": "payment.succeeded",
+  "schema_version": "2026-10-08",
+  "occurred_at": "2026-10-08T10:00:00Z",
+  "environment": "sandbox",
+  "account_id": "ma_example",
+  "resource": { "type": "payment", "id": "txn_example", "version": 2 },
+  "data": {
+    "session_id": "sess_example",
+    "order_id": "ord_example",
+    "status": "succeeded",
+    "amount": { "value": "100.00", "currency": "INR" },
+    "outcome_source": "merchant_observed",
+    "failure_category": null
+  }
+}
+```
+
+`outcome_source` is `prava_issued` for credentials, `merchant_observed` for quote-backed results reconciled by Core, or `merchant_reported` for supported non-quote results. A failed payment uses the fixed category `PAYMENT_ATTEMPT_FAILED`; private provider messages are excluded. An unresolved observation stays pending and may require reconciliation. It never becomes a failure just because a timeout elapsed.
+
+Amounts are decimal strings in the payment's currency. The payment transaction ID identifies the attempt; each new attempt has its own ID. `resource.version` increases for captured changes to that attempt. Persist the highest applied version per resource so an older, late notification cannot overwrite a newer state. Deduplicate by `id` independently of version handling.
+
+Payloads omit payment credentials, network tokens, dynamic CVV, card data, vault references, addresses, email, and raw metadata. Event payloads retain their original schema version and bytes through retries and replays. Additive future fields should be ignored safely.

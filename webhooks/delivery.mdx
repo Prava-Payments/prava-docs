@@ -1,0 +1,16 @@
+---
+title: "Delivery and recovery"
+description: "Handle retries, inspect attempts, and recover missed events."
+---
+
+Delivery is **at least once**. Events can be duplicated or arrive out of order. A 2xx response means your receiver accepted the request. Every other status, redirect, DNS/TLS error, or timeout is an unacknowledged attempt. Prava does not follow redirects. HTTP 410 disables the destination; a destination resolving to private or reserved addresses is also disabled.
+
+Automatic delivery reserves at most nine attempts over 72 hours. Retries use increasing delays with jitter; `Retry-After` is bounded to six hours and the remaining retry window. Each request has a three-second connect budget and ten-second total budget. Request bodies are limited to 64 KiB and responses to 4 KiB. Return a small 2xx response after durable acceptance.
+
+Use **Delivery history** to inspect status, attempt times, HTTP status, safe error category, and the original event body. Prava retains event, delivery, and attempt history for 30 days. No raw customer response bodies are shown or logged. Administrators can resolve endpoint problems; developers can replay a retained delivery after verifying and enabling an endpoint subscribed to that event. Replays preserve the event ID/body and create a new delivery generation. They cancel pending sibling work, but already transmitted requests cannot be recalled.
+
+To recover events in your own system, call `GET /v1/events?cursor=0` using your application secret key. Process each page durably before saving `next_cursor`. When `next_cursor` is null, that scan is caught up. For later scans, retain the most recent non-null cursor; replaying the last partial page is safe when you deduplicate by event ID. The cursor follows committed capture order within the environment; gaps from other accounts are normal. Recovery does not expose events from another application.
+
+You can retrieve a retained event with `GET /v1/events/{eventId}`. Events may exist even when no endpoint was active; newly created endpoints do not automatically receive past events. Beyond the 30-day window, reconcile your payment records through the relevant API.
+
+Pausing prevents new delivery claims. URL changes clear verification, pause delivery, increment the destination revision, and cancel old queued deliveries. The final recheck cannot recall a request already in transit. Deleting cancels outstanding work and removes the endpoint from the active list.
