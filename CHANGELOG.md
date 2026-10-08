@@ -1,5 +1,22 @@
 # Changelog
 
+## [Unreleased] — 2026-10-09-2
+
+### Security
+
+- Add optional authenticated control for a dedicated sandbox account and synthetic deliveries; ordinary receivers keep it disabled.
+
+### Fixed
+
+- Preserve nullable uncapped mandate budgets and document expiry after capture activation.
+
+## [Unreleased] — 2026-10-09-1
+
+### Added
+
+- Document full enrollment and mandate-creation events, event filters, queued synthetic tests, circuit recovery and verified incident notices.
+- Add runnable Node/Python receivers with raw-byte signature verification and durable SQLite receipt deduplication.
+
 ## [Unreleased] — 2026-10-08-1
 
 ### Added

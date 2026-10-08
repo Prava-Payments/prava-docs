@@ -14,3 +14,8 @@ To recover events in your own system, call `GET /v1/events?cursor=0` using your 
 You can retrieve a retained event with `GET /v1/events/{eventId}`. Events may exist even when no endpoint was active; newly created endpoints do not automatically receive past events. Beyond the 30-day window, reconcile your payment records through the relevant API.
 
 Pausing prevents new delivery claims. URL changes clear verification, pause delivery, increment the destination revision, and cancel old queued deliveries. The final recheck cannot recall a request already in transit. Deleting cancels outstanding work and removes the endpoint from the active list.
+
+
+Five consecutive unacknowledged deliveries pause an endpoint for five minutes. Only one request is in flight per endpoint; after the pause, a recovery probe can resume delivery. HTTP 410 or a blocked destination disables it until you repair and reactivate it. Attempts still obey the 72-hour and nine-attempt bounds. Shared limits allow at most two concurrent requests and five claims per second per application across workers, with fair account scheduling.
+
+The Dashboard shows safe incident reasons, next-attempt and acceptance times. It refreshes the visible operational view every 15 seconds. Incident notices use current authorized developer/admin contacts with verified primary email addresses; retries recheck access and address. Notices use the transactional email outbox and never go through the failed webhook.

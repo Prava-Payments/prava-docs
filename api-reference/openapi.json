@@ -877,7 +877,25 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful operation; endpoints never include stored signing secrets."
+            "description": "Successful operation; endpoints never include stored signing secrets.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "schema_version": {
+                      "type": "string"
+                    },
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/WebhookEventCatalogItem"
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "400": {
             "description": "Invalid input or cursor"
@@ -1168,8 +1186,21 @@
                     "enum": [
                       "payment.credentials_ready",
                       "payment.succeeded",
-                      "payment.failed"
+                      "payment.failed",
+                      "card_enrollment.completed",
+                      "card_enrollment.failed",
+                      "card_enrollment.cancelled",
+                      "card_enrollment.expired",
+                      "mandate.created",
+                      "mandate.creation_failed",
+                      "mandate.creation_cancelled",
+                      "mandate.creation_expired"
                     ]
+                  },
+                  "queued": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Use the durable worker on an active endpoint; synthetic, non-financial data"
                   }
                 }
               }
@@ -1380,6 +1411,54 @@
               "type": "string"
             },
             "description": "Return next_cursor unchanged. Events starts at 0; deliveries starts with no cursor."
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Filter by event type",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "payment.credentials_ready",
+                "payment.succeeded",
+                "payment.failed",
+                "card_enrollment.completed",
+                "card_enrollment.failed",
+                "card_enrollment.cancelled",
+                "card_enrollment.expired",
+                "mandate.created",
+                "mandate.creation_failed",
+                "mandate.creation_cancelled",
+                "mandate.creation_expired"
+              ]
+            }
+          },
+          {
+            "name": "resource_id",
+            "in": "query",
+            "description": "Filter by resource ID",
+            "schema": {
+              "type": "string",
+              "pattern": "^(txn|sess)_[A-Za-z0-9]+$"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Inclusive occurrence time",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "Exclusive occurrence time; increasing paired range at most 30 days",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
           }
         ]
       }
@@ -2788,14 +2867,22 @@
           "events": {
             "type": "array",
             "minItems": 1,
-            "maxItems": 3,
+            "maxItems": 11,
             "uniqueItems": true,
             "items": {
               "type": "string",
               "enum": [
                 "payment.credentials_ready",
                 "payment.succeeded",
-                "payment.failed"
+                "payment.failed",
+                "card_enrollment.completed",
+                "card_enrollment.failed",
+                "card_enrollment.cancelled",
+                "card_enrollment.expired",
+                "mandate.created",
+                "mandate.creation_failed",
+                "mandate.creation_cancelled",
+                "mandate.creation_expired"
               ]
             }
           }
@@ -2819,19 +2906,73 @@
           "events": {
             "type": "array",
             "minItems": 1,
-            "maxItems": 3,
+            "maxItems": 11,
             "uniqueItems": true,
             "items": {
               "type": "string",
               "enum": [
                 "payment.credentials_ready",
                 "payment.succeeded",
-                "payment.failed"
+                "payment.failed",
+                "card_enrollment.completed",
+                "card_enrollment.failed",
+                "card_enrollment.cancelled",
+                "card_enrollment.expired",
+                "mandate.created",
+                "mandate.creation_failed",
+                "mandate.creation_cancelled",
+                "mandate.creation_expired"
               ]
             }
           },
           "enabled": {
             "type": "boolean"
+          }
+        }
+      },
+      "WebhookEventCatalogItem": {
+        "type": "object",
+        "required": [
+          "type",
+          "description",
+          "supported_flows",
+          "schema",
+          "example"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "payment.credentials_ready",
+              "payment.succeeded",
+              "payment.failed",
+              "card_enrollment.completed",
+              "card_enrollment.failed",
+              "card_enrollment.cancelled",
+              "card_enrollment.expired",
+              "mandate.created",
+              "mandate.creation_failed",
+              "mandate.creation_cancelled",
+              "mandate.creation_expired"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "supported_flows": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "schema": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "JSON Schema for this event envelope and its allowlisted data fields."
+          },
+          "example": {
+            "type": "object",
+            "additionalProperties": true
           }
         }
       }
