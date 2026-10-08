@@ -1263,7 +1263,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful operation; endpoints never include stored signing secrets."
+            "description": "Retained delivery history with public endpoint status and scoped incident summaries; no signing or encrypted secret material."
           },
           "400": {
             "description": "Invalid input or cursor"
@@ -1307,7 +1307,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful operation; endpoints never include stored signing secrets."
+            "description": "Retained delivery history with public endpoint status and scoped incident summaries; no signing or encrypted secret material."
           },
           "400": {
             "description": "Invalid input or cursor"

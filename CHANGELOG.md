@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — 2026-10-09-3
+
+### Changed
+
+- Clarify repeated retry result versions, replay key binding across destination changes, incident visibility and retained recovery reads during delivery shutdown.
+
 ## [Unreleased] — 2026-10-09-2
 
 ### Security

@@ -3,7 +3,7 @@ title: "Webhooks"
 description: "Receive signed payment, card-enrollment and mandate-setup notifications."
 ---
 
-<Info>Customer webhooks v1 is a gated preview. Prava must enable it for the selected environment before these endpoints are available.</Info>
+<Info>Customer webhooks v1 is a gated preview. Prava must enable delivery for the selected environment before configuration, test and replay mutations are available. Authenticated retained-event and history reads remain available during delivery shutdown.</Info>
 
 Webhooks notify your server about full card-enrollment results, mandate-setup results, payment credential issuance and recorded outcomes of credentialed payment attempts. Sandbox and production have separate endpoints, event histories, and signing secrets.
 

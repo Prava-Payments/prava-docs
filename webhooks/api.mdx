@@ -3,7 +3,7 @@ title: "Webhook API"
 description: "Manage endpoints and retrieve retained events with a server-side secret key."
 ---
 
-<Info>These preview routes return `WEBHOOKS_DISABLED` until the selected environment is enabled.</Info>
+<Info>Configuration, test and replay mutations return `WEBHOOKS_DISABLED` while delivery is disabled. Authenticated GET routes continue to expose retained events and delivery history for recovery.</Info>
 
 Authenticate with `Authorization: Bearer YOUR_APPLICATION_SECRET_KEY`. Use `https://sandbox.api.prava.space` for sandbox and `https://api.prava.space` for production. The key identifies the application; you cannot choose a different owner in a request body.
 
