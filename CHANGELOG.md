@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — 2026-10-09-5
+
+### Changed
+
+- Clarify internal preparation delays, event-scoped exhaustion recovery, adaptive Dashboard refresh and durable queued notice semantics.
+
 ## [Unreleased] — 2026-10-09-4
 
 ### Added

@@ -9,3 +9,7 @@ Document raw-body HMAC verification with a five-minute timestamp window, one-tim
 ## Webhook review contract clarifications — 2026-10-09
 
 Recovery reads retain application authentication and account/environment scope during delivery shutdown; mutation capabilities remain disabled. Retried replay keys return the originally bound delivery generation rather than retargeting a replaced URL. Public history diagnostics expose no signing/encrypted material or contact data.
+
+## 2026-10-09 — Reviewed delivery semantics
+
+Document that known preparation failures belong to Prava and do not consume receiver attempts, that exhausted events retain independent incidents, and that queued email notice acknowledgement is distinct from sending. Examples continue to exclude credentials and customer response bodies. No live receiver or infrastructure configuration changed.
