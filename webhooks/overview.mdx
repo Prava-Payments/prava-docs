@@ -22,7 +22,17 @@ Send a signed test event and confirm your receiver accepts it. Test events have 
 </Step>
 </Steps>
 
-Developers can configure, verify, test, activate, pause, and replay. Administrators can also delete endpoints and rotate signing secrets. Readonly users can inspect configuration and delivery history. Dashboard access remains bound to the selected application and environment; reseller-wide and agent webhook subscriptions are outside this preview.
+Developers can configure, verify, test, activate, pause, and replay. Administrators can also delete endpoints and rotate signing secrets. Readonly users can inspect configuration and delivery history. Dashboard access remains bound to the selected application and environment. Reseller owners can manage their ready child applications using their existing delegated credential-management access; direct agent-account subscriptions and reseller-owned aggregate feeds remain outside this preview.
+
+## Reseller management
+
+Open **Webhooks** in the reseller dashboard to find a ready application and select **Manage webhooks**. The application Integration screen also links to its webhook configuration. Existing reseller access, environment, credential-management module and user-role permissions apply; no additional approval from each child application is required.
+
+To use one receiving server for several applications, select up to ten applications on the current page, enter the destination and choose events. Bulk setup creates an independent, paused endpoint for each application. Save each application-labelled signing secret, then open **Verify and configure** for each result to verify, test and activate delivery. Each application retains its own five-endpoint quota, signing secrets, subscriptions and delivery history. For a shared URL, parse `account_id` and `environment` only as untrusted hints for selecting the configured candidate secrets. Verify the signature against the unchanged raw body first, then check that the authenticated account and environment match the selected configuration before processing any event.
+
+Bulk results are independent: one failure does not roll back successful applications. **Retry same batch** reuses the original application-scoped idempotency key and configuration, so successful creations are not duplicated. A response lost after creation cannot reveal that application's original secret on retry; an administrator must rotate it if it was not saved. Secrets already visible in the current screen remain until hidden or navigation. Future applications are not automatically subscribed.
+
+Removing a reseller user's access or reassigning an application blocks subsequent reseller management. Endpoints remain owned by the application and continue their configured lifecycle until an authorized application operator pauses or deletes them.
 
 The same workflow is available with your application's server-side secret API key through the [Webhook API](/webhooks/api). Keep API keys and signing secrets out of browser SDKs.
 

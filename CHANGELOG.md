@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — 2026-10-09-4
+
+### Added
+
+- Document reseller-managed application subscriptions, shared receivers and independent bulk setup results.
+
 ## [Unreleased] — 2026-10-09-3
 
 ### Changed
