@@ -1,0 +1,60 @@
+---
+title: "Webhook event catalog"
+description: "Payment, card enrollment and mandate-creation events for your application."
+---
+
+| Event | Meaning |
+| --- | --- |
+| `payment.credentials_ready` | Prava issued credentials for this payment attempt. It does **not** mean the merchant charged successfully. |
+| `payment.succeeded` | A credentialed payment attempt was confirmed successful. |
+| `payment.failed` | A credentialed payment attempt was confirmed failed. |
+
+V1 covers supported merchant checkout and mandate charge attempts. Agent-account sessions, provision-only synchronous card enrollment, unrelated card lifecycle operations, failures before payment credential issuance, and synthetic financial sandbox simulations are excluded. Full card enrollment and authorize-only mandate setup have separate event families below. Enabling webhooks does not reconstruct past events. Only endpoints active, verified, and subscribed when the event is captured are eligible for automatic delivery.
+
+```json
+{
+  "id": "evt_example",
+  "type": "payment.succeeded",
+  "schema_version": "2026-10-08",
+  "occurred_at": "2026-10-08T10:00:00Z",
+  "environment": "sandbox",
+  "account_id": "ma_example",
+  "resource": { "type": "payment", "id": "txn_example", "version": 2 },
+  "data": {
+    "session_id": "sess_example",
+    "order_id": "ord_example",
+    "status": "succeeded",
+    "amount": { "value": "100.00", "currency": "INR" },
+    "outcome_source": "merchant_observed",
+    "failure_category": null
+  }
+}
+```
+
+`outcome_source` is `prava_issued` for credentials, `merchant_observed` for quote-backed results reconciled by Core, or `merchant_reported` for supported non-quote results. A failed payment uses the fixed category `PAYMENT_ATTEMPT_FAILED`; private provider messages are excluded. An unresolved observation stays pending and may require reconciliation. It never becomes a failure just because a timeout elapsed.
+
+Amounts are decimal strings in the payment's currency. The payment transaction ID identifies the attempt; each new attempt has its own ID. `resource.version` increases for captured changes to that attempt. Persist the highest applied version per resource so an older, late notification cannot overwrite a newer state. Deduplicate by `id` independently of version handling.
+
+Payloads omit payment credentials, network tokens, dynamic CVV, full card numbers, vault references, addresses, email, and raw metadata. Event payloads retain their original schema version and bytes through retries and replays. Additive future fields should be ignored safely.
+
+
+## Enrollment and mandate setup
+
+| Event | Meaning |
+| --- | --- |
+| `card_enrollment.completed` | Stored card and passkey readiness were persisted. Includes `card_id`, last four digits, normalized brand and expiry, passkey result and consent state. |
+| `card_enrollment.failed` | Enrollment failed; `outcome` distinguishes `not_started` from `card_provisioned`. |
+| `card_enrollment.cancelled` | The action or session was cancelled. |
+| `card_enrollment.expired` | The unfinished session expired. |
+| `mandate.created` | One setup attempt is authorized and its mandate is active. Includes `mandate_id` and approved frequency, charge-count terms and an optional decimal cumulative budget. No charge occurred. |
+| `mandate.creation_failed` | All setup attempts are currently failed. A later retry can still authorize. |
+| `mandate.creation_cancelled` | The unfinished setup session was dismissed. |
+| `mandate.creation_expired` | The unfinished setup session expired. |
+
+These resources are `card_enrollment` or `mandate_setup`, identified by `sess_...`. Consecutive unchanged status writes are deduplicated. A retry that returns to an earlier failure or expiry can publish a new event with a higher version. Each captured status advances `resource.version`; retain the latest version when retries, failures and eventual completion arrive out of order. Completed/failed persisted results take precedence over cancellation/expiry, matching the status API. Expiry is captured by a bounded background scan of unfinished sessions whose expiration occurs after webhook capture starts; enabling webhooks does not backfill past results or expirations.
+
+Enrollment data contains `session_id`, `status`, `outcome`, `card_id`, `passkey`, `consent_status`, nullable `card` and a fixed `failure_category`. Mandate data contains `session_id`, `order_id`, `status`, nullable `mandate_id`, nullable `terms` and a fixed `failure_category`. Raw provider errors, consent references, customer PII, instruction IDs and card tokens are excluded. This does not verify future merchant cancellations or order settlement.
+
+`GET /v1/webhook-event-types` returns descriptions, supported flows, JSON schemas and safe examples for every type. The schema version remains `2026-10-08`; event payload shapes are discriminated by `type`.
+
+`terms.total_budget` is `null` when the stored mandate has no cumulative spend cap; Prava does not substitute a setup or order amount. When present, it is `{ "value": "1200.00", "currency": "INR" }`. `max_charges: 0` identifies a cumulative-budget pool rather than a zero-use mandate. These events describe setup; later charges use the payment event family.

@@ -1,0 +1,39 @@
+---
+title: "Webhooks"
+description: "Receive signed payment, card-enrollment and mandate-setup notifications."
+---
+
+<Info>Customer webhooks v1 is a gated preview. Prava must enable delivery for the selected environment before configuration, test and replay mutations are available. Authenticated retained-event and history reads remain available during delivery shutdown.</Info>
+
+Webhooks notify your server about full card-enrollment results, mandate-setup results, payment credential issuance and recorded outcomes of credentialed payment attempts. Sandbox and production have separate endpoints, event histories, and signing secrets.
+
+<Steps>
+<Step title="Create an endpoint">
+Open **Webhooks** in the developer dashboard. Enter a public HTTPS receiver URL on port 443 and choose the event types you need. Query parameters, credentials in URLs, IP literals, private destinations, and redirects are rejected. You can have up to five endpoints per application and environment.
+</Step>
+<Step title="Save the signing secret">
+The endpoint secret is displayed once after creation. Store it in your server's secret manager. Each endpoint uses its own secret; your legacy account webhook secret is not used.
+</Step>
+<Step title="Verify your destination">
+Click **Verify destination**. Verify the signature on the raw request body. For the `webhook.endpoint_verification` request, return a 2xx JSON response containing the exact `challenge` value received. The challenge is a control message rather than a subscribable payment event.
+</Step>
+<Step title="Test and activate">
+Send a signed test event and confirm your receiver accepts it. Test events have `test: true` and synthetic IDs. Activate delivery only after your receiver is ready. Changing a URL pauses delivery and requires verification again.
+</Step>
+</Steps>
+
+Developers can configure, verify, test, activate, pause, and replay. Administrators can also delete endpoints and rotate signing secrets. Readonly users can inspect configuration and delivery history. Dashboard access remains bound to the selected application and environment. Reseller owners can manage their ready child applications using their existing delegated credential-management access; direct agent-account subscriptions and reseller-owned aggregate feeds remain outside this preview.
+
+## Reseller management
+
+Open **Webhooks** in the reseller dashboard to find a ready application and select **Manage webhooks**. The application Integration screen also links to its webhook configuration. Existing reseller access, environment, credential-management module and user-role permissions apply; no additional approval from each child application is required.
+
+To use one receiving server for several applications, select up to ten applications on the current page, enter the destination and choose events. Bulk setup creates an independent, paused endpoint for each application. Save each application-labelled signing secret, then open **Verify and configure** for each result to verify, test and activate delivery. Each application retains its own five-endpoint quota, signing secrets, subscriptions and delivery history. For a shared URL, parse `account_id` and `environment` only as untrusted hints for selecting the configured candidate secrets. Verify the signature against the unchanged raw body first, then check that the authenticated account and environment match the selected configuration before processing any event.
+
+Bulk results are independent: one failure does not roll back successful applications. **Retry same batch** reuses the original application-scoped idempotency key and configuration, so successful creations are not duplicated. A response lost after creation cannot reveal that application's original secret on retry; an administrator must rotate it if it was not saved. Secrets already visible in the current screen remain until hidden or navigation. Future applications are not automatically subscribed.
+
+Removing a reseller user's access or reassigning an application blocks subsequent reseller management. Endpoints remain owned by the application and continue their configured lifecycle until an authorized application operator pauses or deletes them.
+
+The same workflow is available with your application's server-side secret API key through the [Webhook API](/webhooks/api). Keep API keys and signing secrets out of browser SDKs.
+
+[Event catalog](/webhooks/events) · [Verify signatures](/webhooks/security) · [Delivery and recovery](/webhooks/delivery)

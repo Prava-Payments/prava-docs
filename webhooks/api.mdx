@@ -1,0 +1,41 @@
+---
+title: "Webhook API"
+description: "Manage endpoints and retrieve retained events with a server-side secret key."
+---
+
+<Info>Configuration, test and replay mutations return `WEBHOOKS_DISABLED` while delivery is disabled. Authenticated GET routes continue to expose retained events and delivery history for recovery.</Info>
+
+Authenticate with `Authorization: Bearer YOUR_APPLICATION_SECRET_KEY`. Use `https://sandbox.api.prava.space` for sandbox and `https://api.prava.space` for production. The key identifies the application; you cannot choose a different owner in a request body.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/v1/webhook-event-types` | Supported events, schemas, examples and schema version |
+| GET / POST | `/v1/webhook-endpoints` | List / create endpoints |
+| GET / PATCH / DELETE | `/v1/webhook-endpoints/{endpointId}` | Inspect / update / delete |
+| POST | `/v1/webhook-endpoints/{endpointId}/verify` | Send a signed nonce challenge |
+| POST | `/v1/webhook-endpoints/{endpointId}/test` | Send a test for a subscribed event |
+| POST | `/v1/webhook-endpoints/{endpointId}/rotate-secret` | Rotate with 24-hour overlap |
+| GET | `/v1/webhook-endpoints/{endpointId}/deliveries` | Newest-first history, 50 per page |
+| GET | `/v1/webhook-deliveries/{deliveryId}` | Delivery details and safe attempts |
+| POST | `/v1/webhook-deliveries/{deliveryId}/replay` | Replay a retained event |
+| GET | `/v1/events` | Commit-order event recovery, 50 per page |
+| GET | `/v1/events/{eventId}` | Retrieve one retained event |
+
+Create, rotate, and replay require an `Idempotency-Key` header (8–120 letters, digits, underscores, or hyphens). Reuse the same key when retrying a request. Creating with changed input and the same key fails with a conflict. One-time signing secrets are returned only on the original successful create/rotation response; retries report completion without redisclosing the secret.
+
+```bash
+curl https://sandbox.api.prava.space/v1/webhook-endpoints \
+  -H 'Authorization: Bearer YOUR_SECRET_KEY' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: register-receiver-0001' \
+  -d '{"name":"Payments","url":"https://api.example.com/prava/webhooks","events":["payment.succeeded","payment.failed"]}'
+```
+
+Creation returns `{ "endpoint": { ... }, "signing_secret": "whsec_..." }`; the endpoint starts paused and unverified. PATCH accepts any of `name`, `url`, `events`, and `enabled`. You must verify before enabling. Test accepts `{ "type": "payment.succeeded" }`. Other POST control operations accept an empty body. History APIs return `next_cursor` or null; return the cursor unchanged on the next request. Errors use `{ "error": { "code": "...", "message": "..." } }`. Owner-scoped missing resources return 404; unsupported operations/verification state return 409.
+
+Direct API secret keys grant control over their application's webhook configuration. Dashboard role restrictions apply to dashboard users. Do not give application secret keys to readonly team members.
+
+
+Filter `/v1/events` with `type`, `resource_id` (`txn_...` or `sess_...`), `from` (inclusive ISO timestamp) and `to` (exclusive ISO timestamp). When both times are provided, use an increasing range of at most 30 days. Keep the same filters while advancing `cursor`. Events remain scoped to the authenticated application and environment.
+
+For a non-financial worker check, send `{ "type": "card_enrollment.completed", "queued": true }` to the test route after activating the verified endpoint. It returns `{ "queued": true, "event_id": "evt_..." }`; inspect delivery history for acceptance/retries. Every synthetic payload has `test: true` and contains example data. This verifies delivery, not enrollment or financial provider behavior.
