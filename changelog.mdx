@@ -6,11 +6,82 @@ rss: true
 ---
 
 <Update
-  label="October 4, 2026 - Shopping search"
+  label="October 10, 2026 - Checkout errors"
+  tags={["Improvements", "API"]}
+  rss={{
+    title: "Handle merchant checkout failures with clearer codes",
+    description: "Merchant checkout failures now return stable codes including MERCHANT_CHECKOUT_UNAVAILABLE, MERCHANT_CHECKOUT_FAILED, MERCHANT_RATE_LIMITED, and INVALID_EMAIL, with HTTP status and validated retry timing when available."
+  }}
+>
+  ## Handle merchant checkout failures with clearer codes
+
+  Merchant checkout failures now return specific HTTP statuses and safe error codes.
+  `MERCHANT_CHECKOUT_UNAVAILABLE` identifies a temporary checkout outage, while
+  `MERCHANT_CHECKOUT_FAILED` can accompany an HTTP 422 or 503 response. When a merchant limits
+  checkout requests, Prava returns retriable `MERCHANT_RATE_LIMITED` with a `Retry-After` header
+  if the merchant supplies a valid wait time. A rejected buyer email returns `INVALID_EMAIL`
+  with guidance to use a different shipping email.
+
+  [Review checkout errors →](/api-reference/errors#shopping-checkout-errors)
+</Update>
+
+<Update
+  label="October 10, 2026 - Payment visibility"
+  tags={["Fixes", "Dashboard"]}
+  rss={{
+    title: "See why a payment or card setup needs attention",
+    description: "Dashboard session results and payment journeys now show safe, specific explanations for invalid card details, unsupported passkeys, device verification failures, expired quotes, and checkout preparation failures."
+  }}
+>
+  ## See why a payment or card setup needs attention
+
+  Dashboard session results and payment journeys now distinguish card-detail validation from a
+  payment decline, and checkout preparation failures from cardholder errors. They also show
+  approved explanations for unsupported passkeys, device verification failures, initialization
+  timeouts, and expired quotes. Resolved sessions no longer retain stale progress errors.
+</Update>
+
+<Update
+  label="October 10, 2026 - Merchant checkout"
+  tags={["Improvements", "Fixes"]}
+  rss={{
+    title: "Complete more localized merchant checkouts reliably",
+    description: "Checkout preparation now recognizes Spanish card, billing, review, and final payment controls, and verifies the selected card payment option before continuing."
+  }}
+>
+  ## Complete more localized merchant checkouts reliably
+
+  Checkout preparation now recognizes Spanish card, billing, review, and final payment controls
+  on supported merchant pages. It verifies the card payment option before continuing, while
+  keeping review steps separate from the final payment action. This helps shoppers complete
+  localized checkouts without changing their final amount or consent checks.
+</Update>
+
+<Update
+  label="October 9, 2026 - Checkout corrections"
+  tags={["Fixes"]}
+  rss={{
+    title: "Resolve unavailable items and delivery addresses sooner",
+    description: "Checkout now identifies visible sold-out-item notices and unsupported delivery details earlier, returning specific correction guidance rather than waiting for a checkout timeout."
+  }}
+>
+  ## Resolve unavailable items and delivery addresses sooner
+
+  Checkout now detects a visible sold-out-item notice without waiting for the full checkout
+  deadline. It also checks required shipping regions and available destination countries before
+  continuing. Applications receive the existing item or delivery error, or an
+  `ADDRESS_CORRECTION_REQUIRED` hint when a merchant needs a state or province, so shoppers can
+  correct the request sooner.
+
+  [Review checkout errors →](/api-reference/errors#shopping-checkout-errors)
+</Update>
+
+<Update
+  label="October 6, 2026 - Shopping search"
   tags={["Improvements", "Fixes"]}
   rss={{
     title: "Find products more reliably during temporary provider issues",
-    description: "Shopping search retries temporary catalog limits and service errors, recovers failed relevance checks without repeating successful work, and uses verified merchant names in results and product details."
+    description: "Shopping search retries temporary catalog limits and service errors, avoids duplicate catalog calls for matching requests, recovers failed relevance checks, and uses verified merchant names."
   }}
 >
   ## Find products more reliably during temporary provider issues
@@ -20,8 +91,50 @@ rss: true
   affected result batch is retried through a fallback model. Successful batches remain
   available, so a brief provider issue is less likely to interrupt the full search.
 
+  When two search paths need the same catalog request, Prava now shares that request within the
+  search instead of making it twice. This reduces unnecessary provider work without changing
+  which results are eligible.
+
   Results and product details also use cached, verified merchant display names where available.
   This makes merchant choices clearer and keeps the name consistent as shoppers inspect an item.
+</Update>
+
+<Update
+  label="October 5, 2026 - Repeat purchases"
+  tags={["New", "API"]}
+  rss={{
+    title: "Approve a spending budget for repeat purchases",
+    description: "Supported merchant checkouts can now use one customer-approved spending budget for later purchases within the same merchant or exact-product scope. Each purchase uses its verified final total, and unresolved outcomes keep budget reserved until reconciled."
+  }}
+>
+  ## Approve a spending budget for repeat purchases
+
+  For supported merchant checkouts, customers can approve a cumulative spending budget once
+  for either one exact product variant or purchases from the same merchant. Later purchases
+  use a fresh, verified checkout total within that budget without another passkey prompt.
+
+  Each purchase has its own status. A completed purchase uses the verified final amount;
+  a known failure releases unused budget when safe, while an uncertain outcome keeps its amount
+  reserved until reconciliation. The approval itself does not buy the setup item. In sandbox,
+  eligible card declines can be simulated as a successful test outcome after the actual decline
+  is recorded, without marking a merchant order as paid.
+</Update>
+
+<Update
+  label="October 4, 2026 - Verification retries"
+  tags={["Fixes"]}
+  rss={{
+    title: "Retry checkout after a confirmed early verification failure",
+    description: "A checkout can start a fresh verification attempt after a confirmed authentication or device-verification failure, while uncertain or already-issued payment attempts remain protected from duplicate payment."
+  }}
+>
+  ## Retry checkout after a confirmed early verification failure
+
+  When authentication or device verification fails before payment credentials are issued,
+  a shopper can retry the checkout with a fresh verification attempt. This covers canceled
+  authentication, failed passkey or OTP setup, and supported popup timeouts. The previous
+  attempt must be confirmed failed before a new one starts, protecting checkouts with an
+  uncertain or already-issued payment outcome.
 </Update>
 
 <Update
