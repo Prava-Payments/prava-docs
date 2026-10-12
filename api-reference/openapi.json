@@ -125,7 +125,7 @@
     "/v1/sessions/{sessionId}/status": {
       "get": {
         "summary": "Get Card Enrollment Status",
-        "description": "Poll the fixed-shape lifecycle and durable outcome of a full card-enrollment session. Payment sessions are not supported by this resource.",
+        "description": "Poll the fixed-shape lifecycle and durable outcome of a full card-enrollment session. Payment sessions are not supported by this resource. With the upcoming webhook release, an unfinished session revoked at or after its expiry reports expired; revocation before expiry remains cancelled. Completed/failed precedence and the response shape are unchanged. Integrations should handle both cancelled and expired as terminal results.",
         "operationId": "getCardEnrollmentStatus",
         "parameters": [
           {

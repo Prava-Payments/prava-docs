@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — 2026-10-12-2
+
+### Changed
+
+- Add API compatibility notes for `GET /v1/sessions/{sessionId}/status`: a full-enrollment session revoked at or after expiry remains `expired`; earlier cancellation stays `cancelled`. Integrators should handle both terminal states.
+
 ## [Unreleased] — 2026-10-12-1
 
 ### Fixed

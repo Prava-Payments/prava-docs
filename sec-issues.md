@@ -22,3 +22,10 @@ complete bounded challenge echoes, HTTP acknowledgement without stored response 
 and bounded replay inspection/payload grace. No credentials, receiver diagnostics or
 live endpoint data are included. Event/new replay scope remains application/environment
 bound and limited to30days. These are contract clarifications, not live activation.
+
+## Enrollment status compatibility note — 2026-10-12
+
+The documented late-revocation status follows persisted session/action chronology.
+This note adds no recipient, authorization, credential or response fields. Public
+status and webhook semantics remain aligned; source checks still enforce the
+creating merchant's session ownership. Deployment timing is described as upcoming.
