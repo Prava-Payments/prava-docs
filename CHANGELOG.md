@@ -1,0 +1,71 @@
+# Changelog
+
+## [Unreleased] — 2026-10-12-4
+
+### Changed
+
+- Keep webhook signature guidance language-independent; move optional Node/Python receiver setup and runtime requirements into a separate examples page.
+- Separate sandbox testing guidance and opt-in automated receiver controls from the main security guide.
+
+## [Unreleased] — 2026-10-12-3
+
+### Changed
+
+- Simplify webhook environment enablement guidance and link the event catalog near the start of the setup overview.
+
+## [Unreleased] — 2026-10-12-2
+
+### Changed
+
+- Add API compatibility notes for `GET /v1/sessions/{sessionId}/status`: a full-enrollment session revoked at or after expiry remains `expired`; earlier cancellation stays `cancelled`. Integrators should handle both terminal states.
+
+## [Unreleased] — 2026-10-12-1
+
+### Fixed
+
+- Use canonical session IDs in API/webhook examples and filters, and document actionable receiver/challenge errors and bodyless control requests.
+
+### Changed
+
+- Clarify HTTP acknowledgement independently of bounded response bodies, bounded replay retention grace and cancellation/expiry chronology.
+
+## [Unreleased] — 2026-10-09-5
+
+### Changed
+
+- Clarify internal preparation delays, event-scoped exhaustion recovery, adaptive Dashboard refresh and durable queued notice semantics.
+
+## [Unreleased] — 2026-10-09-4
+
+### Added
+
+- Document reseller-managed application subscriptions, shared receivers and independent bulk setup results.
+
+## [Unreleased] — 2026-10-09-3
+
+### Changed
+
+- Clarify repeated retry result versions, replay key binding across destination changes, incident visibility and retained recovery reads during delivery shutdown.
+
+## [Unreleased] — 2026-10-09-2
+
+### Security
+
+- Add optional authenticated control for a dedicated sandbox account and synthetic deliveries; ordinary receivers keep it disabled.
+
+### Fixed
+
+- Preserve nullable uncapped mandate budgets and document expiry after capture activation.
+
+## [Unreleased] — 2026-10-09-1
+
+### Added
+
+- Document full enrollment and mandate-creation events, event filters, queued synthetic tests, circuit recovery and verified incident notices.
+- Add runnable Node/Python receivers with raw-byte signature verification and durable SQLite receipt deduplication.
+
+## [Unreleased] — 2026-10-08-1
+
+### Added
+
+- Gated-preview webhook setup, event catalog, signature verification, delivery/recovery guidance, and matching OpenAPI operations. Availability remains dependent on sandbox-first Core activation.

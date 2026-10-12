@@ -82,6 +82,19 @@ expiry.
   `card_id` proves only that card provisioning completed.
 </Note>
 
+## API compatibility note — upcoming webhook release
+
+For an unfinished full-enrollment session, revocation at or after `expires_at`
+returns `status: "expired"`. Earlier versions reported `cancelled` after any
+revocation. Revocation before expiry remains `cancelled`, including on repeated
+revoke calls after the deadline. Persisted completion and non-recoverable failure
+retain their existing precedence. The response fields and status enum are unchanged.
+
+**Action required:** If your integration treats every revoked session as
+`cancelled`, handle `expired` as a terminal result too. Stop polling in either case;
+create a new session only if the cardholder wants to continue. This matches the
+[enrollment webhook event chronology](/webhooks/events).
+
 ## Retry behavior
 
 When `error.retryable` is `true`, the cardholder retries inside the existing iframe:

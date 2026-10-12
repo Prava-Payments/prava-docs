@@ -91,7 +91,7 @@ A polling endpoint: after the cardholder completes card entry and passkey approv
 
 <RequestExample>
 ```bash cURL
-curl "https://sandbox.api.prava.space/v1/sessions/sess_123/payment-result" \
+curl "https://sandbox.api.prava.space/v1/sessions/ses_123/payment-result" \
   -H "Authorization: Bearer sk_test_..."
 ```
 
@@ -99,13 +99,13 @@ curl "https://sandbox.api.prava.space/v1/sessions/sess_123/payment-result" \
 import requests
 
 resp = requests.get(
-    "https://sandbox.api.prava.space/v1/sessions/sess_123/payment-result",
+    "https://sandbox.api.prava.space/v1/sessions/ses_123/payment-result",
     headers={"Authorization": "Bearer sk_test_..."},
 )
 ```
 
 ```javascript JavaScript
-const resp = await fetch("https://sandbox.api.prava.space/v1/sessions/sess_123/payment-result", {
+const resp = await fetch("https://sandbox.api.prava.space/v1/sessions/ses_123/payment-result", {
   headers: {
     Authorization: "Bearer sk_test_...",
   },
@@ -116,7 +116,7 @@ const resp = await fetch("https://sandbox.api.prava.space/v1/sessions/sess_123/p
 <ResponseExample>
 ```json 200 Success
 {
-  "session_id": "sess_123",
+  "session_id": "ses_123",
   "order_id": "ord_4a1b",
   "status": "awaiting_result",
   "transactions": [
@@ -144,7 +144,7 @@ const resp = await fetch("https://sandbox.api.prava.space/v1/sessions/sess_123/p
 
 ```json 200 Quote-backed
 {
-  "session_id": "sess_123",
+  "session_id": "ses_123",
   "order_id": "ord_4a1b",
   "status": "processing",
   "transactions": [
@@ -160,7 +160,7 @@ const resp = await fetch("https://sandbox.api.prava.space/v1/sessions/sess_123/p
 
 ```json 200 Quote payment completed
 {
-  "session_id": "sess_123",
+  "session_id": "ses_123",
   "order_id": "ord_4a1b",
   "status": "completed",
   "transactions": [
@@ -179,7 +179,7 @@ const resp = await fetch("https://sandbox.api.prava.space/v1/sessions/sess_123/p
 
 ```json 200 Quote payment failed
 {
-  "session_id": "sess_123",
+  "session_id": "ses_123",
   "order_id": "ord_4a1b",
   "status": "failed",
   "transactions": [

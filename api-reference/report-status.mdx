@@ -63,7 +63,7 @@ Report the payment execution outcome back to Prava. Always report after you atte
 
 <RequestExample>
 ```bash cURL
-curl -X POST https://sandbox.api.prava.space/v1/sessions/sess_123/report-status \
+curl -X POST https://sandbox.api.prava.space/v1/sessions/ses_123/report-status \
   -H "Authorization: Bearer sk_test_..." \
   -H "Content-Type: application/json" \
   -d '{ "txn_ref_id": "tli_1", "txn_status": "APPROVED", "authorization_code": "OK123", "response_code": "00" }'
@@ -73,7 +73,7 @@ curl -X POST https://sandbox.api.prava.space/v1/sessions/sess_123/report-status 
 import requests
 
 resp = requests.post(
-    "https://sandbox.api.prava.space/v1/sessions/sess_123/report-status",
+    "https://sandbox.api.prava.space/v1/sessions/ses_123/report-status",
     headers={"Authorization": "Bearer sk_test_..."},
     json={
         "txn_ref_id": "tli_1",
@@ -85,7 +85,7 @@ resp = requests.post(
 ```
 
 ```javascript JavaScript
-const resp = await fetch("https://sandbox.api.prava.space/v1/sessions/sess_123/report-status", {
+const resp = await fetch("https://sandbox.api.prava.space/v1/sessions/ses_123/report-status", {
   method: "POST",
   headers: {
     Authorization: "Bearer sk_test_...",
