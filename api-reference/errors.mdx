@@ -74,13 +74,19 @@ production, custom checkout, or mandate setup. Only the exact payment-stage succ
 accepted; malformed shapes return a validation error. See
 [Sandbox simulation](/api-reference/testing#simulate-successful-payment-completion).
 
-## Shopping checkout address errors
+## Shopping checkout errors
 
 | Status | Code | Cause | Recovery |
 |--------|------|-------|----------|
 | 422 | `DELIVERY_UNAVAILABLE_FOR_ADDRESS` | The merchant cannot deliver the selected items to the supplied address | Ask the shopper to choose another delivery address or item; retrying the same item and address will not help |
 | 422 | `INVALID_SHIPPING_REGION` | The supplied state or region is unavailable for this merchant checkout | Choose a region accepted by the merchant for the destination address |
 | 422 | `INVALID_PHONE_NUMBER` | The merchant rejected the buyer's phone number | Correct the phone number for the destination country before trying again |
+| 422 | `INVALID_EMAIL` | The merchant rejected the buyer's email | Use a different `shipping_address.email` |
+| 422 | `ADDRESS_CORRECTION_REQUIRED` | The merchant requires a state or province to continue | Add or correct the destination state or province |
+| 422 | `VARIANT_UNAVAILABLE` | A selected item is no longer available | Choose another variant or product |
+| 422 / 503 | `MERCHANT_CHECKOUT_FAILED` | The merchant checkout could not be completed | Inspect a 422 response before changing the request; retry a retriable 503 later |
+| 503 | `MERCHANT_CHECKOUT_UNAVAILABLE` | The merchant checkout is temporarily unavailable | Try again later |
+| 503 | `MERCHANT_RATE_LIMITED` | The merchant is temporarily limiting checkout requests | Retry later; use `Retry-After` when supplied |
 
 An apartment or unit-number suggestion is a non-blocking quote warning,
 `ADDRESS_UNIT_CONFIRMATION_SUGGESTED`, rather than an error. The shopper can confirm or add a
