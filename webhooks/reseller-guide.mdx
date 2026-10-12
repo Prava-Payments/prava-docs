@@ -1,0 +1,289 @@
+---
+title: "Reseller sandbox integration"
+description: "Set up client applications, verify your receiver, and receive signed sandbox events as a reseller."
+---
+
+This guide helps you receive updates for the client applications you manage in Prava. Start with one sandbox application, confirm your receiver works, then configure your remaining applications.
+
+A webhook is an HTTPS request from Prava to your server when a supported event happens. Your server can update your system when payment credentials are issued, a payment attempt succeeds or fails, card enrollment finishes, or mandate setup changes. You do not need to keep polling for each of these updates. Keep the resource APIs available to reconcile uncertain results.
+
+## Before you begin
+
+You need:
+
+- Access to the Prava reseller dashboard and the client application you want to configure.
+- A developer or administrator role for endpoint configuration. Secret rotation and endpoint deletion require an administrator.
+- Webhooks enabled in sandbox. Contact Prava if the workspace is unavailable or reports that webhooks are disabled.
+- A public HTTPS receiver that your technical team controls, with valid TLS on port 443.
+- A secure place on your server to store endpoint signing secrets.
+
+Your receiver can use any backend language or framework. For local testing, your team can use an HTTPS tunnel to forward requests to a local server. Keep the tunnel running; if its public URL changes, update and verify the endpoint again.
+
+**Recommended first test:** configure one application and one endpoint. Receive a test event successfully before using bulk setup.
+
+## Understand what belongs to each application
+
+Every endpoint belongs to **one application in one environment**. As a reseller, you can manage several applications from your dashboard, but each application retains its own event subscriptions, signing secrets, verification state, and delivery history.
+
+You can use the same receiver URL for several applications. You must still save and use each endpoint's own signing secret, and route verified events to the correct client in your system.
+
+| Value | What it is | How to use it |
+| --- | --- | --- |
+| Application ID: `ma_...` | Identifies the client application. | Map it to the correct client in your system. |
+| Endpoint ID: `whe_...` | Identifies one webhook configuration. | Use it to inspect settings, delivery history, and API operations. It is not a secret. |
+| Signing secret: `whsec_...` | Authenticates incoming webhook requests for an endpoint. | Store it privately on your server and use it to verify signatures. |
+| Application API secret: `sk_test_...` | Authorizes sandbox API calls for one application. | Needed only for API-based setup or recovery. It is not the webhook signing secret. |
+| Event ID: `evt_...` | Identifies the event. | Use it to prevent duplicate processing. |
+| Delivery ID: `whd_...` | Identifies a delivery generation. | Use it when checking delivery attempts or replaying a delivery. |
+
+**Never paste signing secrets or API keys into chat, screenshots, tickets, or logs.** Dashboard setup does not require you to share an application API key with Prava.
+
+## How the integration works
+
+```mermaid
+sequenceDiagram
+    participant Operator as Your reseller operator
+    participant Prava as Prava
+    participant Receiver as Your receiver
+    participant Inbox as Your durable inbox
+    participant App as Your application
+    Operator->>Prava: Create endpoint and select events
+    Prava-->>Operator: Endpoint ID and one-time signing secret
+    Operator->>Receiver: Configure signing secret
+    Operator->>Prava: Verify destination
+    Prava->>Receiver: Signed verification challenge
+    Receiver-->>Prava: Return the same challenge as JSON
+    Operator->>Prava: Test and activate delivery
+    Prava->>Receiver: Signed event for a client application
+    Receiver->>Receiver: Verify signature, application and environment
+    Receiver->>Inbox: Store event once
+    Receiver-->>Prava: Return 2xx
+    Inbox->>App: Process asynchronously
+```
+
+A successful HTTP response confirms that your server accepted the event. It does not confirm that all downstream work has completed.
+
+## Step 1: prepare your receiving URL
+
+Ask your technical team to create a route that accepts HTTP POST requests, for example:
+
+```text
+https://hooks.yourcompany.com/prava/sandbox/client-a
+```
+
+The registered URL must be publicly reachable over HTTPS. Do not use localhost, private-network addresses, IP-literal destinations, query strings, fragments, or credentials embedded in the URL. Do not require a browser login or a custom authentication header. Redirects are not followed.
+
+Your handler needs to support both:
+
+- **Verification requests:** authenticate the request and echo its challenge.
+- **Event deliveries:** authenticate the request, store it durably, and acknowledge it promptly.
+
+Optional runnable Node.js and Python examples are available in the receiver documentation linked at the end. Their runtime requirements apply only to those examples.
+
+## Step 2: select the application and events
+
+1. Sign in to your reseller dashboard and select **Sandbox**.
+2. Open **Webhooks**.
+3. Find the ready client application you want to configure and select **Manage webhooks**.
+4. Create an endpoint with a descriptive name, your receiving URL, and the events your integration needs.
+
+Start with the family your client uses. You can add other subscriptions when your receiver knows how to handle them.
+
+| Event | What happened | Suggested action in your system |
+| --- | --- | --- |
+| `payment.credentials_ready` | Prava issued credentials for a payment attempt. | Mark the attempt ready. This does not mean the order is paid. |
+| `payment.succeeded` | An issued payment attempt was recorded successful. | Update that attempt and reconcile the associated purchase. |
+| `payment.failed` | An issued payment attempt was recorded failed. | Record the failure; reconcile uncertain purchases before retrying. |
+| `card_enrollment.completed` | Full enrollment completed with a stored card and passkey readiness. | Mark the enrollment complete. |
+| `card_enrollment.failed` | Enrollment failed; a card may already be partially provisioned. | Inspect the enrollment outcome before restarting. |
+| `card_enrollment.cancelled` | The enrollment action or session was cancelled. | Close that enrollment attempt. |
+| `card_enrollment.expired` | An unfinished enrollment session expired. | Offer a fresh enrollment flow if required. |
+| `mandate.created` | Mandate setup produced an authorized attempt and active mandate. | Save the mandate ID. Setup does not charge a purchase. |
+| `mandate.creation_failed` | All current setup attempts failed. | Record the setup failure; a later retry may still authorize. |
+| `mandate.creation_cancelled` | An unfinished mandate setup was dismissed. | Close the setup flow. |
+| `mandate.creation_expired` | An unfinished mandate setup expired. | Offer a fresh approval session if required. |
+
+These events describe supported payment attempts, full card enrollment, and mandate setup. Later mandate pause/resume/cancellation, refunds, merchant fulfillment, and final settlement are not covered by this catalog. Use the relevant APIs for those operations.
+
+## Step 3: save the signing secret
+
+After creation, save the value shown under **Save your signing secret**. It begins with `whsec_...` and is displayed only once. Label it with the client application, environment, and endpoint ID in your server's secret store.
+
+The endpoint begins paused and awaiting verification. The `whe_...` value shown beside its status is its endpoint ID, not the signing secret.
+
+Give your technical team the secret through your organization's approved secret-sharing mechanism. Configure it on the receiver before attempting verification.
+
+If the secret was not saved, an administrator can open the endpoint settings, expand **Administrator actions**, and choose **Rotate signing secret**. Save the replacement immediately. Rotating application API credentials does not rotate a webhook signing secret.
+
+## Step 4: verify the destination
+
+Select **Verify destination** after your receiver has the signing secret.
+
+Prava sends a signed control request with type `webhook.endpoint_verification`, the application and environment, and a `challenge` value. Your receiver must verify the signature, check the application/environment, and return a small JSON response with the exact received challenge:
+
+```json
+{"challenge":"THE_EXACT_CHALLENGE_RECEIVED"}
+```
+
+Return a 2xx status with that response. A plain `OK`, empty response, redirect, or different challenge will not verify the endpoint. Verification requests do not have the ordinary business event's `resource` and `data` fields.
+
+**Expected result:** the endpoint shows that its destination is verified. Verification does not activate ordinary delivery.
+
+## Step 5: test, then activate
+
+1. Select a subscribed event type and click **Send test event**.
+2. Confirm your receiver validates and saves it, then returns a 2xx response such as `204`.
+3. Select **Activate delivery** on the endpoint.
+4. Ask your technical team to send a queued sandbox test using the API appendix below.
+5. Open **Delivery history** and confirm the queued event was accepted.
+
+The dashboard's test is a direct connectivity/signature check. The queued test additionally exercises background delivery and its attempt history.
+
+Synthetic events contain `test: true` and illustrative resource data. Accept and record them for testing, but do not update actual customer balances, orders, cards, or mandates from them.
+
+Then complete a supported sandbox flow for the same application. Match its API result to the event in delivery history and your receiver inbox. Creating a session alone does not necessarily produce a webhook. Synthetic financial sandbox simulations are excluded from actual lifecycle capture.
+
+**You are ready for additional applications when a queued test and an actual supported lifecycle event reach your receiver with the correct client mapping.**
+
+## Step 6: configure your remaining applications
+
+For a small number of clients, repeat the individual setup. For bulk setup:
+
+1. In the reseller Webhooks workspace, select up to **10 applications on the current page**.
+2. Enter the common endpoint name, receiving URL, and event selection.
+3. Choose **Create for [number] applications**.
+4. Review every application's result and save each application-labelled signing secret.
+5. Open **Verify and configure** for each created endpoint, install its secret, verify, test, and activate it separately.
+
+Bulk creation produces independent paused endpoints. It does not create one reseller-wide subscription. One application's failure does not roll back successful results for others. Use **Retry same batch** for an uncertain result; do not start a new batch merely because the response was lost. Previously returned secrets cannot be recovered on retry.
+
+Each application can have up to five endpoints per environment. New client applications are not automatically subscribed; configure them explicitly.
+
+If reseller access is revoked or an application is reassigned, that operator loses management access. Existing endpoints remain owned by the application and continue until an authorized operator changes them.
+
+## Technical implementation: receive safely
+
+### Verify the exact request bytes
+
+Requests include `Prava-Signature`, `Prava-Event-Id`, and `Prava-Delivery-Id`. The signature header contains a timestamp and one or more signatures:
+
+```text
+t=UNIX_SECONDS,v1=HEX_DIGEST
+```
+
+Compute HMAC-SHA256 using the **full literal `whsec_...` secret** as the UTF-8 key and `timestamp + "." + raw_request_body` as the message. Do not remove the secret prefix or base64-decode it. Compare the digest in constant time; reject missing, malformed, or invalid signatures and timestamps more than five minutes from your current clock.
+
+Preserve the raw body for verification. Do not parse JSON and rebuild it before checking the signature. Only process authenticated events, and check their application and environment before updating a client.
+
+### Route shared receivers to the correct client
+
+Maintain a server-side mapping of application ID, environment, endpoint, signing secret, and your internal client ID. Separate receiving paths per endpoint can make secret selection simpler.
+
+For a shared URL, the unverified `account_id` and `environment` may be read only as hints to select a bounded set of already-configured candidate secrets. They are not authorization. Verify the unchanged raw bytes first, then check that the authenticated account/environment match the selected client configuration. An event from one client must never update another client.
+
+### Store first; process once
+
+Commit the event to a durable inbox before returning 2xx. Use a unique key such as `(environment, account_id, event.id)`. If it is already stored, return 2xx without repeating its business effects. If storage fails, return non-2xx so delivery can retry.
+
+Process business logic asynchronously. Use the signed body `id` for deduplication. Use `resource.version` to prevent an older event overwriting newer state for the same resource; versions cannot be compared across different resources. Delivery can be duplicated or arrive out of order.
+
+For payment events, `resource.id` is the transaction ID. Keep the transaction/order/mandate association returned by your payment APIs. For enrollment and mandate setup, `resource.id` is the session ID. `mandate.created` includes `data.mandate_id`.
+
+A recorded payment outcome is not evidence of merchant fulfillment or final settlement. Reconcile an uncertain purchase through its resource API before issuing another purchase.
+
+## If an event is missing or delivery fails
+
+| What you see | What to check |
+| --- | --- |
+| Verification returns `401` | Receiver has the correct endpoint signing secret; raw body is unchanged; server clock is synchronized. |
+| Verification fails despite a reachable receiver | Return the exact challenge as complete JSON with 2xx; do not return a plain acknowledgement. |
+| Receiver cannot be reached | Check public DNS, valid HTTPS, route availability, and tunnel/proxy forwarding. |
+| Verified endpoint receives no ordinary events | Confirm delivery is active, the event is subscribed, and the flow used the same application/environment. |
+| Direct test succeeds but nothing appears in history | Direct tests are connectivity checks. Send a queued test for worker delivery history. |
+| Session creation produced no event | Complete a supported transition and consult the event catalog; there is no generic session-created event. |
+| Duplicate or older event arrives | Deduplicate by event ID and apply only a newer version for that resource. |
+| Secret rotation is blocked | An earlier rotation's 24-hour overlap is still active. Do not rotate again until it ends. |
+
+Open **Delivery history → Inspect / replay** to view status, attempts, HTTP responses, and the event body. Eligible unsuccessful deliveries retry with increasing delay and jitter, subject to a maximum of nine network attempts and a 72-hour window. A `410` response disables the endpoint; repeated receiver failures can temporarily suspend delivery. Repair the destination and inspect its state before expecting delivery to resume.
+
+After resolving an issue, select **Replay retained event** for an eligible delivery. Replay retains its event ID and body, so your receiver must still deduplicate it. Ordinary history and event retention are 30 days; retain your own audit records and use the Events API to reconcile gaps. New endpoints do not automatically receive past events.
+
+Pause stops new sends, although a request already in transit cannot be recalled. Changing a receiving URL clears verification and pauses delivery; verify the new destination before reactivating. Subscription changes can cancel queued work for removed events. Reconcile any gap instead of assuming activation restores every missed delivery.
+
+## Rotate a signing secret safely
+
+1. Open the endpoint's **Administrator actions → Rotate signing secret**.
+2. Save the new secret before leaving the screen.
+3. Deploy the new secret to your receiver promptly. Queued deliveries are signed with both old and new secrets during the 24-hour overlap.
+4. Confirm queued delivery works with the replacement secret, then retire the old secret after overlap.
+
+Verification and direct tests use the current secret, so install the replacement before running those checks. A second rotation is blocked during overlap. There is no later secret-reveal operation.
+
+## Developer appendix: application API setup
+
+Dashboard management is the recommended starting point for reseller operators. For automated setup or recovery, use the **selected client application's sandbox API secret**, not a reseller-wide key.
+
+Sandbox API base URL: `https://sandbox.api.prava.space`.
+
+Send `Authorization: Bearer YOUR_APPLICATION_SANDBOX_SECRET`. Send `Content-Type: application/json` only when sending a JSON body. Keep keys on your server and out of command history and logs. The key scopes every request to its own application and environment; you cannot choose another client by adding an account ID to the body.
+
+| Action | Method and path | Body / additional requirement |
+| --- | --- | --- |
+| Read event types and schemas | `GET /v1/webhook-event-types` | No body. |
+| Create endpoint | `POST /v1/webhook-endpoints` | Name, URL, selected events; `Idempotency-Key`. |
+| Verify destination | `POST /v1/webhook-endpoints/{endpointId}/verify` | No body required. |
+| Activate | `PATCH /v1/webhook-endpoints/{endpointId}` | `{"enabled":true}`. |
+| Queue a test | `POST /v1/webhook-endpoints/{endpointId}/test` | Example below; selected event must be subscribed. |
+| Inspect deliveries | `GET /v1/webhook-endpoints/{endpointId}/deliveries` | No body. |
+| Read a delivery and attempts | `GET /v1/webhook-deliveries/{deliveryId}` | No body. |
+| Replay | `POST /v1/webhook-deliveries/{deliveryId}/replay` | `Idempotency-Key`; no body required. |
+| Recover captured events | `GET /v1/events` | Follow returned `next_cursor` with unchanged filters. |
+| Rotate signing secret | `POST /v1/webhook-endpoints/{endpointId}/rotate-secret` | `Idempotency-Key`; no body required. |
+
+Example create body:
+
+```json
+{
+  "name": "Client A sandbox events",
+  "url": "https://hooks.yourcompany.com/prava/sandbox/client-a",
+  "events": ["payment.credentials_ready", "payment.succeeded", "payment.failed"]
+}
+```
+
+Creation returns the endpoint and its one-time `signing_secret`; it starts paused and unverified. Create, rotate, and replay require an idempotency key of 8–120 letters, digits, underscores, or hyphens. Retry an uncertain request with the same key and input. Successful create/rotation retries do not disclose the secret again.
+
+Example queued test body:
+
+```json
+{"type":"payment.credentials_ready","queued":true}
+```
+
+For event recovery, save progress only after durable processing. If `next_cursor` is null, retain the last non-null cursor for later scans; duplicate events are safe when your inbox deduplicates. Recovery reads remain scoped to the key's application and environment.
+
+## Sandbox acceptance checklist
+
+Before production onboarding, confirm:
+
+- The correct application and sandbox environment are selected.
+- Endpoint signing secrets are stored securely and mapped to the correct clients.
+- Verification succeeds and invalid or stale signatures are rejected.
+- Direct and queued tests are accepted; queued attempts appear in delivery history.
+- Repeated events and replay do not duplicate business processing.
+- A temporary receiver failure retries and eventually succeeds.
+- Events cannot cross client or environment boundaries.
+- Older resource versions cannot overwrite newer state.
+- Actual supported lifecycle events match the persisted API result.
+- Rotation, subscription changes, and recovery are understood by the operational owner.
+
+Production uses separate applications/keys, endpoints, and signing secrets. After sandbox validation, coordinate production enablement with Prava and repeat destination verification and integration checks. Sandbox setup does not automatically activate production.
+
+## Documentation and support
+
+- [Webhook event catalog](https://docs.prava.space/webhooks/events)
+- [Signature verification](https://docs.prava.space/webhooks/security)
+- [Optional receiver examples](https://docs.prava.space/webhooks/receiver-examples)
+- [Testing your integration](https://docs.prava.space/webhooks/testing)
+- [Webhook API](https://docs.prava.space/webhooks/api)
+- [Delivery and recovery](https://docs.prava.space/webhooks/delivery)
+
+When requesting help, share the environment, application ID, endpoint ID, session/transaction ID, event/delivery ID, and approximate timestamp. Do not send signing secrets, API keys, or payment credentials. Contact **support@prava.space** or your agreed Prava onboarding contact.

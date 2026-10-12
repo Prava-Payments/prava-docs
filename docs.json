@@ -94,6 +94,7 @@
             "group": "Webhooks",
             "pages": [
               "webhooks/overview",
+              "webhooks/reseller-guide",
               "webhooks/events",
               "webhooks/security",
               "webhooks/receiver-examples",

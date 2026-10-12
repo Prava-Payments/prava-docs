@@ -33,3 +33,7 @@ creating merchant's session ownership. Deployment timing is described as upcomin
 ## Webhook receiver documentation structure — 2026-10-12
 
 Clarify that any backend can receive signed webhooks; runtime and SQLite requirements apply only to optional examples. Preserve raw-byte verification, application/environment checks, durable deduplication and private signing-key configuration. Distinguish application API credentials from endpoint signing secrets. Move opt-in sandbox control configuration to advanced testing guidance and explicitly exclude actual lifecycle receipt in control mode; ordinary receivers leave those controls unset. No code, credential, authorization or deployed configuration changed.
+
+## Reseller customer onboarding guide — 2026-10-12
+
+Document per-application/environment endpoint ownership, one-time signing secrets, separation from API credentials, verified shared-receiver routing and durable deduplication. State that unverified account fields are only candidate-secret lookup hints; API keys cannot select arbitrary client accounts. Preserve current delegated dashboard access, administrator-only rotation/deletion and independent application subscriptions. Examples contain placeholders only and introduce no authorization or runtime changes.

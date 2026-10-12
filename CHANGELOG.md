@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — 2026-10-12-5
+
+### Added
+
+- Add a dashboard-first reseller sandbox guide covering per-application setup, shared receiver routing, event selection, verification, testing, retries/replay and application API recovery.
+
 ## [Unreleased] — 2026-10-12-4
 
 ### Changed
