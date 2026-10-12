@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — 2026-10-12-3
+
+### Changed
+
+- Simplify webhook environment enablement guidance and link the event catalog near the start of the setup overview.
+
 ## [Unreleased] — 2026-10-12-2
 
 ### Changed
