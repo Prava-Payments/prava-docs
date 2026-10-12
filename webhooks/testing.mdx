@@ -1,0 +1,52 @@
+---
+title: "Test your integration"
+description: "Verify your receiver, test event delivery, and check retries and secret rotation in sandbox."
+---
+
+Use sandbox to test your receiver before activating production delivery. You can use your existing backend or the [optional receiver examples](/webhooks/receiver-examples). A temporary HTTPS tunnel can forward requests to a local receiver; keep the tunnel running and update the endpoint if its public URL changes.
+
+## Verify and send a test event
+
+1. Create a sandbox endpoint in **Webhooks**, select the event types you need, and save its one-time signing secret.
+2. Configure your receiver with that secret and the expected application and environment.
+3. Click **Verify destination**. Your receiver must validate the signature and return the exact challenge in a small JSON response with a 2xx status.
+4. Select a subscribed event type and click **Send test event**. Confirm your receiver accepts it.
+
+Synthetic events have `test: true`. Accept them to validate delivery, but do not charge, enroll a card, or perform other business side effects for them. A direct test confirms connectivity and signature handling; it does not prove a payment or enrollment happened.
+
+## Test automatic retries and replay
+
+The dashboard's **Send test event** sends directly to your receiver. To exercise the delivery worker and its automatic retries, activate the verified endpoint and use the application's sandbox secret API key with `POST /v1/webhook-endpoints/{endpointId}/test`:
+
+```json
+{
+  "type": "payment.credentials_ready",
+  "queued": true
+}
+```
+
+The selected type must be subscribed. See the [Webhook API](/webhooks/api) for authentication and request details. On a controlled test receiver, reject the first synthetic delivery with `503`, then accept its retry with `204`. Check **Delivery history** for both attempts. The optional Node example supports this sandbox-only behavior with `reject_attempts: 1` in its configuration; restore it to `0` after testing.
+
+Open the accepted queued delivery and select **Replay retained event**. The replay should be accepted but should not create a second inbox record or repeat business side effects. Its delivery ID changes; its event ID and original body remain the same.
+
+## Test secret rotation
+
+Save the current signing secret, rotate once, and save the replacement. During the 24-hour overlap, configure your controlled receiver with only the old secret and send a queued test. Repeat with only the replacement secret. Both should be accepted. Use queued tests for this check: direct test requests use the current secret.
+
+Leave the receiver configured with the replacement secret afterward. Another rotation is blocked until the overlap ends. After the overlap expires, a receiver configured with only the old secret should reject new deliveries; restore the replacement secret to allow retries to succeed.
+
+## Test actual lifecycle events
+
+Run the supported sandbox payment, full card-enrollment, or mandate-setup flow using the same application. Compare the persisted API result with the [expected event](/webhooks/events), delivery history, and receiver inbox. Creating a session alone does not necessarily produce an event. Synthetic financial sandbox simulations are excluded from lifecycle capture.
+
+Check the event's application, environment, resource ID, and version. Actual lifecycle events are not marked `test: true`. Completion, failure, cancellation, and expiry require separate cases. Also test that removing a subscription prevents new automatic deliveries for that event type.
+
+## Advanced: automated sandbox receiver
+
+<Accordion title="Optional test-runner controls">
+Skip this section for a normal integration. The Node example includes an opt-in control endpoint for a dedicated sandbox receiver used by an automated test runner.
+
+Set `WEBHOOK_E2E_CONTROL_KEY` to an independent secret of 32–128 base64url characters and `WEBHOOK_E2E_ACCOUNT_ID` to the dedicated sandbox application's ID. This enables authenticated `/e2e/config` configuration and restricts receipt to that application's synthetic events and signed verification challenges. It cannot validate actual lifecycle events in this mode.
+
+Keep the control key separate from application API keys and webhook signing secrets. Keep proxy request bodies and authorization headers out of logs, and use private durable storage. The test runner can configure temporary signing secrets, exercise test events and retries, then delete its test endpoint and clear receiver configuration. Leave these options unset on ordinary customer receivers.
+</Accordion>

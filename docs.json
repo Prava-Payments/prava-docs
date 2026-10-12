@@ -96,6 +96,8 @@
               "webhooks/overview",
               "webhooks/events",
               "webhooks/security",
+              "webhooks/receiver-examples",
+              "webhooks/testing",
               "webhooks/delivery",
               "webhooks/api"
             ]

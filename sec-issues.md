@@ -29,3 +29,7 @@ The documented late-revocation status follows persisted session/action chronolog
 This note adds no recipient, authorization, credential or response fields. Public
 status and webhook semantics remain aligned; source checks still enforce the
 creating merchant's session ownership. Deployment timing is described as upcoming.
+
+## Webhook receiver documentation structure — 2026-10-12
+
+Clarify that any backend can receive signed webhooks; runtime and SQLite requirements apply only to optional examples. Preserve raw-byte verification, application/environment checks, durable deduplication and private signing-key configuration. Distinguish application API credentials from endpoint signing secrets. Move opt-in sandbox control configuration to advanced testing guidance and explicitly exclude actual lifecycle receipt in control mode; ordinary receivers leave those controls unset. No code, credential, authorization or deployed configuration changed.

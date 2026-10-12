@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased] — 2026-10-12-4
+
+### Changed
+
+- Keep webhook signature guidance language-independent; move optional Node/Python receiver setup and runtime requirements into a separate examples page.
+- Separate sandbox testing guidance and opt-in automated receiver controls from the main security guide.
+
 ## [Unreleased] — 2026-10-12-3
 
 ### Changed
