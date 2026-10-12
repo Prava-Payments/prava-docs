@@ -13,3 +13,12 @@ Recovery reads retain application authentication and account/environment scope d
 ## 2026-10-09 — Reviewed delivery semantics
 
 Document that known preparation failures belong to Prava and do not consume receiver attempts, that exhausted events retain independent incidents, and that queued email notice acknowledgement is distinct from sending. Examples continue to exclude credentials and customer response bodies. No live receiver or infrastructure configuration changed.
+
+
+## 2026-10-12 — Reviewed receiver and lifecycle boundaries
+
+Public webhook examples use canonical session IDs. Document safe receiver422 errors,
+complete bounded challenge echoes, HTTP acknowledgement without stored response bodies,
+and bounded replay inspection/payload grace. No credentials, receiver diagnostics or
+live endpoint data are included. Event/new replay scope remains application/environment
+bound and limited to30days. These are contract clarifications, not live activation.

@@ -1122,6 +1122,9 @@
           },
           "503": {
             "description": "Preview disabled or temporarily unavailable"
+          },
+          "422": {
+            "description": "WEBHOOK_RECEIVER_UNAVAILABLE: public receiver DNS, HTTPS or availability failure; safe actionable error without receiver diagnostics"
           }
         },
         "parameters": [
@@ -1158,6 +1161,9 @@
           },
           "503": {
             "description": "Preview disabled or temporarily unavailable"
+          },
+          "422": {
+            "description": "WEBHOOK_RECEIVER_UNAVAILABLE: public receiver DNS, HTTPS or availability failure; safe actionable error without receiver diagnostics"
           }
         },
         "parameters": [

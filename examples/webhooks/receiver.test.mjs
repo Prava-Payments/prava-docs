@@ -49,7 +49,7 @@ test("receiver verifies scope, persists duplicate receipt once and echoes signed
       account_id: "ma_a",
       environment: "sandbox",
       test: true,
-      resource: { id: "sess_a", version: 1 },
+      resource: { id: "ses_a", version: 1 },
     };
     assert.equal((await send(event)).status, 204);
     assert.equal((await send(event)).status, 204);

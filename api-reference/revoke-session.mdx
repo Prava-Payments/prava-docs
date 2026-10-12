@@ -39,7 +39,7 @@ Revoke a payment session before it is used. Revocation is immediate and cannot b
 
 <RequestExample>
 ```bash cURL
-curl -X POST https://sandbox.api.prava.space/v1/sessions/sess_123/revoke \
+curl -X POST https://sandbox.api.prava.space/v1/sessions/ses_123/revoke \
   -H "Authorization: Bearer sk_test_..."
 ```
 
@@ -47,13 +47,13 @@ curl -X POST https://sandbox.api.prava.space/v1/sessions/sess_123/revoke \
 import requests
 
 resp = requests.post(
-    "https://sandbox.api.prava.space/v1/sessions/sess_123/revoke",
+    "https://sandbox.api.prava.space/v1/sessions/ses_123/revoke",
     headers={"Authorization": "Bearer sk_test_..."},
 )
 ```
 
 ```javascript JavaScript
-const resp = await fetch("https://sandbox.api.prava.space/v1/sessions/sess_123/revoke", {
+const resp = await fetch("https://sandbox.api.prava.space/v1/sessions/ses_123/revoke", {
   method: "POST",
   headers: {
     Authorization: "Bearer sk_test_...",

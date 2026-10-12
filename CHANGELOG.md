@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased] — 2026-10-12-1
+
+### Fixed
+
+- Use canonical session IDs in API/webhook examples and filters, and document actionable receiver/challenge errors and bodyless control requests.
+
+### Changed
+
+- Clarify HTTP acknowledgement independently of bounded response bodies, bounded replay retention grace and cancellation/expiry chronology.
+
 ## [Unreleased] — 2026-10-09-5
 
 ### Changed
