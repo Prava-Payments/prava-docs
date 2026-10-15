@@ -33,3 +33,7 @@ creating merchant's session ownership. Deployment timing is described as upcomin
 ## Webhook receiver documentation structure — 2026-10-12
 
 Clarify that any backend can receive signed webhooks; runtime and SQLite requirements apply only to optional examples. Preserve raw-byte verification, application/environment checks, durable deduplication and private signing-key configuration. Distinguish application API credentials from endpoint signing secrets. Move opt-in sandbox control configuration to advanced testing guidance and explicitly exclude actual lifecycle receipt in control mode; ordinary receivers leave those controls unset. No code, credential, authorization or deployed configuration changed.
+
+## Webhook public outcome errors — 2026-10-16
+
+Document only fixed allowlisted public error text; provider diagnostics, request bodies, shipping/contact data, access grants and unverified quote IDs are excluded. Quote-request failure is distinct from Merchant quote/payment lifecycle, especially on timeouts. Existing ownership/environment/subscription checks and raw-byte signature verification remain. Old retained payloads stay immutable and may omit additive fields. No new auth scope, receiver controls, dependency, environment or live configuration.

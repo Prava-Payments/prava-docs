@@ -95,6 +95,7 @@
             "pages": [
               "webhooks/overview",
               "webhooks/events",
+              "webhooks/errors",
               "webhooks/security",
               "webhooks/receiver-examples",
               "webhooks/testing",

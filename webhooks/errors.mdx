@@ -1,0 +1,143 @@
+---
+title: "Webhook errors and coverage"
+description: "Interpret safe error codes, distinguish request and business outcomes, and understand current coverage."
+---
+
+Failure, cancellation and expiry events captured by this release include `data.error` with a stable `code` and a fixed public `message`. Successful/readiness events have `error: null`. Use the code for branching; do not match or parse the message. `failure_category` identifies the broad event family, while the code gives the known cause. Unknown causes stay generic; a generic decline never implies insufficient funds.
+
+Older retained events can omit `error` and `failure_stage`. Retry and replay preserve the original event ID and bytes; they do not add a reason discovered later. Handle absent fields and unknown future codes safely. A later retry's result is a newer resource version rather than an edit to an old event.
+
+| Negative event | Broad category | Error selection |
+| --- | --- | --- |
+| `payment.failed` | `PAYMENT_ATTEMPT_FAILED` | Safe persisted attempt code; `failure_stage` distinguishes credential issuance from payment. Unknown cause uses `PAYMENT_FAILED`. |
+| `card_enrollment.failed` | `ENROLLMENT_FAILED` | Persisted terminal cause; unknown cause uses `ENROLLMENT_FAILED`. A previous retryable passkey error is not reused as the terminal cause. |
+| `mandate.creation_failed` | `MANDATE_SETUP_FAILED` | Most recently created failed attempt when all setup attempts have failed; unknown cause uses `MANDATE_SETUP_FAILED`. A later retry can still succeed. |
+| Enrollment / mandate cancellation | `SESSION_CANCELLED` | `SESSION_CANCELLED`; no old retry reason. |
+| Enrollment / mandate expiry | `SESSION_EXPIRED` | `SESSION_EXPIRED`; no old retry reason. |
+| `quote.request_failed` | `QUOTE_REQUEST_FAILED` | Safe quote HTTP request error; unknown cause uses `QUOTE_REQUEST_FAILED`. Not a quote/payment lifecycle result. |
+
+```json
+{
+  "failure_category": "PAYMENT_ATTEMPT_FAILED",
+  "failure_stage": "payment",
+  "error": {
+    "code": "INSUFFICIENT_FUNDS",
+    "message": "The payment was declined due to insufficient funds."
+  }
+}
+```
+
+The following codes are emitted only when that reason was actually persisted or returned at the supported request boundary. Their presence in this reference does not mean every upstream processor can supply them. Raw processor diagnostics and customer data are excluded.
+
+## Payment attempts
+
+| Code | Message |
+| --- | --- |
+| `CARD_DECLINED` | The payment was declined by the card issuer. |
+| `INSUFFICIENT_FUNDS` | The payment was declined due to insufficient funds. |
+| `INVALID_CARD_NUMBER` | The card number is invalid. |
+| `INVALID_SECURITY_CODE` | The card security code is invalid. |
+| `INVALID_EXPIRY_DATE` | The card expiry date is invalid. |
+| `EXPIRED_CARD` | The card has expired. |
+| `BILLING_DETAILS_MISMATCH` | The billing details could not be verified. |
+| `CARD_NOT_SUPPORTED` | This card is not supported for this payment. |
+| `PAYMENT_METHOD_UNAVAILABLE` | The selected payment method is unavailable. |
+| `AUTHENTICATION_FAILED` | Payment authentication failed. |
+| `PAYMENT_FAILED` | The payment could not be completed. |
+| `QUOTE_EXPIRED` | The quote has expired. Please request a new quote. |
+| `CREDENTIAL_ISSUANCE_FAILED` | Payment credentials could not be issued. |
+| `MERCHANT_PREPARE_FAILED` | The merchant checkout could not be prepared. |
+| `MERCHANT_ACTION_REQUIRED` | The merchant checkout requires additional verification. |
+| `CARD_PROVISIONING_FAILED` | Card provisioning failed. |
+| `BIN_COUNTRY_NOT_ALLOWED` | Cards from this country are not supported. |
+| `BIN_ISSUER_NOT_ALLOWED` | Cards from this issuer are not supported. |
+| `PAYMENT_INSTRUCTION_FAILED` | The payment instruction could not be created. |
+
+## Full card enrollment
+
+| Code | Message |
+| --- | --- |
+| `ENROLLMENT_FAILED` | Card enrollment could not be completed. |
+| `CARD_PROVISIONING_FAILED` | Card provisioning failed. |
+| `BIN_COUNTRY_NOT_ALLOWED` | Cards from this country are not supported. |
+| `BIN_ISSUER_NOT_ALLOWED` | Cards from this issuer are not supported. |
+| `PASSKEY_NOT_SUPPORTED` | Passkeys are not supported on this device |
+| `OTP_ATTEMPTS_EXHAUSTED` | Too many incorrect verification attempts |
+| `PASSKEY_RETRIES_EXHAUSTED` | The maximum number of passkey attempts was reached |
+| `VIC_ENROLL_RETRIES_EXHAUSTED` | The maximum number of card enrollment attempts was reached |
+| `AUTH_CANCELLED` | Passkey setup was cancelled. Try again to continue. |
+| `AUTH_INCOMPLETE` | Passkey setup could not be completed. Try again. |
+| `DEVICE_BINDING_FAILED` | Secure verification could not be completed. Try again. |
+| `VIC_ENROLL_UNAVAILABLE` | Card enrollment is temporarily unavailable |
+| `VIC_ENROLL_ERROR` | Card enrollment could not be completed. Try again. |
+| `ENROLLMENT_FINALIZATION_FAILED` | Card enrollment could not be finalized |
+| `SESSION_CANCELLED` | The session was cancelled. |
+| `SESSION_EXPIRED` | The session expired. |
+
+## Mandate setup
+
+| Code | Message |
+| --- | --- |
+| `CARD_DECLINED` | The payment was declined by the card issuer. |
+| `INSUFFICIENT_FUNDS` | The payment was declined due to insufficient funds. |
+| `INVALID_CARD_NUMBER` | The card number is invalid. |
+| `INVALID_SECURITY_CODE` | The card security code is invalid. |
+| `INVALID_EXPIRY_DATE` | The card expiry date is invalid. |
+| `EXPIRED_CARD` | The card has expired. |
+| `BILLING_DETAILS_MISMATCH` | The billing details could not be verified. |
+| `CARD_NOT_SUPPORTED` | This card is not supported for this payment. |
+| `PAYMENT_METHOD_UNAVAILABLE` | The selected payment method is unavailable. |
+| `AUTHENTICATION_FAILED` | Payment authentication failed. |
+| `PAYMENT_FAILED` | The payment could not be completed. |
+| `QUOTE_EXPIRED` | The quote has expired. Please request a new quote. |
+| `CREDENTIAL_ISSUANCE_FAILED` | Payment credentials could not be issued. |
+| `BIN_COUNTRY_NOT_ALLOWED` | Cards from this country are not supported. |
+| `BIN_ISSUER_NOT_ALLOWED` | Cards from this issuer are not supported. |
+| `MANDATE_SETUP_FAILED` | Mandate setup could not be completed. |
+| `PAYMENT_INSTRUCTION_FAILED` | The payment instruction could not be created. |
+| `SESSION_CANCELLED` | The session was cancelled. |
+| `SESSION_EXPIRED` | The session expired. |
+
+## Quote requests
+
+| Code | Message |
+| --- | --- |
+| `QUOTE_EXPIRED` | The quote has expired. Please request a new quote. |
+| `QUOTE_REQUEST_FAILED` | The quote request could not be completed. |
+| `MERCHANT_CHECKOUT_FAILED` | Merchant checkout is temporarily unavailable. Please try again later. |
+| `MERCHANT_RATE_LIMITED` | The merchant is temporarily limiting checkout requests. Please try again later. |
+| `DEPARTMENT_STORE_PILOT_DISABLED` | Department-store product quotes are not enabled. |
+| `VARIANT_UNAVAILABLE` | The selected item is sold out. Choose another variant or product. |
+| `CHECKOUT_EXPIRED` | The checkout link has expired. Request a new checkout link. |
+| `CHECKOUT_NOT_FOUND` | The checkout link was not found. Verify the link or request a new one. |
+| `CHECKOUT_INVALID` | The checkout link cannot be used. Request a new checkout link. |
+| `QUOTE_CHECKOUT_UNAVAILABLE` | This quote's checkout is no longer available for a new payment. Check any existing payment outcome before requesting a new quote. |
+| `INSTANT_QUOTE_UNAVAILABLE` | An instant quote is unavailable for this checkout. Request a browser quote. |
+| `MERCHANT_CHECKOUT_UNAVAILABLE` | The merchant checkout is temporarily unavailable. Please try again. |
+| `QUOTE_TOTAL_CHANGED` | The checkout total changed. Please request a new quote. |
+| `QUOTE_UPGRADE_NOT_ALLOWED` | This quote already has a browser checkout. |
+| `QUOTE_LOCKED` | This quote is being updated. Please try again shortly. |
+| `QUOTE_BROWSER_CHECKOUT_REQUIRED` | Open the browser checkout for this quote before starting payment. |
+| `OFFER_CODE_UNSUPPORTED` | Offer codes are unavailable for this quote. |
+| `QUOTE_NOT_READY` | Complete the requested product choice or address confirmation before creating a session. |
+| `INVALID_SHIPPING_OPTION` | The selected shipping option is not available for this quote. |
+| `QUOTE_SESSION_CONTEXT_INCOMPLETE` | Checkout is unavailable because required merchant details are missing. Please choose another product or try again later. |
+| `CARD_PAYMENT_UNAVAILABLE` | Card payment is unavailable for this merchant checkout. |
+| `INVALID_PHONE_NUMBER` | The shipping phone number is invalid for the destination country. |
+| `INVALID_POSTAL_CODE` | The shipping postal code is invalid for the destination address. |
+| `INVALID_SHIPPING_REGION` | The shipping region is not available for this merchant checkout. |
+| `BROWSER_CAPACITY_EXHAUSTED` | Browser capacity is temporarily unavailable. Please try again. |
+| `CHECKOUT_UNAVAILABLE` | The merchant checkout is temporarily unavailable. Please try again. |
+| `QUOTE_TIMEOUT` | The merchant checkout did not respond in time. Please try again. |
+| `QUOTE_CURRENCY_PRECISION_UNSUPPORTED` | This quote has an amount with more decimal places than payment sessions support |
+
+## Coverage boundaries
+
+- **Quote lifecycle:** ready, pricing/shipping updates, automatic expiry and asynchronous quote jobs do not yet have lifecycle webhook events. `quote.request_failed` covers only the admitted Core quote HTTP attempt.
+- **Merchant preparation:** a standalone checkout preparation failure or human-verification state that has not become a persisted payment failure has no separate webhook. A timeout or uncertain payment outcome must not be treated as `payment.failed`.
+- **More specific merchant causes:** some APIs return a broad checkout code plus a buyer-safe correction message. Webhooks use fixed canonical text for that code and can be less specific. Shipping/stock details are included only when Merchant supplies a supported structured code; Prava does not infer them from text.
+- **Before a durable attempt:** authentication, request validation, eligibility/budget checks, unknown resource IDs and errors before a durable payment attempt are returned by the API. They are not financial lifecycle events.
+- **Other resources:** standalone provision-only card flows, later card/mandate lifecycle changes, refunds/reversals/disputes, inventory/fulfillment after checkout and agent-account resources do not have these merchant webhook families. No order-fulfillment claim should be inferred from payment success.
+- **Delivery errors:** receiver HTTP rejection, signature problems, delivery timeout/exhaustion and internal worker failures belong to delivery history/incidents. They never change `data.error` or create a payment failure.
+
+For payment attempts and full-enrollment results, the safe mapping is shared with the corresponding result projections. The enrollment status API retains its existing `retryable` field for intermediate progress errors; it is not a promise that replaying a webhook retries the operation. Terminal errors use `retryable: false`. Cancellation/expiry now return their own fixed reason instead of an earlier error or an empty reason. Always use `status` to determine the lifecycle.
