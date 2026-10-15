@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — 2026-10-16-2
+
+### Fixed
+
+- Clarify that a retried operation may create a different payment-attempt resource, while delivery retries and replays preserve the original event bytes.
+
 ## [Unreleased] — 2026-10-16-1
 
 ### Added

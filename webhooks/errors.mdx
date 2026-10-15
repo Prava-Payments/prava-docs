@@ -5,7 +5,7 @@ description: "Interpret safe error codes, distinguish request and business outco
 
 Failure, cancellation and expiry events captured by this release include `data.error` with a stable `code` and a fixed public `message`. Successful/readiness events have `error: null`. Use the code for branching; do not match or parse the message. `failure_category` identifies the broad event family, while the code gives the known cause. Unknown causes stay generic; a generic decline never implies insufficient funds.
 
-Older retained events can omit `error` and `failure_stage`. Retry and replay preserve the original event ID and bytes; they do not add a reason discovered later. Handle absent fields and unknown future codes safely. A later retry's result is a newer resource version rather than an edit to an old event.
+Older retained events can omit `error` and `failure_stage`. Retry and replay preserve the original event ID and bytes; they do not add a reason discovered later. Handle absent fields and unknown future codes safely. Later operation outcomes produce new events, with a new resource version where applicable; they do not edit an old event. A new payment attempt can have a different resource ID.
 
 | Negative event | Broad category | Error selection |
 | --- | --- | --- |
