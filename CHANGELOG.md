@@ -1,5 +1,21 @@
 # Changelog
 
+## [Unreleased] — 2026-10-16-2
+
+### Fixed
+
+- Clarify that a retried operation may create a different payment-attempt resource, while delivery retries and replays preserve the original event bytes.
+
+## [Unreleased] — 2026-10-16-1
+
+### Added
+
+- Document safe error codes across payment, enrollment and mandate outcomes, quote-request failure subscriptions/examples, and explicit missing lifecycle-event coverage.
+
+### Changed
+
+- Explain credential-issuance failure stages, retained-event compatibility, terminal enrollment status reasons, and twelve supported event choices in OpenAPI.
+
 ## [Unreleased] — 2026-10-12-4
 
 ### Changed

@@ -125,7 +125,7 @@
     "/v1/sessions/{sessionId}/status": {
       "get": {
         "summary": "Get Card Enrollment Status",
-        "description": "Poll the fixed-shape lifecycle and durable outcome of a full card-enrollment session. Payment sessions are not supported by this resource. With the upcoming webhook release, an unfinished session revoked at or after its expiry reports expired; revocation before expiry remains cancelled. Completed/failed precedence and the response shape are unchanged. Integrations should handle both cancelled and expired as terminal results.",
+        "description": "Poll the fixed-shape lifecycle and durable outcome of a full card-enrollment session. Payment sessions are not supported by this resource. With the upcoming webhook release, an unfinished session revoked at or after its expiry reports expired; revocation before expiry remains cancelled. Completed/failed precedence and the response shape are unchanged. Integrations should handle both cancelled and expired as terminal results. The outcome-error release returns fixed safe reasons for terminal failure/cancellation/expiry, without stale retry text; intermediate errors retain retryable. See /webhooks/errors.",
         "operationId": "getCardEnrollmentStatus",
         "parameters": [
           {
@@ -871,7 +871,7 @@
     "/v1/webhook-event-types": {
       "get": {
         "summary": "GET /v1/webhook-event-types",
-        "description": "Gated preview; application and environment are derived from the secret key. See the Webhooks guide for delivery and signing contracts.",
+        "description": "Gated preview; application and environment are derived from the secret key. See the Webhooks guide for delivery and signing contracts. Includes safe error examples and quote.request_failed request semantics; see /webhooks/errors. Retained payloads may lack additive error/stage fields.",
         "tags": [
           "Webhooks"
         ],
@@ -1200,7 +1200,8 @@
                       "mandate.created",
                       "mandate.creation_failed",
                       "mandate.creation_cancelled",
-                      "mandate.creation_expired"
+                      "mandate.creation_expired",
+                      "quote.request_failed"
                     ]
                   },
                   "queued": {
@@ -1435,7 +1436,8 @@
                 "mandate.created",
                 "mandate.creation_failed",
                 "mandate.creation_cancelled",
-                "mandate.creation_expired"
+                "mandate.creation_expired",
+                "quote.request_failed"
               ]
             }
           },
@@ -2873,7 +2875,7 @@
           "events": {
             "type": "array",
             "minItems": 1,
-            "maxItems": 11,
+            "maxItems": 12,
             "uniqueItems": true,
             "items": {
               "type": "string",
@@ -2888,7 +2890,8 @@
                 "mandate.created",
                 "mandate.creation_failed",
                 "mandate.creation_cancelled",
-                "mandate.creation_expired"
+                "mandate.creation_expired",
+                "quote.request_failed"
               ]
             }
           }
@@ -2912,7 +2915,7 @@
           "events": {
             "type": "array",
             "minItems": 1,
-            "maxItems": 11,
+            "maxItems": 12,
             "uniqueItems": true,
             "items": {
               "type": "string",
@@ -2927,7 +2930,8 @@
                 "mandate.created",
                 "mandate.creation_failed",
                 "mandate.creation_cancelled",
-                "mandate.creation_expired"
+                "mandate.creation_expired",
+                "quote.request_failed"
               ]
             }
           },
@@ -2959,7 +2963,8 @@
               "mandate.created",
               "mandate.creation_failed",
               "mandate.creation_cancelled",
-              "mandate.creation_expired"
+              "mandate.creation_expired",
+              "quote.request_failed"
             ]
           },
           "description": {
