@@ -1447,7 +1447,8 @@
             "description": "Filter by resource ID",
             "schema": {
               "type": "string",
-              "pattern": "^(txn|sess)_[A-Za-z0-9]+$"
+              "pattern": "^(txn|ses|qreq)_[A-Za-z0-9_]+$",
+              "maxLength": 120
             }
           },
           {

@@ -97,6 +97,12 @@ Subscribe explicitly to `quote.request_failed` to receive errors from admitted m
 
 This event reports the **Core HTTP request's failure**, not the lifecycle of an existing quote or a payment. For example, `QUOTE_TIMEOUT` does not prove that the downstream service created no quote. Reconcile the existing operation and use the API's idempotency rules before retrying. A returned request ID confirms event persistence, not successful webhook delivery or business processing. If capture is skipped or its outcome is uncertain, the original API error is preserved and the header is omitted; an event might still exist after an unconfirmed response. Capture is not automatically retried.
 
+<Warning>
+`quote.request_failed` is best-effort before the event is saved. It does not guarantee a notification for every failed quote request. Each Core task captures only one failure at a time; concurrent failures are skipped, and short database timeouts can prevent capture. During bursts such as a downstream outage, many failed requests can therefore have no webhook. These skipped captures are not retried or backfilled. Always handle the API’s error response directly; do not wait for a webhook to learn that the request failed.
+</Warning>
+
+Once saved, the event follows the ordinary [delivery and retry rules](/webhooks/delivery). The best-effort limit applies to capture, before those delivery guarantees begin.
+
 Capture uses a dedicated one-connection pool: connection acquisition is limited to 200ms, database lock waits to 75ms, statements to 200ms and client query waits to 250ms. Overlapping capture attempts are skipped immediately. Failures with no eligible subscribers perform no event/counter/version writes.
 
 Authentication, schema validation, rate-limit and invalid-idempotency-key rejections are synchronous admission errors and do not generate this event. Agent-owned requests are outside merchant webhook coverage. Product selection or address confirmation returned successfully is not a quote failure. No request body, address/contact data, product URL, access grant or unverified quote ID is included.

@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased] — 2026-10-19-2
+
+### Fixed
+
+- Match event-history resource filters to Core: `txn_`, `ses_` and `qreq_`, underscores allowed, maximum 120 characters; add quote-request IDs to the API guide and a contract regression.
+- State explicitly that quote-request failure capture is best-effort: bursts/timeouts can skip events without retry or backfill, while saved events retain normal delivery guarantees.
+
 ## [Unreleased] — 2026-10-19-1
 
 ### Fixed

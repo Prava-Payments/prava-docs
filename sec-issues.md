@@ -43,3 +43,7 @@ Document only fixed allowlisted public error text; provider diagnostics, request
 Only authoritative issued payment transitions enter payment webhooks; browser reports and pre-issuance failures cannot attest card-issuer causes. Public result projections sanitize client-selected financial reasons and preserve cancellation identity. Neutral enrollment aliases and fixed actionable text replace unpublished network-specific public codes. Quote correlation is exposed only on confirmed subscribed capture; short isolated acquisition/lock/statement/client limits preserve the API failure without automatically retrying ambiguous writes. Existing cancellation category and retained event bytes stay unchanged. No live configuration, secret or receiver changes.
 
 Legacy fail-report metadata cannot establish issuer authority; the API compatibility guide documents its conservative generic projection.
+
+## Quote capture and resource-filter clarification — 2026-10-19
+
+The documented identifier pattern now matches Core’s existing bound, parameterized validation; it grants no new scope or data access. Best-effort capture is distinguished from durable delivery, with explicit burst/timeout loss and no backfill; receivers must use the synchronous error response. No receiver/authentication/credential configuration changes.
