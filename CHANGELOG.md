@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — 2026-10-19-6
+
+### Fixed
+
+- Clarify hosted-checkout HTTP errors versus merchant payment-result/webhook causes, and document the existing timeout code without changing either API contract.
+
 ## [Unreleased] — 2026-10-19-5
 
 ### Fixed

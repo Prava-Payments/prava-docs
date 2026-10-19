@@ -96,6 +96,7 @@ The following codes are emitted only when that reason was actually persisted or 
 | `PAYLOAD_NOT_PRESENT` | Payment credentials could not be confirmed. Check the payment status before trying again. |
 | `PENDING` | Payment credentials could not be confirmed. Check the payment status before trying again. |
 | `UNKNOWN_STATUS` | Payment credentials could not be confirmed. Check the payment status before trying again. |
+| `VISA_PROVISION_TIMEOUT` | Payment setup could not be confirmed in time. Check the payment status before trying again. |
 
 ## Full card enrollment
 
@@ -121,6 +122,7 @@ The following codes are emitted only when that reason was actually persisted or 
 | `VISA_PROVISION_FAILED` | We couldn't add this card. Try again or use a different card. |
 | `VIC_ENROLL_RETRIES_EXHAUSTED` | Card enrollment attempts have been exhausted. Start a new enrollment session to try again. |
 | `VIC_ENROLL_UNAVAILABLE` | Card enrollment is temporarily unavailable. Try again later. |
+| `VISA_PROVISION_TIMEOUT` | Payment setup could not be confirmed in time. Check the payment status before trying again. |
 
 ## Mandate setup
 
@@ -185,6 +187,7 @@ The following codes are emitted only when that reason was actually persisted or 
 | `PAYLOAD_NOT_PRESENT` | Payment credentials could not be confirmed. Check the payment status before trying again. |
 | `PENDING` | Payment credentials could not be confirmed. Check the payment status before trying again. |
 | `UNKNOWN_STATUS` | Payment credentials could not be confirmed. Check the payment status before trying again. |
+| `VISA_PROVISION_TIMEOUT` | Payment setup could not be confirmed in time. Check the payment status before trying again. |
 
 ## Quote requests
 
@@ -253,4 +256,4 @@ Messages come from fixed safe copy; raw provider text is excluded. Unknown codes
 
 Cancelled enrollment status responses keep **`error: null`** for compatibility. Use `status: cancelled`; the corresponding cancellation webhook provides `SESSION_CANCELLED` with its unchanged null `failure_category`. Enrollment expiry has the safe `SESSION_EXPIRED` reason. Successful enrollment clears the error. No previous retryable error is reused as a terminal reason.
 
-This shared contract applies to detailed outcome responses and newly captured webhooks. The older checkout request wrapper can return the broad operation error `PAYMENT_CREDS_FAILED` while payment-result contains the specific stored cause. Both existing API contracts are preserved; the webhook matches the detailed payment-result code. Other operation wrappers/admission errors without a recorded outcome remain synchronous API errors. Retained events and replay bytes are never rewritten. Definite credential-issuance events describe failure to obtain credentials, not a merchant charge or final settlement result.
+This shared contract applies to detailed outcome responses and newly captured webhooks. The hosted checkout request uses a separate HTTP error envelope: network failures can return `VISA_PROVISION_FAILED` or `VISA_PROVISION_TIMEOUT`, while the merchant payment-result API contains the specific stored cause. Both existing API contracts are preserved; the webhook matches the detailed payment-result code. Other operation wrappers/admission errors without a recorded outcome remain synchronous API errors. Retained events and replay bytes are never rewritten. Definite credential-issuance events describe failure to obtain credentials, not a merchant charge or final settlement result.
