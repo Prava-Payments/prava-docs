@@ -512,7 +512,7 @@
             }
           },
           "502": {
-            "description": "Card-network deletion failed \u2014 retry (NETWORK_DELETE_FAILED)",
+            "description": "Card-network deletion failed — retry (NETWORK_DELETE_FAILED)",
             "content": {
               "application/json": {
                 "schema": {
@@ -527,7 +527,7 @@
     "/v1/mandates/{id}/charge": {
       "post": {
         "summary": "Charge a Mandate",
-        "description": "Mint fresh single-use card credentials against an active mandate \u2014 no passkey. Available to merchants (secret key) and agents (Ed25519 signature); not exposed over MCP. For agent callers the credentials are returned as an encrypted_payload.",
+        "description": "Mint fresh single-use card credentials against an active mandate — no passkey. Available to merchants (secret key) and agents (Ed25519 signature); not exposed over MCP. For agent callers the credentials are returned as an encrypted_payload.",
         "operationId": "chargeMandate",
         "parameters": [
           {
@@ -1201,6 +1201,10 @@
                       "mandate.creation_failed",
                       "mandate.creation_cancelled",
                       "mandate.creation_expired",
+                      "mandate.paused",
+                      "mandate.resumed",
+                      "mandate.cancelled",
+                      "mandate.expired",
                       "quote.request_failed"
                     ]
                   },
@@ -1437,6 +1441,10 @@
                 "mandate.creation_failed",
                 "mandate.creation_cancelled",
                 "mandate.creation_expired",
+                "mandate.paused",
+                "mandate.resumed",
+                "mandate.cancelled",
+                "mandate.expired",
                 "quote.request_failed"
               ]
             }
@@ -1447,7 +1455,7 @@
             "description": "Filter by resource ID",
             "schema": {
               "type": "string",
-              "pattern": "^(txn|ses|qreq)_[A-Za-z0-9_]+$",
+              "pattern": "^(txn|ses|qreq|mdt)_[A-Za-z0-9_]+$",
               "maxLength": 120
             }
           },
@@ -1787,7 +1795,7 @@
         "properties": {
           "id": {
             "type": "string",
-            "description": "Mandate id (mdt_\u2026)."
+            "description": "Mandate id (mdt_…)."
           },
           "agentId": {
             "type": "string"
@@ -1957,7 +1965,7 @@
             "type": "array",
             "minItems": 1,
             "maxItems": 1,
-            "description": "Optional per-charge product details \u2014 same shape as purchase_context.custom in Create Session.",
+            "description": "Optional per-charge product details — same shape as purchase_context.custom in Create Session.",
             "items": {
               "$ref": "#/components/schemas/CustomPurchaseContext"
             }
@@ -2091,7 +2099,7 @@
               },
               "details": {
                 "type": "object",
-                "description": "Optional \u2014 included for validation errors to specify which fields failed"
+                "description": "Optional — included for validation errors to specify which fields failed"
               }
             }
           }
@@ -2131,7 +2139,7 @@
             "minLength": 3,
             "maxLength": 3,
             "pattern": "^[A-Z]{3}$",
-            "description": "ISO 4217 currency code \u2014 exactly 3 uppercase letters, and one of Prava's supported currencies (e.g. USD, EUR, GBP, INR) - other codes are rejected"
+            "description": "ISO 4217 currency code — exactly 3 uppercase letters, and one of Prava's supported currencies (e.g. USD, EUR, GBP, INR) - other codes are rejected"
           },
           "purchase_context": {
             "$ref": "#/components/schemas/PurchaseContext"
@@ -2145,7 +2153,7 @@
             "minLength": 2,
             "maxLength": 2,
             "pattern": "^[A-Z]{2}$",
-            "description": "Customer's country \u2014 2 uppercase ISO 3166-1 letters"
+            "description": "Customer's country — 2 uppercase ISO 3166-1 letters"
           },
           "external_order_ref": {
             "type": "string",
@@ -2252,7 +2260,7 @@
         }
       },
       "PurchaseContext": {
-        "description": "What is being bought. Two modes \u2014 send exactly one: quote: true + quote_id (session built from an existing quote), or custom (describe the merchant and products yourself).",
+        "description": "What is being bought. Two modes — send exactly one: quote: true + quote_id (session built from an existing quote), or custom (describe the merchant and products yourself).",
         "oneOf": [
           {
             "title": "Custom checkout",
@@ -2271,7 +2279,7 @@
                 "type": "array",
                 "minItems": 1,
                 "maxItems": 1,
-                "description": "Exactly one entry \u2014 multi-merchant sessions are not currently supported.",
+                "description": "Exactly one entry — multi-merchant sessions are not currently supported.",
                 "items": {
                   "$ref": "#/components/schemas/CustomPurchaseContext"
                 }
@@ -2876,7 +2884,7 @@
           "events": {
             "type": "array",
             "minItems": 1,
-            "maxItems": 12,
+            "maxItems": 16,
             "uniqueItems": true,
             "items": {
               "type": "string",
@@ -2892,6 +2900,10 @@
                 "mandate.creation_failed",
                 "mandate.creation_cancelled",
                 "mandate.creation_expired",
+                "mandate.paused",
+                "mandate.resumed",
+                "mandate.cancelled",
+                "mandate.expired",
                 "quote.request_failed"
               ]
             }
@@ -2916,7 +2928,7 @@
           "events": {
             "type": "array",
             "minItems": 1,
-            "maxItems": 12,
+            "maxItems": 16,
             "uniqueItems": true,
             "items": {
               "type": "string",
@@ -2932,6 +2944,10 @@
                 "mandate.creation_failed",
                 "mandate.creation_cancelled",
                 "mandate.creation_expired",
+                "mandate.paused",
+                "mandate.resumed",
+                "mandate.cancelled",
+                "mandate.expired",
                 "quote.request_failed"
               ]
             }
@@ -2965,6 +2981,10 @@
               "mandate.creation_failed",
               "mandate.creation_cancelled",
               "mandate.creation_expired",
+              "mandate.paused",
+              "mandate.resumed",
+              "mandate.cancelled",
+              "mandate.expired",
               "quote.request_failed"
             ]
           },

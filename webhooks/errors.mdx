@@ -229,7 +229,7 @@ The following codes are emitted only when that reason was actually persisted or 
 - **More specific merchant causes:** some APIs return a broad checkout code plus a buyer-safe correction message. Webhooks use fixed canonical text for that code and can be less specific. Shipping/stock details are included only when Merchant supplies a supported structured code; Prava does not infer them from text.
 - **Before credentials are issued:** a definite Core-recorded failure can emit `payment.failed` with `failure_stage: credential_issuance` and `outcome_source: prava_observed`. Supported cases include missing token/mandate details, invalid charge context, an unsent charge request and an explicit credential decline. Shopper failure reports, old records without trusted provenance, transport timeouts and unknown issuance outcomes remain excluded. A generic failed status alone is insufficient. A `NO_TOKEN` rejection before a charge transaction exists remains API-only.
 - **Before a durable attempt:** authentication, request validation, eligibility/budget checks, unknown resource IDs and errors before a durable payment attempt are returned by the API. They are not financial lifecycle events.
-- **Other resources:** standalone provision-only card flows, later card/mandate lifecycle changes, refunds/reversals/disputes, inventory/fulfillment after checkout and agent-account resources do not have these merchant webhook families. No order-fulfillment claim should be inferred from payment success.
+- **Other resources:** standalone provision-only card flows, later card lifecycle changes, mandate budget/consumption/terms changes, refunds/reversals/disputes, inventory/fulfillment after checkout and agent-account resources do not have these merchant webhook families. No order-fulfillment claim should be inferred from payment success.
 - **Delivery errors:** receiver HTTP rejection, signature problems, delivery timeout/exhaustion and internal worker failures belong to delivery history/incidents. They never change `data.error` or create a payment failure.
 
 For payment attempts and full-enrollment results, the safe mapping is shared with the corresponding result projections. Intermediate enrollment errors retain `retryable`; terminal errors use `retryable: false`. A webhook replay retries delivery, not the underlying operation. Always use `status` to determine the lifecycle.
@@ -270,3 +270,6 @@ Historical codes that include a card-network name remain documented for compatib
 ### Charge response messages
 
 [Charge a Mandate](/api-reference/mandate-charge) keeps existing known `errorCode` values, including on a deduplicated response. Its `errorMessage` now uses fixed, safe text from this catalog instead of raw provider diagnostics. Match `errorCode` in your handler; do not parse the message for upstream threshold or validation details. Unknown codes use the safe family fallback.
+
+
+Mandate lifecycle notifications (`mandate.paused`, `mandate.resumed`, `mandate.cancelled`, `mandate.expired`) have `error: null`. They describe local state, not a payment failure. See the [event catalog](/webhooks/events#mandate-charges-and-lifecycle).

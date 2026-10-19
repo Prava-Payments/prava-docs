@@ -22,6 +22,7 @@ V1 covers supported merchant checkout and mandate charge attempts. Agent-account
   "resource": { "type": "payment", "id": "txn_example", "version": 2 },
   "data": {
     "session_id": "ses_example",
+    "mandate_id": null,
     "order_id": "ord_example",
     "status": "succeeded",
     "amount": { "value": "100.00", "currency": "INR" },
@@ -39,6 +40,48 @@ Amounts are decimal strings in the payment's currency. The payment transaction I
 
 Payloads omit payment credentials, network tokens, dynamic CVV, full card numbers, vault references, addresses, email, and raw metadata. Event payloads retain their original schema version and bytes through retries and replays. Additive future fields should be ignored safely.
 
+
+## Mandate charges and lifecycle
+
+Mandate charges use `payment.credentials_ready`, `payment.succeeded` and `payment.failed`. Newly captured payment payloads include `data.mandate_id` for an owned mandate charge, or `null` for other payment flows. Older retained payloads may omit this additive field. Use the mandate ID to correlate charges without another API request. Issued credentials do not establish payment success or final settlement.
+
+Subscribe separately to the lifecycle events you need:
+
+| Event | Meaning |
+| --- | --- |
+| `mandate.paused` | An active standing mandate was paused locally. New charges are blocked. |
+| `mandate.resumed` | A paused standing mandate was resumed locally. Validity, budget, cadence and charge checks still apply. |
+| `mandate.cancelled` | An active or paused standing mandate was cancelled locally. This does not reverse existing payments or confirm card-network revocation. |
+| `mandate.expired` | A standing mandate reached its validity deadline, or an eligible mandate was explicitly marked expired. Existing charges are unchanged. |
+
+These events use resource type `mandate` and an `mdt_...` resource ID. They are distinct from setup cancellation and expiry (`mandate.creation_cancelled` and `mandate.creation_expired`). Existing endpoints do not gain the new subscriptions automatically. Agent-owned and internal one-off payment mandates are excluded.
+
+```json
+{
+  "id": "evt_mandate_example",
+  "type": "mandate.paused",
+  "schema_version": "2026-10-08",
+  "occurred_at": "2026-10-20T10:00:00Z",
+  "environment": "sandbox",
+  "account_id": "ma_example",
+  "resource": { "type": "mandate", "id": "mdt_example", "version": 1 },
+  "data": {
+    "mandate_id": "mdt_example",
+    "order_id": "ord_setup_example",
+    "previous_status": "active",
+    "status": "paused",
+    "valid_until": "2026-10-27T10:00:00Z",
+    "recurring_frequency": "one_time",
+    "error": null
+  }
+}
+```
+
+The status describes local control, not an available-balance or charge-authorization guarantee. For a resume, `status` is `active`; an already-passed deadline can still prevent charging. `valid_until` can be null for an indefinite recurring mandate or an ambiguous legacy deadline. `recurring_frequency` is `one_time`, `weekly`, `monthly` or `yearly` (or null for a legacy record without a frequency). Lifecycle changes are normal outcomes, so `error` is null. Creation/charge failures retain their respective safe error contracts.
+
+Clock-driven expiry is captured by a background observer in bounded batches. It does not require a status API call and does not mutate financial state. For one-time mandates the deadline is the earlier of the stored deadline and seven days after creation; recurring mandates use their stored deadline, if any. Paused/cancelled/consumed mandates do not receive an automatic active-mandate expiry notification. Conflicting stored deadlines are quarantined rather than guessed.
+
+Expiry delivery can be delayed by observer scheduling, a busy source row, or a due backlog. Revalidate the highest resource version and deduplicate event IDs as with other events. Clock-expiry payloads have `previous_status: null`. Deadlines before this family was enabled, including a later re-enablement, are not backfilled. This event family has its own activation boundary. Retained events and replay bytes remain unchanged.
 
 ## Enrollment and mandate setup
 
@@ -61,7 +104,7 @@ Enrollment data contains `session_id`, `status`, `outcome`, `card_id`, `passkey`
 
 `GET /v1/webhook-event-types` returns descriptions, supported flows, JSON schemas and safe examples for every type. The schema version remains `2026-10-08`; event payload shapes are discriminated by `type`.
 
-`terms.total_budget` is `null` when the stored mandate has no cumulative spend cap; Prava does not substitute a setup or order amount. When present, it is `{ "value": "1200.00", "currency": "INR" }`. `max_charges: 0` identifies a cumulative-budget pool rather than a zero-use mandate. These events describe setup; later charges use the payment event family.
+`terms.total_budget` is `null` when the stored mandate has no cumulative spend cap; Prava does not substitute a setup or order amount. When present, it is `{ "value": "1200.00", "currency": "INR" }`. `max_charges: 0` identifies a cumulative-budget pool rather than a zero-use mandate. These events describe setup; later charges use the payment event family with a mandate ID. Later pause, resume, cancellation and expiry use the mandate lifecycle events above.
 
 
 A cancellation or revocation recorded at or after session expiration preserves the

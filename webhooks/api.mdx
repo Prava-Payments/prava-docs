@@ -36,7 +36,7 @@ Creation returns `{ "endpoint": { ... }, "signing_secret": "whsec_..." }`; the e
 Direct API secret keys grant control over their application's webhook configuration. Dashboard role restrictions apply to dashboard users. Do not give application secret keys to readonly team members.
 
 
-Filter `/v1/events` with `type`, `resource_id` (`txn_...`, `ses_...` or `qreq_...`; underscores are allowed, maximum 120 characters), `from` (inclusive ISO timestamp) and `to` (exclusive ISO timestamp). When both times are provided, use an increasing range of at most 30 days. Keep the same filters while advancing `cursor`. Events remain scoped to the authenticated application and environment.
+Filter `/v1/events` with `type`, `resource_id` (`txn_...`, `ses_...`, `qreq_...` or `mdt_...`; underscores are allowed, maximum 120 characters), `from` (inclusive ISO timestamp) and `to` (exclusive ISO timestamp). When both times are provided, use an increasing range of at most 30 days. Keep the same filters while advancing `cursor`. Events remain scoped to the authenticated application and environment.
 
 For a non-financial worker check, send `{ "type": "card_enrollment.completed", "queued": true }` to the test route after activating the verified endpoint. It returns `{ "queued": true, "event_id": "evt_..." }`; inspect delivery history for acceptance/retries. Every synthetic payload has `test: true` and contains example data. This verifies delivery, not enrollment or financial provider behavior.
 

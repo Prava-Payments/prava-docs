@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — 2026-10-20-1
+
+### Added
+
+- Document mandate lifecycle subscriptions, owned mandate IDs on payment events, expiry scheduling and activation boundaries, and mdt_ event filters. Distinguish setup, local mandate control and charge outcomes without implying payment settlement or network revocation.
+
 ## [Unreleased] — 2026-10-19-7
 
 ### Fixed
