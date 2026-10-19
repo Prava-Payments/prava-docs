@@ -47,3 +47,9 @@ Legacy fail-report metadata cannot establish issuer authority; the API compatibi
 ## Quote capture and resource-filter clarification — 2026-10-19
 
 The documented identifier pattern now matches Core’s existing bound, parameterized validation; it grants no new scope or data access. Best-effort capture is distinguished from durable delivery, with explicit burst/timeout loss and no backfill; receivers must use the synchronous error response. No receiver/authentication/credential configuration changes.
+
+## 2026-10-19 — Outcome compatibility and trusted credential failures
+
+Only fixed Core writers attach a code-bound credential-failure receipt. The capture function excludes end-user markers and legacy caller-controlled fail-report pairs, transport/unknown issuance results, agent/simulation/authorize-only flows and unresolved ownership. API compatibility preserves existing recognized public codes or safe authentication/cancellation reports; unverified issuer claims and unknown codes remain generic. All returned messages use fixed local copy. Existing categories/schema and immutable replay bytes are preserved; no transaction trigger DDL, new grants, secrets, dependencies or live configuration changes.
+
+Mandate setup keeps its existing generic failure event when all attempts fail, but source-aware reason selection prevents marked or legacy shopper reports from supplying an issuer diagnosis. The payment.failed publication gate remains stricter: no browser report or uncertain outcome creates it.

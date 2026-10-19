@@ -14,3 +14,12 @@ test('event resource filters accept real payment/session/quote-request IDs', () 
   }
   assert.equal(schema.maxLength, 120);
 });
+
+test('outcome APIs keep the existing public code contract without canonical_code', () => {
+ const schemas=JSON.stringify(spec.components.schemas);
+ assert.equal(schemas.includes('canonical_code'), false);
+ for (const path of ['/v1/sessions/{sessionId}/payment-result','/v1/sessions/{sessionId}/status']) {
+  assert.match(spec.paths[path].get.description,/preserved/);
+  assert.match(spec.paths[path].get.description,/versioned API release/);
+ }
+});

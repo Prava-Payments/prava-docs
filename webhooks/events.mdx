@@ -7,7 +7,7 @@ description: "Payment, card enrollment, mandate setup and quote-request failure 
 | --- | --- |
 | `payment.credentials_ready` | Prava issued credentials for this payment attempt. It does **not** mean the merchant charged successfully. |
 | `payment.succeeded` | A credentialed payment attempt was confirmed successful. |
-| `payment.failed` | An issued payment attempt was recorded failed. Inspect `error` for its known cause. |
+| `payment.failed` | An issued payment attempt failed, or Core recorded a definite credential-issuance failure. Inspect `failure_stage` and `error` for the cause. |
 
 V1 covers supported merchant checkout and mandate charge attempts. Agent-account sessions, provision-only synchronous card enrollment, unrelated card lifecycle operations, failures before a durable payment attempt exists, and synthetic financial sandbox simulations are excluded. Full card enrollment and authorize-only mandate setup have separate event families below. Enabling webhooks does not reconstruct past events. Only endpoints active, verified, and subscribed when the event is captured are eligible for automatic delivery.
 
@@ -33,7 +33,7 @@ V1 covers supported merchant checkout and mandate charge attempts. Agent-account
 }
 ```
 
-`outcome_source` is `prava_issued` for credentials, `merchant_observed` for quote-backed results reconciled by Core, or `merchant_reported` for supported non-quote results. A failed payment uses the fixed category `PAYMENT_ATTEMPT_FAILED` and a safe `error.code` / `error.message`. `failure_stage` is `payment` for an issued attempt's recorded result. Pre-issuance failures and session-user fail reports do not emit `payment.failed`; UI errors or uncertain provider results cannot attest an issuer decline. Payment success/failure does not establish final order settlement. Private provider messages are excluded. [Error reference](/webhooks/errors). An unresolved observation stays pending and may require reconciliation. It never becomes a failure just because a timeout elapsed.
+`outcome_source` is `prava_issued` for credentials, `merchant_observed` for quote-backed results reconciled by Core, `merchant_reported` for supported non-quote results, or `prava_observed` for a definite failure Core records before credential issuance. A failed payment keeps the category `PAYMENT_ATTEMPT_FAILED`; `failure_stage` is `payment` for an issued attempt or `credential_issuance` for the supported Core-recorded failures. The error code preserves the known operation result; unknown causes stay generic. Session-user fail reports, unverified legacy reports, transport timeouts and uncertain issuance outcomes never emit `payment.failed`. An API rejection before a transaction exists remains API-only. Payment success/failure does not establish final order settlement. Private provider messages are excluded. [Error reference](/webhooks/errors).
 
 Amounts are decimal strings in the payment's currency. The payment transaction ID identifies the attempt; each new attempt has its own ID. `resource.version` increases for captured changes to that attempt. Persist the highest applied version per resource so an older, late notification cannot overwrite a newer state. Deduplicate by `id` independently of version handling.
 

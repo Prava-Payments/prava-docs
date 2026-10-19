@@ -125,7 +125,7 @@
     "/v1/sessions/{sessionId}/status": {
       "get": {
         "summary": "Get Card Enrollment Status",
-        "description": "Poll the fixed-shape lifecycle and durable outcome of a full card-enrollment session. Payment sessions are not supported by this resource. With the upcoming webhook release, an unfinished session revoked at or after its expiry reports expired; revocation before expiry remains cancelled. Completed/failed precedence and the response shape are unchanged. Integrations should handle both cancelled and expired as terminal results. The outcome-error release returns fixed safe reasons for terminal failure/cancellation/expiry, without stale retry text; intermediate errors retain retryable. See /webhooks/errors.",
+        "description": "Read full card-enrollment lifecycle and durable outcome. Existing recognized error.code values are preserved and reused unchanged in webhook events. Renaming requires a versioned API release. Messages use safe local copy, unknown codes fall back to ENROLLMENT_FAILED, and cancelled enrollment keeps error:null. Intermediate errors retain retryable. An unfinished session revoked at or after expiry reports expired; earlier cancellation remains cancelled. See /webhooks/errors#result-api-compatibility.",
         "operationId": "getCardEnrollmentStatus",
         "parameters": [
           {
@@ -296,7 +296,7 @@
     "/v1/sessions/{sessionId}/payment-result": {
       "get": {
         "summary": "Get Payment Result",
-        "description": "Retrieve transaction status, card identity, and payment credentials for a session. Quote-backed results use top-level status and canonical errors, include normalized merchant_res when lifecycle data exists, and never return credentials. Explicit sandbox simulations also include observed_result for the actual outcome. Responses use Cache-Control: no-store. Failed transaction errors now use fixed canonical public codes/messages instead of stored diagnostic codes/text; unknown codes become PAYMENT_FAILED. Session-user reports cannot attest issuer declines; cancellation codes remain distinct. See /webhooks/errors#payment-result-api-compatibility for migration guidance.",
+        "description": "Retrieve transaction status, card identity, and payment credentials for a session. Quote-backed results use top-level status and canonical errors, include normalized merchant_res when lifecycle data exists, and never return credentials. Responses use Cache-Control: no-store. Existing recognized transaction error.code values are preserved and reused unchanged by the corresponding webhook, including previously exposed network-named codes. Renaming requires a versioned API release. Messages use safe local copy and unknown codes fall back to PAYMENT_FAILED. Shopper and unverified legacy reports cannot attest issuer declines. See /webhooks/errors#result-api-compatibility.",
         "operationId": "getPaymentResult",
         "parameters": [
           {

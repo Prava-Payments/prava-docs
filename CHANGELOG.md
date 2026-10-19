@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — 2026-10-19-5
+
+### Fixed
+
+- Document exact shared API/webhook public codes, trusted pre-issuance capture boundaries, and compatibility until a versioned API release. Preserve cancelled-enrollment error:null and align OpenAPI result schemas with the documented contract.
+
 ## [Unreleased] — 2026-10-19-4
 
 ### Fixed
@@ -24,7 +30,7 @@
 ### Fixed
 
 - Document issued-only payment coverage, exclusion of browser failure reports and uncertain pre-issuance outcomes, preserved enrollment cancellation category, and confirmed-only quote correlation headers with bounded capture.
-- Publish neutral enrollment error codes, actionable messages and transaction-level payment-result error normalization/legacy-code migration guidance.
+- Publish safe outcome messages and payment-result compatibility guidance while preserving existing public error codes.
 
 ## [Unreleased] — 2026-10-16-2
 
