@@ -296,7 +296,7 @@
     "/v1/sessions/{sessionId}/payment-result": {
       "get": {
         "summary": "Get Payment Result",
-        "description": "Retrieve transaction status, card identity, and payment credentials for a session. Quote-backed results use top-level status and canonical errors, include normalized merchant_res when lifecycle data exists, and never return credentials. Explicit sandbox simulations also include observed_result for the actual outcome. Responses use Cache-Control: no-store.",
+        "description": "Retrieve transaction status, card identity, and payment credentials for a session. Quote-backed results use top-level status and canonical errors, include normalized merchant_res when lifecycle data exists, and never return credentials. Explicit sandbox simulations also include observed_result for the actual outcome. Responses use Cache-Control: no-store. Failed transaction errors now use fixed canonical public codes/messages instead of stored diagnostic codes/text; unknown codes become PAYMENT_FAILED. Session-user reports cannot attest issuer declines; cancellation codes remain distinct. See /webhooks/errors#payment-result-api-compatibility for migration guidance.",
         "operationId": "getPaymentResult",
         "parameters": [
           {

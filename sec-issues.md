@@ -37,3 +37,9 @@ Clarify that any backend can receive signed webhooks; runtime and SQLite require
 ## Webhook public outcome errors — 2026-10-16
 
 Document only fixed allowlisted public error text; provider diagnostics, request bodies, shipping/contact data, access grants and unverified quote IDs are excluded. Quote-request failure is distinct from Merchant quote/payment lifecycle, especially on timeouts. Existing ownership/environment/subscription checks and raw-byte signature verification remain. Old retained payloads stay immutable and may omit additive fields. No new auth scope, receiver controls, dependency, environment or live configuration.
+
+## Outcome authority and compatibility repair — 2026-10-19
+
+Only authoritative issued payment transitions enter payment webhooks; browser reports and pre-issuance failures cannot attest card-issuer causes. Public result projections sanitize client-selected financial reasons and preserve cancellation identity. Neutral enrollment aliases and fixed actionable text replace unpublished network-specific public codes. Quote correlation is exposed only on confirmed subscribed capture; short isolated acquisition/lock/statement/client limits preserve the API failure without automatically retrying ambiguous writes. Existing cancellation category and retained event bytes stay unchanged. No live configuration, secret or receiver changes.
+
+Legacy fail-report metadata cannot establish issuer authority; the API compatibility guide documents its conservative generic projection.

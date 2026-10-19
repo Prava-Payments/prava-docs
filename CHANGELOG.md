@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased] — 2026-10-19-1
+
+### Fixed
+
+- Document issued-only payment coverage, exclusion of browser failure reports and uncertain pre-issuance outcomes, preserved enrollment cancellation category, and confirmed-only quote correlation headers with bounded capture.
+- Publish neutral enrollment error codes, actionable messages and transaction-level payment-result error normalization/legacy-code migration guidance.
+
 ## [Unreleased] — 2026-10-16-2
 
 ### Fixed

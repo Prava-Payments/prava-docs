@@ -7,7 +7,7 @@ description: "Payment, card enrollment, mandate setup and quote-request failure 
 | --- | --- |
 | `payment.credentials_ready` | Prava issued credentials for this payment attempt. It does **not** mean the merchant charged successfully. |
 | `payment.succeeded` | A credentialed payment attempt was confirmed successful. |
-| `payment.failed` | A persisted payment attempt failed. Check `failure_stage` to distinguish credential issuance from an issued payment. |
+| `payment.failed` | An issued payment attempt was recorded failed. Inspect `error` for its known cause. |
 
 V1 covers supported merchant checkout and mandate charge attempts. Agent-account sessions, provision-only synchronous card enrollment, unrelated card lifecycle operations, failures before a durable payment attempt exists, and synthetic financial sandbox simulations are excluded. Full card enrollment and authorize-only mandate setup have separate event families below. Enabling webhooks does not reconstruct past events. Only endpoints active, verified, and subscribed when the event is captured are eligible for automatic delivery.
 
@@ -33,7 +33,7 @@ V1 covers supported merchant checkout and mandate charge attempts. Agent-account
 }
 ```
 
-`outcome_source` is `prava_issued` for credentials, `merchant_observed` for quote-backed results reconciled by Core, or `merchant_reported` for supported non-quote results. A failed payment uses the fixed category `PAYMENT_ATTEMPT_FAILED` and a safe `error.code` / `error.message`. `failure_stage` is `credential_issuance` if the attempt failed before credentials were recorded as ready, or `payment` for an issued attempt's recorded result. Pre-issuance failure uses `outcome_source: "prava_observed"`. It does not establish an issuer decline or final order settlement. Private provider messages are excluded. [Error reference](/webhooks/errors). An unresolved observation stays pending and may require reconciliation. It never becomes a failure just because a timeout elapsed.
+`outcome_source` is `prava_issued` for credentials, `merchant_observed` for quote-backed results reconciled by Core, or `merchant_reported` for supported non-quote results. A failed payment uses the fixed category `PAYMENT_ATTEMPT_FAILED` and a safe `error.code` / `error.message`. `failure_stage` is `payment` for an issued attempt's recorded result. Pre-issuance failures and session-user fail reports do not emit `payment.failed`; UI errors or uncertain provider results cannot attest an issuer decline. Payment success/failure does not establish final order settlement. Private provider messages are excluded. [Error reference](/webhooks/errors). An unresolved observation stays pending and may require reconciliation. It never becomes a failure just because a timeout elapsed.
 
 Amounts are decimal strings in the payment's currency. The payment transaction ID identifies the attempt; each new attempt has its own ID. `resource.version` increases for captured changes to that attempt. Persist the highest applied version per resource so an older, late notification cannot overwrite a newer state. Deduplicate by `id` independently of version handling.
 
@@ -55,6 +55,8 @@ Payloads omit payment credentials, network tokens, dynamic CVV, full card number
 
 These resources are `card_enrollment` or `mandate_setup`, identified by `ses_...`. Consecutive unchanged status writes are deduplicated. A retry that returns to an earlier failure or expiry can publish a new event with a higher version. Each captured status advances `resource.version`; retain the latest version when retries, failures and eventual completion arrive out of order. Completed/failed persisted results take precedence over cancellation/expiry, matching the status API. Expiry is captured by a bounded background scan of unfinished sessions whose expiration occurs after webhook capture starts; enabling webhooks does not backfill past results or expirations.
 
+`card_enrollment.cancelled` preserves its existing `failure_category: null`; the additive `error.code` is `SESSION_CANCELLED`.
+
 Enrollment data contains `session_id`, `status`, `outcome`, `card_id`, `passkey`, `consent_status`, nullable `card` and a fixed `failure_category`, plus a safe `error` for negative outcomes. Mandate data contains `session_id`, `order_id`, `status`, nullable `mandate_id`, nullable `terms` and a fixed `failure_category`, plus a safe `error` for negative outcomes. Raw provider errors, consent references, customer PII, instruction IDs and card tokens are excluded. This does not verify future merchant cancellations or order settlement.
 
 `GET /v1/webhook-event-types` returns descriptions, supported flows, JSON schemas and safe examples for every type. The schema version remains `2026-10-08`; event payload shapes are discriminated by `type`.
@@ -73,7 +75,7 @@ previous cancellation after expiry cannot change it into an expiry event.
 
 ## Quote request failures
 
-Subscribe explicitly to `quote.request_failed` to receive errors from admitted merchant-owned `POST /v1/shop/quote` requests. A quote ID may never have been created, so the resource is a **quote request**, identified by `qreq_...`. The failed HTTP response includes `Prava-Quote-Request-Id` for correlation when webhook capture is enabled. Each HTTP attempt has its own request/event ID, including attempts that reuse an API idempotency key. Deduplicate event delivery by the event ID.
+Subscribe explicitly to `quote.request_failed` to receive errors from admitted merchant-owned `POST /v1/shop/quote` requests. A quote ID may never have been created, so the resource is a **quote request**, identified by `qreq_...`. The failed HTTP response includes `Prava-Quote-Request-Id` only after an event is confirmed persisted for an active, verified, explicitly subscribed endpoint. Disabled capture, inactive owners, absent eligible subscribers or skipped/uncertain persistence do not receive this header. Each HTTP attempt has its own request/event ID, including attempts that reuse an API idempotency key. Deduplicate event delivery by the event ID.
 
 ```json
 {
@@ -93,7 +95,9 @@ Subscribe explicitly to `quote.request_failed` to receive errors from admitted m
 }
 ```
 
-This event reports the **Core HTTP request's failure**, not the lifecycle of an existing quote or a payment. For example, `QUOTE_TIMEOUT` does not prove that the downstream service created no quote. Reconcile the existing operation and use the API's idempotency rules before retrying. A response/request ID is a correlation value, not proof that webhook delivery or business processing succeeded.
+This event reports the **Core HTTP request's failure**, not the lifecycle of an existing quote or a payment. For example, `QUOTE_TIMEOUT` does not prove that the downstream service created no quote. Reconcile the existing operation and use the API's idempotency rules before retrying. A returned request ID confirms event persistence, not successful webhook delivery or business processing. If capture is skipped or its outcome is uncertain, the original API error is preserved and the header is omitted; an event might still exist after an unconfirmed response. Capture is not automatically retried.
+
+Capture uses a dedicated one-connection pool: connection acquisition is limited to 200ms, database lock waits to 75ms, statements to 200ms and client query waits to 250ms. Overlapping capture attempts are skipped immediately. Failures with no eligible subscribers perform no event/counter/version writes.
 
 Authentication, schema validation, rate-limit and invalid-idempotency-key rejections are synchronous admission errors and do not generate this event. Agent-owned requests are outside merchant webhook coverage. Product selection or address confirmation returned successfully is not a quote failure. No request body, address/contact data, product URL, access grant or unverified quote ID is included.
 
