@@ -2034,7 +2034,7 @@
           },
           "errorMessage": {
             "type": "string",
-            "description": "e.g. THRESHOLD_EXCEEDED on an over-cap decline."
+            "description": "Fixed safe catalog message. Raw provider diagnostics are excluded; use errorCode to select your handler."
           },
           "deduplicated": {
             "type": "boolean"

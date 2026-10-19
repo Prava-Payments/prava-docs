@@ -23,3 +23,10 @@ test('outcome APIs keep the existing public code contract without canonical_code
   assert.match(spec.paths[path].get.description,/versioned API release/);
  }
 });
+
+
+test('mandate charge documents safe fixed messages rather than raw threshold diagnostics', () => {
+ const source=JSON.stringify(spec.components.schemas);
+ assert.equal(source.includes('e.g. THRESHOLD_EXCEEDED'),false);
+ assert.match(source,/Fixed safe catalog message/);
+});

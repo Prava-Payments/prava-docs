@@ -257,3 +257,16 @@ Messages come from fixed safe copy; raw provider text is excluded. Unknown codes
 Cancelled enrollment status responses keep **`error: null`** for compatibility. Use `status: cancelled`; the corresponding cancellation webhook provides `SESSION_CANCELLED` with its unchanged null `failure_category`. Enrollment expiry has the safe `SESSION_EXPIRED` reason. Successful enrollment clears the error. No previous retryable error is reused as a terminal reason.
 
 This shared contract applies to detailed outcome responses and newly captured webhooks. The hosted checkout request uses a separate HTTP error envelope: network failures can return `VISA_PROVISION_FAILED` or `VISA_PROVISION_TIMEOUT`, while the merchant payment-result API contains the specific stored cause. Both existing API contracts are preserved; the webhook matches the detailed payment-result code. Other operation wrappers/admission errors without a recorded outcome remain synchronous API errors. Retained events and replay bytes are never rewritten. Definite credential-issuance events describe failure to obtain credentials, not a merchant charge or final settlement result.
+
+
+### Confirmed credential-fetch rejections
+
+`FETCH_AGENTIC_CREDS_ERROR` remains the same public code in the detailed API outcome and webhook. A `payment.failed` event with `failure_stage: credential_issuance` and `outcome_source: prava_observed` is sent only when Prava confirms that the credential request was rejected before credentials were issued. This reports failure to obtain credentials; it does not claim an issuer decline or a completed merchant charge.
+
+A timeout, network failure, ambiguous response, or a rejection after the request was already pending does not prove failure and produces no `payment.failed` event. Such outcomes still require checking the status before trying again. Older failures are not backfilled. The internal evidence used to distinguish these cases is not included in the public payload.
+
+Historical codes that include a card-network name remain documented for compatibility because existing integrations already receive them. Their names will change only through an explicitly versioned API release.
+
+### Charge response messages
+
+[Charge a Mandate](/api-reference/mandate-charge) keeps existing known `errorCode` values, including on a deduplicated response. Its `errorMessage` now uses fixed, safe text from this catalog instead of raw provider diagnostics. Match `errorCode` in your handler; do not parse the message for upstream threshold or validation details. Unknown codes use the safe family fallback.

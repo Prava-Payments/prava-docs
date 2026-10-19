@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — 2026-10-19-7
+
+### Fixed
+
+- Document confirmed credential-fetch rejection coverage without changing public codes, preserve historical network-named names for compatibility, and explain fixed safe Charge a Mandate messages in immediate and deduplicated responses.
+
 ## [Unreleased] — 2026-10-19-6
 
 ### Fixed
