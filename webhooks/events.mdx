@@ -96,6 +96,8 @@ Expiry delivery can be delayed by observer scheduling, a busy source row, or a d
 | `mandate.creation_cancelled` | The unfinished setup session was dismissed. |
 | `mandate.creation_expired` | The unfinished setup session expired. |
 
+`mandate.created` preserves the stored approved frequency: current recurring mandates use `weekly`, `monthly` or `yearly`; older records may use uppercase values. New mandate lifecycle events use lowercase values.
+
 These resources are `card_enrollment` or `mandate_setup`, identified by `ses_...`. Consecutive unchanged status writes are deduplicated. A retry that returns to an earlier failure or expiry can publish a new event with a higher version. Each captured status advances `resource.version`; retain the latest version when retries, failures and eventual completion arrive out of order. Completed/failed persisted results take precedence over cancellation/expiry, matching the status API. Expiry is captured by a bounded background scan of unfinished sessions whose expiration occurs after webhook capture starts; enabling webhooks does not backfill past results or expirations.
 
 `card_enrollment.cancelled` preserves its existing `failure_category: null`; the additive `error.code` is `SESSION_CANCELLED`.

@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — 2026-10-20-2
+
+### Fixed
+
+- Clarify current lowercase recurring setup terms and retained historical uppercase values; lifecycle events use lowercase values.
+
 ## [Unreleased] — 2026-10-20-1
 
 ### Added
