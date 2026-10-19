@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — 2026-10-19-4
+
+### Fixed
+
+- Remove the normalized provider-workflow guidance claim belonging to the separate, unfinished Core #230 work. Keep this guide scoped to the standalone webhook release in Core #271.
+
 ## [Unreleased] — 2026-10-19-3
 
 ### Changed
