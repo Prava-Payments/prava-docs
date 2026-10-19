@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — 2026-10-19-3
+
+### Changed
+
+- Clarify that unmapped provider-workflow codes use the safe generic fallback while normalized payment-result guidance remains available.
+
 ## [Unreleased] — 2026-10-19-2
 
 ### Fixed
