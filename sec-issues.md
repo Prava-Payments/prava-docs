@@ -1,5 +1,8 @@
 # Security notes
 
+> **Endpoint pause notices (2026-10-21):** Explain owner/environment-scoped auto-pause, one notice per outage and send-time membership/address/current-incident checks. Receiver URLs, secrets and payloads stay out of emails; paused gaps use authenticated Events API recovery. No authentication/signature or live configuration change.
+
+
 > **Mandate lifecycle contract (2026-10-20):** Explicit opt-in, merchant/customer/registry/parent checks and environment-scoped delivery apply to lifecycle events and payment mandate-ID correlation. Exclude agent/internal/simulation resources and private instruction/provider metadata. Normal control/expiry events carry null errors. Clock expiry has a family activation boundary and does not mutate financial state or imply network revocation. Historical event/replay bytes remain immutable. No receiver/signature or live configuration change.
 
 > **Confirmed credential rejection (2026-10-19):** Preserve existing public error codes, including historical network-named codes, until a versioned API release. Only the authenticated credential service's actual upstream HTTP rejection can supply private versioned evidence; Core binds it to its request and exact stored code, and SQL validates the receipt before publishing. Missing/mismatched proof, local/service-wrapper errors, transport/timeout/rate/server outcomes, unreadable or contradictory bodies and prior PENDING remain uncertain. Browser/legacy reports remain excluded. No raw provider diagnostics enter public messages/events; charge responses use fixed safe catalog copy. Quote-charge reservation release requires matching evidence, and local persistence retries never mint credentials again. No new trust principal, secret, configuration or live operation.

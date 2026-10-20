@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — 2026-10-21-1
+
+### Changed
+
+- Document eight-failure endpoint auto-pause, one labelled email per outage with no reminders, explicit resume, real-delivery recovery and Events API recovery for gaps during pauses.
+
 ## [Unreleased] — 2026-10-20-2
 
 ### Fixed
