@@ -6,6 +6,71 @@ rss: true
 ---
 
 <Update
+  label="October 19, 2026 - Spending approvals"
+  tags={["New", "API"]}
+  rss={{
+    title: "Set recurring spending limits for supported merchant purchases",
+    description: "Supported merchant checkouts can use weekly, monthly, or yearly customer-approved limits for one purchase per cycle. Unresolved purchases hold the cycle until their outcome is reconciled."
+  }}
+>
+  ## Set recurring spending limits for supported merchant purchases
+
+  Customers can now approve a weekly, monthly, or yearly limit for supported merchant
+  purchases. Each cycle allows one purchase up to the approved final-cart amount without a
+  new passkey prompt. One-time approvals keep their cumulative budget and existing validity
+  window. An unresolved purchase holds its cycle until the outcome is reconciled.
+</Update>
+
+<Update
+  label="October 18, 2026 - First-time setup"
+  tags={["Fixes"]}
+  rss={{
+    title: "Complete first-time sessions and card setup under concurrent requests",
+    description: "Concurrent first-time session, card-enrollment, and agent-link requests now resolve the same customer or saved record safely, reducing duplicate-record failures without repeating card-network work."
+  }}
+>
+  ## Complete first-time sessions and card setup under concurrent requests
+
+  When an application starts several first-time sessions or card enrollments for the same
+  customer at once, Prava now resolves the shared customer record consistently. Concurrent
+  agent linking and card-record writes also recover from an exact duplicate identifier, so
+  the shopper can continue without a duplicate-record failure or a repeated card-network call.
+</Update>
+
+<Update
+  label="October 15, 2026 - Checkout status"
+  tags={["Fixes", "API"]}
+  rss={{
+    title: "Check the existing payment outcome before starting checkout again",
+    description: "A checkout with a completed, failed, or uncertain payment outcome now returns QUOTE_CHECKOUT_UNAVAILABLE during session setup or preparation, so applications can check the original result before requesting a fresh checkout."
+  }}
+>
+  ## Check the existing payment outcome before starting checkout again
+
+  A checkout that already has a completed, failed, or uncertain payment outcome now returns
+  `QUOTE_CHECKOUT_UNAVAILABLE` during session setup or preparation. Applications should check
+  the existing payment result before asking the shopper to start again. Expired checkouts
+  continue to return `QUOTE_EXPIRED` with a clear, non-retriable response.
+</Update>
+
+<Update
+  label="October 13, 2026 - Checkout totals"
+  tags={["Improvements", "Fixes"]}
+  rss={{
+    title: "See item prices beneath the checkout subtotal",
+    description: "When a merchant supplies a consistent itemized subtotal, checkout now shows the individual product amounts below it. Missing or inconsistent item prices are omitted without blocking checkout."
+  }}
+>
+  ## See item prices beneath the checkout subtotal
+
+  When a merchant provides item prices that add up to the selected subtotal, Prava now shows
+  those product amounts in the checkout summary and payment screen. If item prices are missing
+  or do not reconcile, the subtotal remains available and checkout can continue without an
+  itemized display. Amounts that cannot fit the session's supported decimal precision now
+  return a specific validation error rather than an unexplained failure.
+</Update>
+
+<Update
   label="October 10, 2026 - Checkout errors"
   tags={["Improvements", "API"]}
   rss={{
