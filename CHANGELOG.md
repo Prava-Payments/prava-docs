@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — 2026-10-21-3
+
+### Fixed
+
+- Explain confirmed-response endpoint health, bounded health-pause buffering, explicit resume periods, public blocked reasons and terminal mandate expiry without changing financial state.
+
 ## [Unreleased] — 2026-10-21-1
 
 ### Changed

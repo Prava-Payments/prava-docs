@@ -48,3 +48,5 @@ verification challenge was not echoed in a complete JSON response; echo the exac
 `challenge` value with 2xx. Internal signing/storage outages remain platform errors.
 For control operations without a payload, omit `Content-Type: application/json`;
 use that header when actually sending JSON.
+
+Endpoint responses include nullable `blocked_reason`; see [Endpoint health reasons](/webhooks/delivery#endpoint-health-reasons) for `RECEIVER_UNACKNOWLEDGED`, `DELIVERY_FAILURE_LIMIT`, `HTTP_GONE` and `DESTINATION_BLOCKED`. Automatically health-paused endpoints retain new subscribed events within the original retry window. Explicit manual pause opts out of new recipient capture.

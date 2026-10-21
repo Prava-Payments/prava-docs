@@ -1,5 +1,8 @@
 # Security notes
 
+> **Health attribution and retention (2026-10-21):** Document that uncertain transport errors do not health-pause receivers; buffering retains existing owner/environment, verification and subscription boundaries. No raw response diagnostics or secrets are published.
+
+
 > **Endpoint pause notices (2026-10-21):** Explain owner/environment-scoped auto-pause, one notice per outage and send-time membership/address/current-incident checks. Receiver URLs, secrets and payloads stay out of emails; paused gaps use authenticated Events API recovery. No authentication/signature or live configuration change.
 
 
