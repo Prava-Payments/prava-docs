@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — 2026-10-22-1
+
+### Fixed
+
+- Merge current main's public release notes and document the existing quote pricing-evidence error with the same code and fixed message in API responses and quote-request failure events.
+
 ## [Unreleased] — 2026-10-21-4
 
 ### Fixed
