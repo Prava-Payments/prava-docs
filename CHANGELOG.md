@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — 2026-10-21-4
+
+### Fixed
+
+- Document restored warnings for specific receiver connection, certificate/protocol and confirmed DNS failures, while preserving ambiguous network-outage exclusions and quiet pause notices.
+
 ## [Unreleased] — 2026-10-21-3
 
 ### Fixed

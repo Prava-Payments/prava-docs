@@ -1,5 +1,8 @@
 # Security notes
 
+> **Receiver failure categories (2026-10-21):** Public guidance exposes only bounded attempt categories. Raw receiver/DNS/certificate diagnostics remain private. Negative DNS requires both address families; ambiguous platform/network failures do not enter endpoint pause accounting. No new credentials, payload data or infrastructure.
+
+
 > **Health attribution and retention (2026-10-21):** Document that uncertain transport errors do not health-pause receivers; buffering retains existing owner/environment, verification and subscription boundaries. No raw response diagnostics or secrets are published.
 
 

@@ -15,9 +15,9 @@ You can retrieve a retained event with `GET /v1/events/{eventId}`. Events may ex
 
 Pausing prevents new delivery claims. URL changes clear verification, pause delivery, increment the destination revision, and cancel old queued deliveries. The final recheck cannot recall a request already in transit. Deleting cancels outstanding work and removes the endpoint from the active list.
 
-Five consecutive receiver failures start a five-minute cooldown. A recovery attempt can run after that cooldown. After **eight consecutive non-2xx HTTP responses**, the endpoint becomes **Unhealthy · paused** and automatic attempts stop until you explicitly resume it. HTTP 410 and a blocked destination pause it immediately. DNS, connection, TLS and timeout failures remain uncertain delivery attempts and do not advance the receiver-health streak or pause the endpoint. Platform preparation failures do not count either. An individual event exhausting its retry limit does not independently pause a healthy receiver. Only one request is in flight per endpoint. Pending deliveries retain the 72-hour and nine-attempt limits; pausing does not extend either window. Shared limits allow at most two concurrent requests and five claims per second per application across workers, with fair account scheduling.
+Five consecutive receiver failures start a five-minute cooldown. A recovery attempt can run after that cooldown. After **eight consecutive receiver-health failures**, the endpoint becomes **Unhealthy · paused** and automatic attempts stop until you explicitly resume it. HTTP 410 and a blocked destination pause it immediately. Receiver-health failures include non-2xx HTTP responses, an explicitly refused connection, supported peer-certificate/protocol errors, and confirmed missing DNS address records. Examples include expired or mismatched certificates and nonexistent domains. DNS confirmation requires negative answers for both IPv4 and IPv6 within the existing DNS budget; an OS lookup failure alone is inconclusive. Resolver failures/timeouts, unreachable networks, connect/response timeouts, connection resets, unknown errors and local trust/configuration failures remain uncertain and do not advance the health streak. Platform preparation failures do not count either. An individual event exhausting its retry limit does not independently pause a healthy receiver. Only one request is in flight per endpoint. Pending deliveries retain the 72-hour and nine-attempt limits; pausing does not extend either window. Shared limits allow at most two concurrent requests and five claims per second per application across workers, with fair account scheduling.
 
-The Dashboard shows safe incident reasons, next-attempt and acceptance times. Exhaustion incidents identify the failed delivery; an unrelated successful request does not clear them. Successfully replaying that event resolves its exhaustion incident, including after a verified destination replacement. The visible operational view refreshes after 30 seconds and backs off to two minutes while unchanged, with jitter; hidden tabs and one-time secret views do not refresh. Incident notices use current authorized developer/admin contacts with verified primary email addresses; retries recheck access and address. We send **one pause email per endpoint outage** to each eligible contact, identifying the endpoint name, application and environment with a link to its settings. Individual exhausted events do not each trigger an email. There are no reminder or recovery emails. An explicit resume/activation closes the previous pause period and resets the health streak. A later pause after eight new consecutive HTTP failures can send one fresh notice. Editing the URL alone does not start a new notice period. Notices use the transactional email outbox and never go through the failed webhook. Access, verified email and current incident/endpoint state are checked again before sending; outdated queued emails are suppressed. Provider send failures retry the same outbox message with backoff, rather than creating new notices. Queue acknowledgement does not mean an email has been sent.
+The Dashboard shows safe incident reasons, next-attempt and acceptance times. Exhaustion incidents identify the failed delivery; an unrelated successful request does not clear them. Successfully replaying that event resolves its exhaustion incident, including after a verified destination replacement. The visible operational view refreshes after 30 seconds and backs off to two minutes while unchanged, with jitter; hidden tabs and one-time secret views do not refresh. Incident notices use current authorized developer/admin contacts with verified primary email addresses; retries recheck access and address. We send **one pause email per endpoint outage** to each eligible contact, identifying the endpoint name, application and environment with a link to its settings. Individual exhausted events do not each trigger an email. There are no reminder or recovery emails. An explicit resume/activation closes the previous pause period and resets the health streak. A later pause after eight new consecutive receiver-health failures can send one fresh notice. Editing the URL alone does not start a new notice period. Notices use the transactional email outbox and never go through the failed webhook. Access, verified email and current incident/endpoint state are checked again before sending; outdated queued emails are suppressed. Provider send failures retry the same outbox message with backoff, rather than creating new notices. Queue acknowledgement does not mean an email has been sent.
 
 ## Resume an unhealthy endpoint
 
@@ -35,9 +35,25 @@ The endpoint's `blocked_reason` is nullable:
 
 | Value | Meaning |
 | --- | --- |
-| `RECEIVER_UNACKNOWLEDGED` | Five consecutive non-2xx HTTP responses triggered a five-minute cooldown. |
-| `DELIVERY_FAILURE_LIMIT` | Eight consecutive non-2xx HTTP responses triggered an automatic pause. Fix and test the receiver, then explicitly resume. |
+| `RECEIVER_UNACKNOWLEDGED` | Five consecutive receiver-health failures triggered a five-minute cooldown. |
+| `DELIVERY_FAILURE_LIMIT` | Eight consecutive receiver-health failures triggered an automatic pause. Fix and test the receiver, then explicitly resume. |
 | `HTTP_GONE` | The receiver returned HTTP 410; delivery is paused. |
 | `DESTINATION_BLOCKED` | The destination failed the public-address security check; delivery is paused. |
 
 A null reason does not by itself mean an endpoint is enabled. Check `enabled` and verification state too. Network uncertainty remains visible in delivery history, without being classified as a receiver-health failure.
+
+
+## Transport failure categories
+
+Delivery history records bounded categories with no raw DNS, certificate or receiver response details:
+
+| Attempt category | Advances endpoint health? | Meaning |
+| --- | --- | --- |
+| `HTTP_REJECTED`, `REDIRECT_REFUSED` | Yes | A non-2xx HTTP response or redirect. |
+| `RECEIVER_CONNECTION_REFUSED` | Yes | The connection was explicitly refused. |
+| `RECEIVER_TLS_REJECTED` | Yes | An allowlisted peer certificate or protocol failure, such as expiry, hostname mismatch or a self-signed certificate. |
+| `RECEIVER_PROTOCOL_REJECTED` | Yes | An allowlisted malformed HTTP response. |
+| `RECEIVER_DNS_NOT_FOUND` | Yes | Both A and AAAA queries confirmed no address records. |
+| `DELIVERY_UNACKNOWLEDGED` | No | An ambiguous network/resolver/timeout, local trust/configuration or unknown failure. Normal retry limits still apply. |
+
+These categories guide endpoint health; they do not prove which party caused an outage. A successful 2xx delivery resets the receiver-health failure streak. Ambiguous failures neither advance nor reset it. HTTP 410 and blocked destinations still pause immediately. Requests that already received a 2xx remain accepted even if the connection later closes.
