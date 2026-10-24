@@ -1,0 +1,9 @@
+---
+title: 'Retrieve an Event'
+description: 'Get one retained event by ID.'
+icon: 'bolt'
+openapi: '/api-reference/openapi.json GET /v1/events/{eventId}'
+playground: 'interactive'
+---
+
+Returns one event with the same envelope Prava delivers to your endpoints. Events older than 30 days return `404`. See [Event types](/webhooks/events) for each event's `data`.

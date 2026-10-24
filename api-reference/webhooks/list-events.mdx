@@ -1,0 +1,18 @@
+---
+title: 'List Events'
+description: 'Recover retained events in the order Prava recorded them.'
+icon: 'list'
+openapi: '/api-reference/openapi.json GET /v1/events'
+playground: 'interactive'
+---
+
+Returns up to 50 events per page, oldest first, in the order Prava recorded them. Use it to recover events your receiver missed. Events are kept for 30 days.
+
+| Filter | Description |
+| --- | --- |
+| `type` | One event type, for example `payment.failed`. |
+| `resource_id` | A payment (`txn_…`), session (`ses_…`), quote request (`qreq_…`) or mandate (`mdt_…`) ID, up to 120 characters. |
+| `from` | Inclusive ISO 8601 timestamp with a time zone. |
+| `to` | Exclusive ISO 8601 timestamp with a time zone. With `from`, the range must increase and span at most 30 days. |
+
+Keep the same filters while you pass `next_cursor` as `cursor`. Events are scoped to the application and environment of your secret key. Queued test events are included, with `"test": true`.

@@ -5,11 +5,16 @@ description: "Optional Node.js and Python examples for accepting signed webhook 
 
 These examples are optional starting points for your server. **Prava webhooks work with any backend language or framework.** The runtime versions below are requirements for these example programs, not for the webhook API.
 
-Both examples use their language's standard library to verify the signature on the raw request body, check the application and environment, echo verification challenges, and save events in SQLite before returning a successful response. A unique event-ID constraint prevents duplicate inbox entries.
+Using only their language's standard library, both examples:
+
+- verify the signature on the raw request body
+- check the application and environment
+- echo verification challenges
+- save events in SQLite before returning a successful response, with a unique event-ID constraint that prevents duplicate inbox entries
 
 ## Configure an example
 
-Download the example for your preferred language using the source links below. Create a private configuration file outside your repository with the following structure. Replace the placeholders with your application ID and the endpoint's signing secret:
+Download the example for your language from the source links below. Then create a private configuration file **outside your repository**:
 
 ```json
 {
@@ -19,7 +24,13 @@ Download the example for your preferred language using the source links below. C
 }
 ```
 
-Set its permissions to `0600` so only its owner can read or modify it. Point `WEBHOOK_CONFIG_PATH` to this file and `WEBHOOK_INBOX_PATH` to a private, durable SQLite file. The paths in these commands are placeholders; replace them with your local paths.
+| Field | Value |
+| --- | --- |
+| `account_id` | Your application ID |
+| `environment` | The endpoint's environment, for example `sandbox` |
+| `secrets` | The endpoint's signing secret (`whsec_...`) |
+
+Set the file's permissions to `0600` so only its owner can read or modify it, and point the example at it:
 
 ```bash
 chmod 600 /absolute/path/webhook-config.json
@@ -27,13 +38,21 @@ export WEBHOOK_CONFIG_PATH=/absolute/path/webhook-config.json
 export WEBHOOK_INBOX_PATH=/absolute/path/webhook-inbox.sqlite
 ```
 
-The `whsec_...` value is the webhook endpoint signing secret. Do not substitute an application API key, commit this file, or log its contents.
+| Variable | Purpose |
+| --- | --- |
+| `WEBHOOK_CONFIG_PATH` | The private configuration file above |
+| `WEBHOOK_INBOX_PATH` | A private, durable SQLite file for the inbox |
+| `PORT` | Optional. A different local port (default `8787`). |
+
+The paths in these commands are placeholders; replace them with your local paths.
+
+<Warning>The `whsec_...` value is the webhook endpoint signing secret. Don't substitute an application API key, commit this file or log its contents.</Warning>
 
 ## Run your preferred example
 
 <Tabs>
 <Tab title="Node.js">
-The [Node.js receiver source](https://github.com/Prava-Payments/prava-docs/blob/main/examples/webhooks/receiver.mjs) is supported on **Node.js 24 or later**. It uses Node's built-in SQLite module, so this complete example is not intended for older runtimes. This requirement does not apply to the JavaScript verification function or to your own receiver.
+The [Node.js receiver source](https://github.com/Prava-Payments/prava-docs/blob/main/examples/webhooks/receiver.mjs) is supported on **Node.js 24 or later**. It uses Node's built-in SQLite module, so this complete example isn't intended for older runtimes. This requirement doesn't apply to the JavaScript verification function or to your own receiver.
 
 Run the downloaded file:
 
@@ -52,11 +71,18 @@ python3 receiver.py
 </Tab>
 </Tabs>
 
-Both examples listen at `http://127.0.0.1:8787/webhooks` by default. Set `PORT` to choose a different local port. Use a reverse proxy for your public HTTPS endpoint, or a temporary HTTPS tunnel for sandbox testing. Register the public URL in the dashboard; the local HTTP address is not a valid delivery destination.
+Both examples listen at `http://127.0.0.1:8787/webhooks` by default. Expose them through a reverse proxy for your public HTTPS endpoint, or a temporary HTTPS tunnel for sandbox testing. Register the public URL in the dashboard; the local HTTP address isn't a valid delivery destination.
 
 ## Process stored events
 
-A separate consumer reads unprocessed `webhook_inbox` records. In one application transaction, deduplicate side effects by event ID, ignore `test: true` for business effects, apply only a newer resource version, then set `processed_at`. For external side effects, use that service's idempotency mechanism.
+A separate consumer reads unprocessed `webhook_inbox` records. In one application transaction, it should:
+
+1. Deduplicate side effects by event ID.
+2. Ignore `test: true` events for business effects.
+3. Apply only a newer resource version.
+4. Set `processed_at`.
+
+For external side effects, use that service's idempotency mechanism.
 
 A successful webhook response confirms receipt, not completion of your business processing. SQLite here demonstrates durable acceptance on a single host. For a receiver deployed across multiple hosts, use a shared production database or durable queue with equivalent deduplication.
 

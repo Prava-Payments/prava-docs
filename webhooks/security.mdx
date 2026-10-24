@@ -3,17 +3,33 @@ title: "Verify webhook signatures"
 description: "Authenticate raw bytes and reject stale or tampered requests."
 ---
 
-You can receive Prava webhooks in any backend language or framework. Verify each request on your server using the endpoint signing secret before processing the event. Your application API secret (`sk_test_...` or `sk_live_...`) is a different credential and must not be used for webhook signature verification.
+You can receive Prava webhooks in any backend language or framework. Verify every request on your server with the **endpoint signing secret** (`whsec_...`) before you process the event.
 
-Every request carries `Prava-Signature`, `Prava-Event-Id`, and `Prava-Delivery-Id`. Use the signed body `id` as your authoritative deduplication key. Delivery IDs identify delivery generations and can change on replay.
+<Note>Your application API secret (`sk_test_...` or `sk_live_...`) is a different credential. Never use it to verify webhook signatures.</Note>
 
-`Prava-Signature` has the form `t=UNIX_SECONDS,v1=HEX_DIGEST`. The digest is HMAC-SHA256 over `timestamp + "." + raw_body` with the complete `whsec_...` secret as the UTF-8 key. The header can contain multiple `v1` values during a 24-hour rotation overlap. A matching signature from either active secret is sufficient.
+## Request headers
 
-<Warning>Verify before JSON parsing, reserialization, or application processing. Reject missing/malformed signatures, duplicate timestamps, and timestamps more than five minutes in the past or future. Keep your receiver clock synchronized.</Warning>
+| Header | What it contains |
+| --- | --- |
+| `Prava-Signature` | `t=UNIX_SECONDS,v1=HEX_DIGEST`. During a secret rotation it can carry more than one `v1` value. |
+| `Prava-Event-Id` | The event ID. For deduplication, use the `id` in the signed body, which is authoritative. |
+| `Prava-Delivery-Id` | The delivery generation. It can change on replay, so don't deduplicate on it. |
 
-## Example: verify a signature in JavaScript
+## How the signature is computed
 
-The following function illustrates the verification steps. Pass the exact request bytes from your HTTP framework as `rawBody`; parsing and rebuilding JSON changes those bytes.
+The `v1` digest is **HMAC-SHA256** over `timestamp + "." + raw_body`, keyed with the complete `whsec_...` secret as UTF-8. During a 24-hour rotation overlap the header can contain several `v1` values; a match against either active secret is enough.
+
+## Verify a request
+
+1. Read the **raw request bytes**. Verify before JSON parsing, reserialization or any application processing; rebuilding JSON changes the bytes.
+2. Reject a missing or malformed `Prava-Signature`, or one with duplicate timestamps.
+3. Reject timestamps more than five minutes in the past or future. Keep your receiver's clock synchronized.
+4. Compute the expected digest with each active secret and compare it to every `v1` value in constant time.
+5. Only then parse the body, and check that the environment and account are the ones you expect.
+
+### Example in JavaScript
+
+Pass the exact request bytes from your HTTP framework as `rawBody`.
 
 ```javascript
 import { createHmac, timingSafeEqual } from 'node:crypto';
@@ -36,16 +52,30 @@ export function verifyWebhook(rawBody, signature, secrets, now = Date.now()) {
 }
 ```
 
-After verification, parse the body and check the expected environment/account. Handle `webhook.endpoint_verification` by echoing its challenge as JSON with HTTP 200. Ignore `test: true` events for financial side effects while still acknowledging a successful test.
+## Handle the verified request
 
-For any subscribed event, atomically store its ID and enqueue your work before responding with 2xx. Use a unique database constraint on the event ID. A duplicate already stored event should still receive 2xx. Process slow business logic asynchronously. A receiver timeout is an unknown outcome and Prava may send the same event again.
+| Request | What to do |
+| --- | --- |
+| `webhook.endpoint_verification` | Echo its `challenge` as JSON with HTTP `200`. |
+| Event with `test: true` | Acknowledge it with `2xx`, but don't perform financial or other business side effects. |
+| Any other subscribed event | Atomically store its ID and enqueue your work, then respond `2xx`. |
+| An event you already stored | Still respond `2xx`. |
+
+- Put a unique database constraint on the event ID.
+- Process slow business logic asynchronously, after you respond.
+- A receiver timeout is an unknown outcome, so Prava may send the same event again.
 
 ## Rotate your signing secret
 
-Administrators can rotate an endpoint secret. Save the new secret when it is shown; Prava dual-signs for 24 hours. Deploy verification with the new secret during that overlap, then retire the old secret. A second rotation is blocked until the overlap ends. The secret cannot be retrieved later; idempotent retries return completion status without disclosing it again.
+Administrators can rotate an endpoint's secret.
 
-## Optional receiver examples
+1. Rotate, then save the new secret when it's shown. You can't retrieve it later, and an idempotent retry returns the completion status without showing it again.
+2. Prava signs with both the old and new secrets for 24 hours. Deploy verification with the new secret during that overlap.
+3. Retire the old secret.
 
-For a runnable starting point, use the [Node.js or Python receiver examples](/webhooks/receiver-examples). Their runtime and storage requirements apply only to those examples. You can implement the same verification and delivery handling in your existing application.
+You can't rotate again until the overlap ends.
 
-See [Test your integration](/webhooks/testing) to verify your destination, send test events, and check retries and secret rotation.
+## Next steps
+
+- For a runnable starting point, use the [Node.js or Python receiver examples](/webhooks/receiver-examples). Their runtime and storage requirements apply only to those examples; you can implement the same verification and delivery handling in your existing application.
+- See [Test your integration](/webhooks/testing) to verify your destination, send test events, and check retries and secret rotation.

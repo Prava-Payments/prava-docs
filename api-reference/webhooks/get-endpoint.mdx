@@ -1,0 +1,11 @@
+---
+title: 'Retrieve an Endpoint'
+description: 'Get one webhook endpoint, including its health.'
+icon: 'eye'
+openapi: '/api-reference/openapi.json GET /v1/webhook-endpoints/{endpointId}'
+playground: 'interactive'
+---
+
+Returns a single endpoint with its 20 most recent health `incidents` and the event type `catalog`.
+
+A non-null `blocked_reason` means Prava paused deliveries to it. See [Endpoint health reasons](/webhooks/delivery#endpoint-health-reasons) for what each reason means and how to resume.

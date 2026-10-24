@@ -1,0 +1,15 @@
+---
+title: 'Update an Endpoint'
+description: "Change an endpoint's name, URL or events, or turn delivery on or off."
+icon: 'pen'
+openapi: '/api-reference/openapi.json PATCH /v1/webhook-endpoints/{endpointId}'
+playground: 'interactive'
+---
+
+Send any of `name`, `url`, `events` and `enabled`. Fields you leave out don't change.
+
+- **Enabling** requires a [verified](/api-reference/webhooks/verify-endpoint) endpoint. Otherwise the request returns `409 WEBHOOK_NOT_VERIFIED`.
+- **Changing the URL** turns the endpoint off and clears its verification and health state. Verify the new URL, then enable it in a separate request. Changing the URL and enabling in the same request returns `409 WEBHOOK_NOT_VERIFIED`.
+- **Pausing** with `"enabled": false` stops new events from being queued for this endpoint.
+
+Prava can also pause an endpoint automatically after repeated delivery failures; it keeps queuing new subscribed events while it waits. See [Delivery and retries](/webhooks/delivery).

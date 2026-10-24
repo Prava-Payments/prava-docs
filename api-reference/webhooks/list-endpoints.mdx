@@ -1,0 +1,11 @@
+---
+title: 'List Endpoints'
+description: 'List the webhook endpoints for your application.'
+icon: 'list-ul'
+openapi: '/api-reference/openapi.json GET /v1/webhook-endpoints'
+playground: 'interactive'
+---
+
+Returns the endpoints for the application and environment of your secret key, oldest first, with the event type `catalog`. The list isn't paginated: an environment has at most five endpoints.
+
+Check `blocked_reason` to see whether Prava paused an endpoint because of delivery failures. See [Endpoint health reasons](/webhooks/delivery#endpoint-health-reasons).

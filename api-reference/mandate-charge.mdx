@@ -25,7 +25,7 @@ Need to **create** a mandate first? Mandate creation is part of the Session APIs
 ## Body
 
 <ParamField body="amount" type="string" required>
-  Charge amount as a decimal string with up to 2 decimals, e.g. `"40.00"`. The per-charge cap is enforced by the card network — an over-cap charge is declined (`THRESHOLD_EXCEEDED`).
+  Charge amount as a decimal string with up to 2 decimals, e.g. `"40.00"`. The per-charge cap is enforced by the card network — an over-cap charge is declined.
 </ParamField>
 <ParamField body="reference" type="string">
   Idempotency key (max 255). The same mandate id + `reference` returns the original charge (`deduplicated: true`) instead of minting again. Omit it and every call is a distinct charge. A *failed* charge clears its key, so a retry after failure is not deduplicated.
@@ -44,14 +44,14 @@ Need to **create** a mandate first? Mandate creation is part of the Session APIs
 <ResponseField name="fetchStatus" type="string">`SUCCESS` or `FAILURE`.</ResponseField>
 <ResponseField name="credentials" type="object">Merchant callers: `{ token, dynamicCvv, expiryMonth, expiryYear }`.</ResponseField>
 <ResponseField name="encrypted_payload" type="object">Agent callers: `{ ephemeral_public_key, iv, auth_tag, data }`, decrypted client-side.</ResponseField>
-<ResponseField name="errorCode" type="string" />
-<ResponseField name="errorMessage" type="string">e.g. `THRESHOLD_EXCEEDED` on an over-cap decline.</ResponseField>
+<ResponseField name="errorCode" type="string">The existing public failure code. Use this field to select your error handler; see the [error catalog](/webhooks/errors).</ResponseField>
+<ResponseField name="errorMessage" type="string">Fixed, safe text from the error catalog. Raw provider diagnostics are not returned. Do not parse this message for an upstream reason.</ResponseField>
 <ResponseField name="deduplicated" type="boolean">True when a prior charge with the same `reference` was returned.</ResponseField>
 
 ## Notes
 
 - The mandate must be `active`. Charging a non-active mandate returns `409 MANDATE_NOT_ACTIVE`.
-- An over-cap charge is a normal outcome: `status: "failed"` with an `errorMessage` such as `THRESHOLD_EXCEEDED`. The amount cap is enforced at the card-network level.
+- An over-cap rejection is a normal outcome: `status: "failed"`, typically `errorCode: "DECLINED"`, with a fixed safe message. The amount cap is enforced at the card-network level; the response does not expose its raw threshold diagnostic.
 - A charge outside a `listed` mandate's merchant returns `403 MANDATE_MERCHANT_NOT_ALLOWED`.
 - After checkout, settle the outcome with [Report a Mandate Charge](/api-reference/mandate-report).
 

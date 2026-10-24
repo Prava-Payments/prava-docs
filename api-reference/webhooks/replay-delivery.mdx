@@ -1,0 +1,13 @@
+---
+title: 'Replay a Delivery'
+description: 'Send a retained event to the endpoint again.'
+icon: 'rotate-right'
+openapi: '/api-reference/openapi.json POST /v1/webhook-deliveries/{deliveryId}/replay'
+playground: 'interactive'
+---
+
+Sends the delivery's event to the endpoint again as a new delivery, and returns its ID in `{ "delivery": { "id": "whd_…" } }`. Use it after fixing your receiver.
+
+The endpoint must be enabled, verified and still subscribed to the event type. Otherwise the request returns `409 WEBHOOK_REPLAY_BLOCKED`. Events older than 30 days can't be replayed and return `404`.
+
+This request requires an `Idempotency-Key` header and has no body, so omit `Content-Type: application/json`. A retry with the same key returns the same delivery ID.

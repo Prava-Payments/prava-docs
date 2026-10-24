@@ -1,15 +1,47 @@
 ---
 title: "Webhook event catalog"
-description: "Payment, card enrollment and mandate-creation events for your application."
+description: "Every webhook event type, the shared envelope, and the data that payment, mandate, card-enrollment and quote-request failure events include."
 ---
 
-| Event | Meaning |
-| --- | --- |
-| `payment.credentials_ready` | Prava issued credentials for this payment attempt. It does **not** mean the merchant charged successfully. |
-| `payment.succeeded` | A credentialed payment attempt was confirmed successful. |
-| `payment.failed` | A credentialed payment attempt was confirmed failed. |
+Events come in five families. Every event uses the same [envelope](#event-envelope); its `data` depends on the event type.
 
-V1 covers supported merchant checkout and mandate charge attempts. Agent-account sessions, provision-only synchronous card enrollment, unrelated card lifecycle operations, failures before payment credential issuance, and synthetic financial sandbox simulations are excluded. Full card enrollment and authorize-only mandate setup have separate event families below. Enabling webhooks does not reconstruct past events. Only endpoints active, verified, and subscribed when the event is captured are eligible for automatic delivery.
+## Event types
+
+| Family | Events | Resource |
+| --- | --- | --- |
+| [Payments](#payment-events) | `payment.credentials_ready`<br />`payment.succeeded`<br />`payment.failed` | `payment`, the payment transaction ID (such as `txn_example`) |
+| [Mandate lifecycle](#lifecycle-events) | `mandate.paused`<br />`mandate.resumed`<br />`mandate.cancelled`<br />`mandate.expired` | `mandate`, `mdt_...` |
+| [Card enrollment](#enrollment-and-mandate-setup) | `card_enrollment.completed`<br />`card_enrollment.failed`<br />`card_enrollment.cancelled`<br />`card_enrollment.expired` | `card_enrollment`, `ses_...` |
+| [Mandate setup](#enrollment-and-mandate-setup) | `mandate.created`<br />`mandate.creation_failed`<br />`mandate.creation_cancelled`<br />`mandate.creation_expired` | `mandate_setup`, `ses_...` |
+| [Quote request failures](#quote-request-failures) | `quote.request_failed` | `quote_request`, `qreq_...` |
+
+## Coverage
+
+V1 covers supported merchant checkout and mandate charge attempts. Full card enrollment and authorize-only mandate setup have their own event families, described below.
+
+V1 excludes:
+
+- agent-account sessions
+- provision-only synchronous card enrollment
+- unrelated card lifecycle operations
+- failures before a durable payment attempt exists
+- synthetic financial sandbox simulations
+
+### Who receives an event
+
+An endpoint must be verified and subscribed when the event is created. Enabling webhooks doesn't reconstruct past events.
+
+| Endpoint state when the event is created | Result |
+| --- | --- |
+| Active | Eligible for delivery. |
+| Automatically paused for health | Selected events are retained without dispatch until the endpoint is resumed, within the original retry window. |
+| Manually paused | Not selected. |
+| Deleted | Not selected. |
+| Unverified | Not selected. |
+
+## Event envelope
+
+Every event shares this envelope. This example is a `payment.succeeded` event:
 
 ```json
 {
@@ -22,21 +54,179 @@ V1 covers supported merchant checkout and mandate charge attempts. Agent-account
   "resource": { "type": "payment", "id": "txn_example", "version": 2 },
   "data": {
     "session_id": "ses_example",
+    "mandate_id": null,
     "order_id": "ord_example",
     "status": "succeeded",
     "amount": { "value": "100.00", "currency": "INR" },
     "outcome_source": "merchant_observed",
-    "failure_category": null
+    "failure_category": null,
+    "failure_stage": null,
+    "error": null
   }
 }
 ```
 
-`outcome_source` is `prava_issued` for credentials, `merchant_observed` for quote-backed results reconciled by Core, or `merchant_reported` for supported non-quote results. A failed payment uses the fixed category `PAYMENT_ATTEMPT_FAILED`; private provider messages are excluded. An unresolved observation stays pending and may require reconciliation. It never becomes a failure just because a timeout elapsed.
+| Field | Description |
+| --- | --- |
+| `id` | Event ID, such as `evt_example`. Deduplicate by this value. |
+| `type` | Event type. Payload shapes are discriminated by `type`. |
+| `schema_version` | Remains `2026-10-08`. |
+| `occurred_at` | Event timestamp, such as `2026-10-08T10:00:00Z`. |
+| `environment` | Environment, such as `sandbox`. |
+| `account_id` | Account ID, such as `ma_example`. |
+| `resource` | The `type`, `id` and `version` of the resource the event describes. See [Event types](#event-types) for each family's resource. |
+| `data` | Event-specific fields. See each event family below. |
 
-Amounts are decimal strings in the payment's currency. The payment transaction ID identifies the attempt; each new attempt has its own ID. `resource.version` increases for captured changes to that attempt. Persist the highest applied version per resource so an older, late notification cannot overwrite a newer state. Deduplicate by `id` independently of version handling.
+### Handling events
 
-Payloads omit payment credentials, network tokens, dynamic CVV, full card numbers, vault references, addresses, email, and raw metadata. Event payloads retain their original schema version and bytes through retries and replays. Additive future fields should be ignored safely.
+- **Deduplicate by `id`**, independently of version handling.
+- **Keep the newest state.** Persist the highest applied `resource.version` per resource, so an older, late notification can't overwrite a newer state.
+- **Ignore new fields.** Additive future fields should be ignored safely.
+- **Expect identical replays.** Event payloads keep their original schema version and bytes through retries and replays.
 
+`GET /v1/webhook-event-types` returns descriptions, supported flows, JSON schemas and safe examples for every type.
+
+Payloads omit payment credentials, network tokens, dynamic CVV, full card numbers, stored card references, addresses, email, and raw metadata.
+
+## Payment events
+
+| Event | Meaning |
+| --- | --- |
+| `payment.credentials_ready` | Prava issued credentials for this payment attempt. It does **not** mean the merchant charged successfully. |
+| `payment.succeeded` | A credentialed payment attempt was confirmed successful. |
+| `payment.failed` | An issued payment attempt failed, or Prava recorded a definite failure before issuing credentials. Inspect `failure_stage` and `error` for the cause. |
+
+Mandate charges use these same events. See [Mandate charges](#mandate-charges).
+
+Payment success or failure does not establish final order settlement.
+
+### Payment data
+
+The [envelope example](#event-envelope) shows a full payment payload.
+
+| Field | Description |
+| --- | --- |
+| `session_id` | Session ID, such as `ses_example`. |
+| `mandate_id` | The mandate ID for an owned mandate charge, or `null` for other payment flows. See [Mandate charges](#mandate-charges). |
+| `order_id` | Order ID, such as `ord_example`. |
+| `status` | Status, such as `succeeded`. |
+| `amount` | Amounts are decimal strings in the payment's currency. |
+| `outcome_source` | One of the [outcome sources](#outcome-sources). |
+| `failure_category` | `PAYMENT_ATTEMPT_FAILED` for a failed payment. See [Failed payments](#failed-payments). |
+| `failure_stage` | Where a failed payment failed. See [Failed payments](#failed-payments). |
+| `error` | The cause of a failure. See [Failed payments](#failed-payments). |
+
+### Attempts and versions
+
+- The payment transaction ID identifies the attempt. Each new attempt has its own ID.
+- `resource.version` increases for each recorded change to that attempt.
+
+### Outcome sources
+
+| `outcome_source` | Used for |
+| --- | --- |
+| `prava_issued` | Credentials |
+| `merchant_observed` | Quote-backed results reconciled by Prava |
+| `merchant_reported` | Supported non-quote results |
+| `prava_observed` | A definite failure Prava records before credential issuance |
+
+### Failed payments
+
+A failed payment keeps the category `PAYMENT_ATTEMPT_FAILED`. `failure_stage` shows where it failed:
+
+| `failure_stage` | Meaning |
+| --- | --- |
+| `payment` | An issued attempt failed. |
+| `credential_issuance` | One of the supported failures Prava records before issuing credentials. |
+
+The error code preserves the known operation result. Unknown causes stay generic. Private provider messages are excluded. See the [error reference](/webhooks/errors).
+
+These never emit `payment.failed`:
+
+- session-user fail reports
+- unverified legacy reports
+- transport timeouts
+- uncertain issuance outcomes
+
+An API rejection before a transaction exists remains API-only.
+
+## Mandate charges and lifecycle
+
+### Mandate charges
+
+Mandate charges use `payment.credentials_ready`, `payment.succeeded` and `payment.failed`.
+
+- Newly created payment events include `data.mandate_id` for an owned mandate charge, or `null` for other payment flows.
+- Older retained payloads may omit this additive field.
+- Use the mandate ID to correlate charges without another API request.
+- Issued credentials do not establish payment success or final settlement.
+
+### Lifecycle events
+
+Subscribe separately to the lifecycle events you need. Existing endpoints do not gain the new subscriptions automatically.
+
+| Event | Meaning |
+| --- | --- |
+| `mandate.paused` | An active standing mandate was paused locally. New charges are blocked. |
+| `mandate.resumed` | A paused standing mandate was resumed locally. Validity, budget, cadence and charge checks still apply. |
+| `mandate.cancelled` | An active or paused standing mandate was cancelled locally. This does not reverse existing payments or confirm card-network revocation. |
+| `mandate.expired` | A standing mandate reached its validity deadline, or an eligible mandate was explicitly marked expired. Existing charges are unchanged. |
+
+- These events use resource type `mandate` and an `mdt_...` resource ID.
+- They are distinct from setup cancellation and expiry (`mandate.creation_cancelled` and `mandate.creation_expired`).
+- Agent-owned mandates, and one-off payment mandates that Prava creates for a single payment, are excluded.
+
+```json
+{
+  "id": "evt_mandate_example",
+  "type": "mandate.paused",
+  "schema_version": "2026-10-08",
+  "occurred_at": "2026-10-20T10:00:00Z",
+  "environment": "sandbox",
+  "account_id": "ma_example",
+  "resource": { "type": "mandate", "id": "mdt_example", "version": 1 },
+  "data": {
+    "mandate_id": "mdt_example",
+    "order_id": "ord_setup_example",
+    "previous_status": "active",
+    "status": "paused",
+    "valid_until": "2026-10-27T10:00:00Z",
+    "recurring_frequency": "one_time",
+    "error": null
+  }
+}
+```
+
+| Field | Description |
+| --- | --- |
+| `mandate_id` | Mandate ID, such as `mdt_example`. |
+| `order_id` | Order ID, such as `ord_setup_example`. |
+| `previous_status` | Previous status, such as `active`. Clock-expiry payloads have `previous_status: null`. |
+| `status` | Describes local control, not an available-balance or charge-authorization guarantee. For a resume, `status` is `active`; an already-passed deadline can still prevent charging. |
+| `valid_until` | Validity deadline. Can be `null` for an indefinite recurring mandate or an ambiguous legacy deadline. |
+| `recurring_frequency` | `one_time`, `weekly`, `monthly` or `yearly`. `null` for a legacy record without a frequency. |
+| `error` | `null`. Lifecycle changes are normal outcomes. Creation and charge failures keep their own safe error contracts. |
+
+### Clock-driven expiry
+
+Prava detects clock-driven expiry automatically. You don't need to call the status API, and detecting expiry doesn't change any financial state.
+
+| Mandate | Expiry deadline |
+| --- | --- |
+| One-time | The earlier of the stored deadline and seven days after creation |
+| Recurring | The stored deadline, if any |
+
+- Active and paused mandates can receive clock-expiry notifications. Cancelled and consumed mandates do not.
+- Once expiry is recorded, later local pause, resume or cancel changes do not emit another lifecycle notification for that expired mandate.
+- If a mandate's stored deadlines conflict, Prava doesn't send an expiry event rather than guess.
+
+<Tip>The API can retain its stored `status`. Compare `valid_until` with the current time as well as checking `state` and `status`. A paused mandate can still report `state: "paused"` after its deadline.</Tip>
+
+**Delays and backfill**
+
+- An expiry event can arrive some time after the deadline. Revalidate the highest resource version and deduplicate event IDs as with other events.
+- Deadlines that passed before these events were enabled, including before a later re-enablement, aren't backfilled.
+- Retained events and replay bytes remain unchanged.
 
 ## Enrollment and mandate setup
 
@@ -51,20 +241,119 @@ Payloads omit payment credentials, network tokens, dynamic CVV, full card number
 | `mandate.creation_cancelled` | The unfinished setup session was dismissed. |
 | `mandate.creation_expired` | The unfinished setup session expired. |
 
-These resources are `card_enrollment` or `mandate_setup`, identified by `ses_...`. Consecutive unchanged status writes are deduplicated. A retry that returns to an earlier failure or expiry can publish a new event with a higher version. Each captured status advances `resource.version`; retain the latest version when retries, failures and eventual completion arrive out of order. Completed/failed persisted results take precedence over cancellation/expiry, matching the status API. Expiry is captured by a bounded background scan of unfinished sessions whose expiration occurs after webhook capture starts; enabling webhooks does not backfill past results or expirations.
+- These resources are `card_enrollment` or `mandate_setup`, identified by `ses_...`.
+- `card_enrollment.cancelled` preserves its existing `failure_category: null`. The additive `error.code` is `SESSION_CANCELLED`.
+- `mandate.created` preserves the stored approved frequency. Current recurring mandates use `weekly`, `monthly` or `yearly`; older records may use uppercase values. New mandate lifecycle events use lowercase values.
+- These events describe setup. Later charges use the [payment event family](#payment-events) with a mandate ID. Later pause, resume, cancellation and expiry use the [mandate lifecycle events](#lifecycle-events).
 
-Enrollment data contains `session_id`, `status`, `outcome`, `card_id`, `passkey`, `consent_status`, nullable `card` and a fixed `failure_category`. Mandate data contains `session_id`, `order_id`, `status`, nullable `mandate_id`, nullable `terms` and a fixed `failure_category`. Raw provider errors, consent references, customer PII, instruction IDs and card tokens are excluded. This does not verify future merchant cancellations or order settlement.
+### Enrollment and setup data
 
-`GET /v1/webhook-event-types` returns descriptions, supported flows, JSON schemas and safe examples for every type. The schema version remains `2026-10-08`; event payload shapes are discriminated by `type`.
+| Field | Card enrollment | Mandate setup |
+| --- | --- | --- |
+| `session_id` | Yes | Yes |
+| `status` | Yes | Yes |
+| `outcome` | Yes | No |
+| `card_id` | Yes | No |
+| `passkey` | Yes | No |
+| `consent_status` | Yes | No |
+| `card` | Yes, nullable | No |
+| `order_id` | No | Yes |
+| `mandate_id` | No | Yes, nullable |
+| `terms` | No | Yes, nullable |
+| `failure_category` | Yes, fixed | Yes, fixed |
+| `error` | A safe error for negative outcomes | A safe error for negative outcomes |
 
-`terms.total_budget` is `null` when the stored mandate has no cumulative spend cap; Prava does not substitute a setup or order amount. When present, it is `{ "value": "1200.00", "currency": "INR" }`. `max_charges: 0` identifies a cumulative-budget pool rather than a zero-use mandate. These events describe setup; later charges use the payment event family.
+Mandate setup terms:
 
+| Field | Meaning |
+| --- | --- |
+| `terms.total_budget` | `null` when the stored mandate has no cumulative spend cap. Prava does not substitute a setup or order amount. When present, it is `{ "value": "1200.00", "currency": "INR" }`. |
+| `terms.max_charges` | `max_charges: 0` identifies a cumulative-budget pool rather than a zero-use mandate. |
 
-A cancellation or revocation recorded at or after session expiration preserves the
-expired result. Earlier cancellation remains cancelled. Persisted completed/failed
-results and actual retry transitions keep their precedence and resource versions.
-The expiry observer advances through bounded raw batches, so unrelated or ineligible
-sessions cannot prevent another application's expiry event.
+Raw provider errors, consent references, customer PII, instruction IDs and card tokens are excluded. This does not verify future merchant cancellations or order settlement.
 
-Repeated revocation retains its original recording timestamp, so retrying a
-previous cancellation after expiry cannot change it into an expiry event.
+### Versions and ordering
+
+- Each recorded status advances `resource.version`. Retain the latest version when retries, failures and eventual completion arrive out of order.
+- Consecutive unchanged status writes are deduplicated.
+- A retry that returns to an earlier failure or expiry can publish a new event with a higher version.
+
+### Which result wins
+
+| Situation | Result |
+| --- | --- |
+| A completed or failed result is persisted | It takes precedence over cancellation and expiry, matching the status API. Persisted completed/failed results and actual retry transitions keep their precedence and resource versions. |
+| Cancellation or revocation is recorded at or after session expiration | The expired result is preserved. |
+| Cancellation is recorded earlier | It remains cancelled. |
+| Revocation is repeated | It retains its original recording timestamp, so retrying a previous cancellation after expiry cannot change it into an expiry event. |
+
+### Session expiry
+
+- Prava detects expiry automatically for unfinished sessions that expire after webhooks were enabled.
+- Enabling webhooks does not backfill past results or expirations.
+
+## Quote request failures
+
+Subscribe explicitly to `quote.request_failed` to receive errors from admitted merchant-owned `POST /v1/shop/quote` requests. A quote ID may never have been created, so the resource is a **quote request**, identified by `qreq_...`.
+
+This event reports the **failure of the quote API request**, not the lifecycle of an existing quote or a payment.
+
+```json
+{
+  "id": "evt_example",
+  "type": "quote.request_failed",
+  "schema_version": "2026-10-08",
+  "occurred_at": "2026-10-16T00:00:00Z",
+  "environment": "sandbox",
+  "account_id": "ma_example",
+  "resource": { "type": "quote_request", "id": "qreq_example", "version": 1 },
+  "data": {
+    "request_id": "qreq_example",
+    "status": "failed",
+    "failure_category": "QUOTE_REQUEST_FAILED",
+    "error": { "code": "VARIANT_UNAVAILABLE", "message": "The selected item is sold out. Choose another variant or product." }
+  }
+}
+```
+
+<Warning>
+`quote.request_failed` is best-effort. Prava doesn't guarantee an event for every failed quote request: during bursts of failures, such as a downstream outage, some failures may not produce a webhook, and missed events aren't sent later. Always handle the API's error response directly; don't wait for a webhook to learn that a request failed.
+</Warning>
+
+### The request ID header
+
+The failed HTTP response includes `Prava-Quote-Request-Id` only after an event is confirmed persisted for an active, verified, explicitly subscribed endpoint.
+
+| Situation | `Prava-Quote-Request-Id` |
+| --- | --- |
+| Event confirmed persisted for an active, verified, explicitly subscribed endpoint | Included |
+| Webhooks disabled | Not received |
+| Inactive owner | Not received |
+| No eligible subscribers | Not received |
+| The event wasn't saved, or it's unclear whether it was saved | Not received. The original API error is preserved. An event might still exist after an unconfirmed response. |
+
+- A returned request ID confirms event persistence, not successful webhook delivery or business processing.
+- Each HTTP attempt has its own request/event ID, including attempts that reuse an API idempotency key. Deduplicate event delivery by the event ID.
+- Prava doesn't retry saving a missed event.
+
+### Before you retry
+
+`QUOTE_TIMEOUT`, for example, does not prove that the downstream service created no quote. Reconcile the existing operation and use the API's idempotency rules before retrying.
+
+### Delivery
+
+Once an event is saved, it follows the normal [delivery and retry rules](/webhooks/delivery). The best-effort limit applies only to saving the event, before those delivery guarantees begin. If no endpoint is subscribed, no event is saved.
+
+### What doesn't generate this event
+
+| Case | Why |
+| --- | --- |
+| Authentication, schema validation, rate-limit and invalid-idempotency-key rejections | They are synchronous admission errors. |
+| Agent-owned requests | They are outside merchant webhook coverage. |
+| Product selection or address confirmation returned successfully | It is not a quote failure. |
+
+No request body, address/contact data, product URL, access grant or unverified quote ID is included.
+
+### No quote lifecycle events
+
+There are currently no independent `quote.ready`, `quote.updated` or `quote.expired` lifecycle events. Expiry reported during a quote request can appear as its error; it is not a background notification that every quote expired. See [coverage and missing events](/webhooks/errors#coverage-boundaries).

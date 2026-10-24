@@ -3,25 +3,38 @@ title: "Webhook API"
 description: "Manage endpoints and retrieve retained events with a server-side secret key."
 ---
 
-<Info>Configuration, test and replay mutations return `WEBHOOKS_DISABLED` while delivery is disabled. Authenticated GET routes continue to expose retained events and delivery history for recovery.</Info>
+<Info>Configuration, test and replay mutations return `WEBHOOKS_DISABLED` while delivery is disabled. Authenticated GET routes keep returning retained events and delivery history for recovery.</Info>
 
-Authenticate with `Authorization: Bearer YOUR_APPLICATION_SECRET_KEY`. Use `https://sandbox.api.prava.space` for sandbox and `https://api.prava.space` for production. The key identifies the application; you cannot choose a different owner in a request body.
+Manage endpoints and recover events from your own server with your application's secret key. For each operation's parameters, request body and response fields, see the [Webhooks API reference](/api-reference/webhooks/overview).
+
+## Authentication
+
+| Environment | Base URL |
+| --- | --- |
+| Sandbox | `https://sandbox.api.prava.space` |
+| Production | `https://api.prava.space` |
+
+Send `Authorization: Bearer YOUR_APPLICATION_SECRET_KEY`. The key identifies the application, so you can't choose a different owner in a request body.
+
+A secret key grants control over its application's webhook configuration. Dashboard role restrictions apply only to dashboard users, so don't give application secret keys to read-only team members.
+
+## Operations
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| GET | `/v1/webhook-event-types` | Supported events, schemas, examples and schema version |
-| GET / POST | `/v1/webhook-endpoints` | List / create endpoints |
-| GET / PATCH / DELETE | `/v1/webhook-endpoints/{endpointId}` | Inspect / update / delete |
-| POST | `/v1/webhook-endpoints/{endpointId}/verify` | Send a signed nonce challenge |
-| POST | `/v1/webhook-endpoints/{endpointId}/test` | Send a test for a subscribed event |
-| POST | `/v1/webhook-endpoints/{endpointId}/rotate-secret` | Rotate with 24-hour overlap |
-| GET | `/v1/webhook-endpoints/{endpointId}/deliveries` | Newest-first history, 50 per page |
-| GET | `/v1/webhook-deliveries/{deliveryId}` | Delivery details and safe attempts |
-| POST | `/v1/webhook-deliveries/{deliveryId}/replay` | Replay a retained event |
-| GET | `/v1/events` | Commit-order event recovery, 50 per page |
-| GET | `/v1/events/{eventId}` | Retrieve one retained event |
+| GET | `/v1/webhook-event-types` | [Supported events, schemas, examples and schema version](/api-reference/webhooks/list-event-types) |
+| GET / POST | `/v1/webhook-endpoints` | [List](/api-reference/webhooks/list-endpoints) / [create](/api-reference/webhooks/create-endpoint) endpoints |
+| GET / PATCH / DELETE | `/v1/webhook-endpoints/{endpointId}` | [Inspect](/api-reference/webhooks/get-endpoint) / [update](/api-reference/webhooks/update-endpoint) / [delete](/api-reference/webhooks/delete-endpoint) |
+| POST | `/v1/webhook-endpoints/{endpointId}/verify` | [Send a signed nonce challenge](/api-reference/webhooks/verify-endpoint) |
+| POST | `/v1/webhook-endpoints/{endpointId}/test` | [Send a test for a subscribed event](/api-reference/webhooks/send-test-event) |
+| POST | `/v1/webhook-endpoints/{endpointId}/rotate-secret` | [Rotate with a 24-hour overlap](/api-reference/webhooks/rotate-signing-secret) |
+| GET | `/v1/webhook-endpoints/{endpointId}/deliveries` | [Newest-first history, 50 per page](/api-reference/webhooks/list-deliveries) |
+| GET | `/v1/webhook-deliveries/{deliveryId}` | [Delivery details and safe attempts](/api-reference/webhooks/get-delivery) |
+| POST | `/v1/webhook-deliveries/{deliveryId}/replay` | [Replay a retained event](/api-reference/webhooks/replay-delivery) |
+| GET | `/v1/events` | [Event recovery in recorded order, 50 per page](/api-reference/webhooks/list-events) |
+| GET | `/v1/events/{eventId}` | [Retrieve one retained event](/api-reference/webhooks/get-event) |
 
-Create, rotate, and replay require an `Idempotency-Key` header (8–120 letters, digits, underscores, or hyphens). Reuse the same key when retrying a request. Creating with changed input and the same key fails with a conflict. One-time signing secrets are returned only on the original successful create/rotation response; retries report completion without redisclosing the secret.
+## Create an endpoint
 
 ```bash
 curl https://sandbox.api.prava.space/v1/webhook-endpoints \
@@ -31,20 +44,53 @@ curl https://sandbox.api.prava.space/v1/webhook-endpoints \
   -d '{"name":"Payments","url":"https://api.example.com/prava/webhooks","events":["payment.succeeded","payment.failed"]}'
 ```
 
-Creation returns `{ "endpoint": { ... }, "signing_secret": "whsec_..." }`; the endpoint starts paused and unverified. PATCH accepts any of `name`, `url`, `events`, and `enabled`. You must verify before enabling. Test accepts `{ "type": "payment.succeeded" }`. Other POST control operations accept an empty body. History APIs return `next_cursor` or null; return the cursor unchanged on the next request. Errors use `{ "error": { "code": "...", "message": "..." } }`. Owner-scoped missing resources return 404; unsupported operations/verification state return 409.
+Creation returns `{ "endpoint": { ... }, "signing_secret": "whsec_..." }`. The endpoint starts paused and unverified; you must verify it before enabling it.
 
-Direct API secret keys grant control over their application's webhook configuration. Dashboard role restrictions apply to dashboard users. Do not give application secret keys to readonly team members.
+## Request conventions
 
+| Topic | Rule |
+| --- | --- |
+| Idempotency | Create, rotate and replay require an `Idempotency-Key` header of 8–120 letters, digits, underscores or hyphens. Reuse the same key when you retry. Reusing a key for a create with changed input fails with a conflict. |
+| Signing secrets | Returned only on the original successful create or rotate response. Retries report completion without showing the secret again. |
+| Update | PATCH accepts any of `name`, `url`, `events` and `enabled`. |
+| Test | Accepts `{ "type": "payment.succeeded" }`. |
+| Other POST controls | Accept an empty body. For operations without a payload, omit `Content-Type: application/json`; send it only when you send JSON. |
+| Pagination | History APIs return `next_cursor` or `null`. Send the cursor back unchanged on the next request. |
+| Errors | `{ "error": { "code": "...", "message": "..." } }` |
 
-Filter `/v1/events` with `type`, `resource_id` (`txn_...` or `ses_...`), `from` (inclusive ISO timestamp) and `to` (exclusive ISO timestamp). When both times are provided, use an increasing range of at most 30 days. Keep the same filters while advancing `cursor`. Events remain scoped to the authenticated application and environment.
+## Errors
 
-For a non-financial worker check, send `{ "type": "card_enrollment.completed", "queued": true }` to the test route after activating the verified endpoint. It returns `{ "queued": true, "event_id": "evt_..." }`; inspect delivery history for acceptance/retries. Every synthetic payload has `test: true` and contains example data. This verifies delivery, not enrollment or financial provider behavior.
+| Status | Meaning |
+| --- | --- |
+| `404` | The resource doesn't exist for this application. |
+| `409` | The operation isn't supported in the current state, for example before verification. |
+| `409 WEBHOOK_CHALLENGE_FAILED` | The signed verification challenge wasn't echoed in a complete JSON response. Echo the exact `challenge` value with `2xx`. |
+| `422 WEBHOOK_RECEIVER_UNAVAILABLE` | Verify or Send test couldn't reach the public receiver securely. Check its public DNS, HTTPS certificate and availability before retrying. |
 
+Outages on Prava's side return platform errors.
 
-Verify and Send test return `422 WEBHOOK_RECEIVER_UNAVAILABLE` when the public
-receiver cannot be reached securely. Check public DNS, HTTPS certificate and
-availability before retrying. `409 WEBHOOK_CHALLENGE_FAILED` means the signed
-verification challenge was not echoed in a complete JSON response; echo the exact
-`challenge` value with 2xx. Internal signing/storage outages remain platform errors.
-For control operations without a payload, omit `Content-Type: application/json`;
-use that header when actually sending JSON.
+## Recover events
+
+Filter `/v1/events` with:
+
+| Filter | Value |
+| --- | --- |
+| `type` | An event type |
+| `resource_id` | `txn_...`, `ses_...`, `qreq_...` or `mdt_...`. Underscores are allowed; at most 120 characters. |
+| `from` | Inclusive ISO timestamp |
+| `to` | Exclusive ISO timestamp. With `from`, use an increasing range of at most 30 days. |
+
+Keep the same filters while you advance `cursor`. Events stay scoped to the authenticated application and environment.
+
+## Check queued delivery
+
+For a non-financial check of queued delivery, activate the verified endpoint and send `{ "type": "card_enrollment.completed", "queued": true }` to the test route. It returns `{ "queued": true, "event_id": "evt_..." }`; inspect delivery history for acceptance and retries.
+
+Every synthetic payload has `test: true` and contains example data. This verifies delivery, not enrollment or financial provider behavior.
+
+## Endpoint health
+
+Endpoint responses include a nullable `blocked_reason`. See [Endpoint health reasons](/webhooks/delivery#endpoint-health-reasons) for `RECEIVER_UNACKNOWLEDGED`, `DELIVERY_FAILURE_LIMIT`, `HTTP_GONE` and `DESTINATION_BLOCKED`.
+
+- Endpoints paused automatically for health keep new subscribed events within the original retry window.
+- An explicit manual pause stops new events from being queued for that endpoint.

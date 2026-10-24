@@ -1,5 +1,111 @@
 # Changelog
 
+## [Unreleased] — 2026-10-24-1
+
+### Added
+
+- Add a Webhooks API reference with one page per webhook operation and response schemas.
+
+### Changed
+
+- Reorganize the webhook guides into shorter sections and tables.
+
+## [Unreleased] — 2026-10-22-1
+
+### Fixed
+
+- Merge current main's public release notes and document the existing quote pricing-evidence error with the same code and fixed message in API responses and quote-request failure events.
+
+## [Unreleased] — 2026-10-21-4
+
+### Fixed
+
+- Document restored warnings for specific receiver connection, certificate/protocol and confirmed DNS failures, while preserving ambiguous network-outage exclusions and quiet pause notices.
+
+## [Unreleased] — 2026-10-21-3
+
+### Fixed
+
+- Explain confirmed-response endpoint health, bounded health-pause buffering, explicit resume periods, public blocked reasons and terminal mandate expiry without changing financial state.
+
+## [Unreleased] — 2026-10-21-1
+
+### Changed
+
+- Document eight-failure endpoint auto-pause, one labelled email per outage with no reminders, explicit resume, real-delivery recovery and Events API recovery for gaps during pauses.
+
+## [Unreleased] — 2026-10-20-2
+
+### Fixed
+
+- Clarify current lowercase recurring setup terms and retained historical uppercase values; lifecycle events use lowercase values.
+
+## [Unreleased] — 2026-10-20-1
+
+### Added
+
+- Document mandate lifecycle subscriptions, owned mandate IDs on payment events, expiry scheduling and activation boundaries, and mdt_ event filters. Distinguish setup, local mandate control and charge outcomes without implying payment settlement or network revocation.
+
+## [Unreleased] — 2026-10-19-7
+
+### Fixed
+
+- Document confirmed credential-fetch rejection coverage without changing public codes, preserve historical network-named names for compatibility, and explain fixed safe Charge a Mandate messages in immediate and deduplicated responses.
+
+## [Unreleased] — 2026-10-19-6
+
+### Fixed
+
+- Clarify hosted-checkout HTTP errors versus merchant payment-result/webhook causes, and document the existing timeout code without changing either API contract.
+
+## [Unreleased] — 2026-10-19-5
+
+### Fixed
+
+- Document exact shared API/webhook public codes, trusted pre-issuance capture boundaries, and compatibility until a versioned API release. Preserve cancelled-enrollment error:null and align OpenAPI result schemas with the documented contract.
+
+## [Unreleased] — 2026-10-19-4
+
+### Fixed
+
+- Remove the normalized provider-workflow guidance claim belonging to the separate, unfinished Core #230 work. Keep this guide scoped to the standalone webhook release in Core #271.
+
+## [Unreleased] — 2026-10-19-3
+
+### Changed
+
+- Clarify that unmapped provider-workflow codes use the safe generic fallback while normalized payment-result guidance remains available.
+
+## [Unreleased] — 2026-10-19-2
+
+### Fixed
+
+- Match event-history resource filters to Core: `txn_`, `ses_` and `qreq_`, underscores allowed, maximum 120 characters; add quote-request IDs to the API guide and a contract regression.
+- State explicitly that quote-request failure capture is best-effort: bursts/timeouts can skip events without retry or backfill, while saved events retain normal delivery guarantees.
+
+## [Unreleased] — 2026-10-19-1
+
+### Fixed
+
+- Document issued-only payment coverage, exclusion of browser failure reports and uncertain pre-issuance outcomes, preserved enrollment cancellation category, and confirmed-only quote correlation headers with bounded capture.
+- Publish safe outcome messages and payment-result compatibility guidance while preserving existing public error codes.
+
+## [Unreleased] — 2026-10-16-2
+
+### Fixed
+
+- Clarify that a retried operation may create a different payment-attempt resource, while delivery retries and replays preserve the original event bytes.
+
+## [Unreleased] — 2026-10-16-1
+
+### Added
+
+- Document safe error codes across payment, enrollment and mandate outcomes, quote-request failure subscriptions/examples, and explicit missing lifecycle-event coverage.
+
+### Changed
+
+- Explain credential-issuance failure stages, retained-event compatibility, terminal enrollment status reasons, and twelve supported event choices in OpenAPI.
+
 ## [Unreleased] — 2026-10-12-4
 
 ### Changed

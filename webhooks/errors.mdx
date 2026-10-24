@@ -1,0 +1,274 @@
+---
+title: "Webhook errors and coverage"
+description: "Interpret webhook error codes, tell request errors from business outcomes, and see what webhooks cover."
+---
+
+Failure, cancellation and expiry events created since this release include `data.error`, with a stable `code` and a fixed public `message`. Use the code for branching. Don't match or parse the message. Look up any code in the [error code tables](#error-codes).
+
+## The error object
+
+```json
+{
+  "failure_category": "PAYMENT_ATTEMPT_FAILED",
+  "failure_stage": "payment",
+  "error": {
+    "code": "INSUFFICIENT_FUNDS",
+    "message": "The payment was declined due to insufficient funds."
+  }
+}
+```
+
+- `failure_category` identifies the broad event family. `error.code` gives the known cause.
+- Unknown causes stay generic. A generic decline never implies insufficient funds.
+- Successful and readiness events have `error: null`.
+- Mandate lifecycle notifications (`mandate.paused`, `mandate.resumed`, `mandate.cancelled`, `mandate.expired`) also have `error: null`. They describe local state, not a payment failure. See the [event catalog](/webhooks/events#mandate-charges-and-lifecycle).
+
+## Which error each event carries
+
+| Event | `failure_category` | How the error is chosen | Unknown-cause fallback |
+| --- | --- | --- | --- |
+| `payment.failed` | `PAYMENT_ATTEMPT_FAILED` | A safe persisted code from the issued attempt (`failure_stage: payment`), or a definite credential failure recorded by Prava (`failure_stage: credential_issuance`, `outcome_source: prava_observed`). Browser reports and uncertain outcomes are excluded. | `PAYMENT_FAILED` |
+| `card_enrollment.failed` | `ENROLLMENT_FAILED` | The persisted terminal cause. A previous retryable passkey error is not reused as the terminal cause. | `ENROLLMENT_FAILED` |
+| `mandate.creation_failed` | `MANDATE_SETUP_FAILED` | The error from the most recently created failed attempt, when all setup attempts have failed. A later retry can still succeed. | `MANDATE_SETUP_FAILED` |
+| `card_enrollment.cancelled` | `null` (unchanged) | `SESSION_CANCELLED`. No old retry reason. | — |
+| `mandate.creation_cancelled` | `SESSION_CANCELLED` | `SESSION_CANCELLED`. No old retry reason. | — |
+| Enrollment or mandate expiry | `SESSION_EXPIRED` | `SESSION_EXPIRED`. No old retry reason. | — |
+| `quote.request_failed` | `QUOTE_REQUEST_FAILED` | A safe quote HTTP request error. This is not a quote or payment lifecycle result. | `QUOTE_REQUEST_FAILED` |
+
+## Handle errors safely
+
+- Older retained events can omit `error` and `failure_stage`. Handle absent fields and unknown future codes safely.
+- Retries and replays keep the original event ID and bytes. They don't add a reason discovered later.
+- A later operation outcome produces a new event, with a new resource version where applicable. It doesn't edit an old event.
+- A new payment attempt can have a different resource ID.
+- A webhook replay retries delivery, not the underlying operation.
+- Always use `status` to determine the lifecycle.
+
+## Coverage boundaries
+
+Some outcomes have limited or no webhook coverage.
+
+| Area | Webhook coverage |
+| --- | --- |
+| Quote lifecycle | Ready, pricing/shipping updates, automatic expiry and asynchronous quote updates don't have lifecycle webhook events yet. `quote.request_failed` covers only the admitted quote API request. |
+| Merchant preparation | A standalone checkout preparation failure or human-verification state that hasn't become a persisted payment failure has no separate webhook. A timeout or uncertain payment outcome must not be treated as `payment.failed`. |
+| More specific merchant causes | Some APIs return a broad checkout code plus a buyer-safe correction message. Webhooks use the fixed canonical text for that code and can be less specific. Shipping and stock details are included only when the merchant supplies a supported structured code. Prava doesn't infer them from text. |
+| Before credentials are issued | A definite failure recorded by Prava can emit `payment.failed`. See [Before credentials are issued](#before-credentials-are-issued). |
+| Before a durable attempt | Authentication, request validation, eligibility/budget checks, unknown resource IDs and errors before a durable payment attempt are returned by the API. They aren't financial lifecycle events. |
+| Other resources | Standalone provision-only card flows, later card lifecycle changes, mandate budget/consumption/terms changes, refunds/reversals/disputes, inventory/fulfillment after checkout and agent-account resources don't have these merchant webhook families. Don't infer any order-fulfillment claim from payment success. |
+| Delivery errors | Receiver HTTP rejection, signature problems, delivery timeout/exhaustion and delivery problems on Prava's side belong to delivery history and incidents. They never change `data.error` or create a payment failure. |
+
+### Before credentials are issued
+
+A definite failure recorded by Prava can emit `payment.failed` with `failure_stage: credential_issuance` and `outcome_source: prava_observed`. Supported cases include those marked **Yes**:
+
+| Case | Emits `payment.failed` |
+| --- | --- |
+| Missing token or mandate details | Yes |
+| Invalid charge context | Yes |
+| An unsent charge request | Yes |
+| An explicit credential decline | Yes |
+| Shopper failure reports | No, excluded |
+| Old records without trusted provenance | No, excluded |
+| Transport timeouts | No, excluded |
+| Unknown issuance outcomes | No, excluded |
+| A generic failed status alone | No, insufficient on its own |
+| A `NO_TOKEN` rejection before a charge transaction exists | No, API-only |
+
+For credential-fetch rejections, see [Confirmed credential-fetch rejections](#confirmed-credential-fetch-rejections).
+
+## Result API compatibility
+
+The same recorded failure uses the **same public `error.code`** in the detailed payment-result or enrollment status API and in its webhook. You can reuse one error handler.
+
+- For payment attempts and full-enrollment results, the safe mapping is shared with the corresponding result projections.
+- `failure_stage`, `outcome_source` and `failure_category` add context independently of the code.
+
+```json
+{
+  "failure_stage": "credential_issuance",
+  "outcome_source": "prava_observed",
+  "failure_category": "PAYMENT_ATTEMPT_FAILED",
+  "error": {
+    "code": "MANDATE_TOKEN_UNAVAILABLE",
+    "message": "The saved card is unavailable for this mandate. Check the mandate's card before trying again."
+  }
+}
+```
+
+### Code names and messages
+
+- Existing codes are preserved, including previously exposed names that mention a card network. This release doesn't rename, remove or collapse them.
+- Historical codes that include a card-network name remain documented for compatibility, because existing integrations already receive them.
+- Any future public-code rename, including for those historical codes, needs an explicitly versioned API release. There's no calendar cutover or automatic switch.
+- Messages come from fixed safe copy. Raw provider text is excluded.
+- Unknown codes use the family's generic fallback.
+- Branch on codes, tolerate future codes and absent additive fields, and don't parse messages.
+
+### Shopper reports and legacy claims
+
+- `PAYMENT_DECLINED`, `USER_CANCELLED`, `AUTH_CANCELLED` and `AUTH_INCOMPLETE` remain distinct.
+- Session-user reports can describe authentication or cancellation, or a generic `PAYMENT_FAILED`.
+- A browser-supplied issuer reason is never returned as an attested financial result. It never creates `payment.failed` and never supplies an issuer reason in any event.
+- Legacy financial claims with caller-controlled diagnostic metadata are also generic.
+- Known non-issuer legacy setup/provisioning aliases stay compatible. Stored diagnostics are unchanged.
+
+### Enrollment status
+
+- Cancelled enrollment status responses keep **`error: null`** for compatibility. Use `status: cancelled`.
+- The corresponding cancellation webhook provides `SESSION_CANCELLED`, with its unchanged null `failure_category`.
+- Enrollment expiry has the safe `SESSION_EXPIRED` reason.
+- Successful enrollment clears the error.
+- Intermediate enrollment errors retain `retryable`. Terminal errors use `retryable: false`.
+- No previous retryable error is reused as a terminal reason.
+
+### Where the shared contract applies
+
+This shared contract applies to detailed outcome responses and newly created events. The hosted checkout request and the merchant payment-result API both keep their existing contracts:
+
+| API | Behavior |
+| --- | --- |
+| Hosted checkout request | Uses a separate HTTP error envelope. Network failures can return `VISA_PROVISION_FAILED` or `VISA_PROVISION_TIMEOUT`. |
+| Merchant payment-result API | Contains the specific stored cause. The webhook matches this detailed payment-result code. |
+
+- Other operation wrappers/admission errors without a recorded outcome remain synchronous API errors.
+- Retained events and replay bytes are never rewritten.
+- Definite credential-issuance events describe failure to obtain credentials, not a merchant charge or final settlement result.
+
+### Confirmed credential-fetch rejections
+
+`FETCH_AGENTIC_CREDS_ERROR` remains the same public code in the detailed API outcome and the webhook.
+
+| Credential-fetch result | Webhook |
+| --- | --- |
+| Prava confirms that the credential request was rejected before credentials were issued | `payment.failed` with `failure_stage: credential_issuance` and `outcome_source: prava_observed`. This is the only case that sends it. |
+| A timeout, network failure, ambiguous response, or a rejection after the request was already pending | No `payment.failed` event, because these don't prove failure. You still need to check the status before trying again. |
+
+- The event reports failure to obtain credentials. It doesn't claim an issuer decline or a completed merchant charge.
+- Older failures aren't backfilled.
+- The evidence Prava uses to tell these cases apart isn't included in the payload.
+
+### Charge response messages
+
+In [Charge a Mandate](/api-reference/mandate-charge) responses:
+
+| Field | Behavior |
+| --- | --- |
+| `errorCode` | Keeps existing known values, including on a deduplicated response. Match `errorCode` in your handler. |
+| `errorMessage` | Now uses fixed, safe text from this catalog instead of raw provider diagnostics. Don't parse it for upstream threshold or validation details. |
+
+Unknown codes use the safe family fallback.
+
+## Error codes
+
+Each table lists codes with their fixed messages. Keep these limits in mind:
+
+- A code is emitted only when its reason was actually persisted or returned at the supported request boundary.
+- These tables also cover detailed API errors. A code being listed doesn't by itself make an outcome eligible for a webhook.
+- A listed code doesn't mean every upstream processor can supply it.
+- Raw processor diagnostics and customer data are excluded.
+
+<Warning>Timeout, pending, malformed-response and unknown-issuance codes never produce `payment.failed`.</Warning>
+
+### Payment attempts and mandate setup
+
+Payment attempts and mandate setup share most codes. **Used by** shows whether a code belongs to payment attempts, mandate setup, or both. Codes that share a message are grouped in one row.
+
+| Code | Message | Used by |
+| --- | --- | --- |
+| `CARD_DECLINED` | The payment was declined by the card issuer. | Both |
+| `INSUFFICIENT_FUNDS` | The payment was declined due to insufficient funds. | Both |
+| `INVALID_CARD_NUMBER` | The card number is invalid. | Both |
+| `INVALID_SECURITY_CODE` | The card security code is invalid. | Both |
+| `INVALID_EXPIRY_DATE` | The card expiry date is invalid. | Both |
+| `EXPIRED_CARD` | The card has expired. | Both |
+| `BILLING_DETAILS_MISMATCH` | The billing details could not be verified. | Both |
+| `CARD_NOT_SUPPORTED` | This card is not supported for this payment. | Both |
+| `PAYMENT_METHOD_UNAVAILABLE` | The selected payment method is unavailable. | Both |
+| `AUTHENTICATION_FAILED`, `FIDO_START_FAILED`, `NO_OTP_METHODS`, `OTP_SEND_FAILED`, `PASSKEY_REG_FAILED`, `AUTH_FAILED`, `AUTH_NOT_SUPPORTED`, `POPUP_TIMEOUT`, `POPUP_FLOW_TIMEOUT` | Payment authentication failed. | Both |
+| `PAYMENT_FAILED` | The payment could not be completed. | Both |
+| `QUOTE_EXPIRED` | The quote has expired. Please request a new quote. | Both |
+| `CREDENTIAL_ISSUANCE_FAILED`, `SAVED_CARD_ERROR`, `ADDCARD_PROCESSING_ERROR`, `CHARGE_PRE_ISSUANCE_TIMEOUT` | Payment setup could not be completed. Check the payment status before trying again. | Both |
+| `MERCHANT_PREPARE_FAILED` | The merchant checkout could not be prepared. | Payment attempts |
+| `MERCHANT_ACTION_REQUIRED` | The merchant checkout requires additional verification. | Payment attempts |
+| `CARD_PROVISIONING_FAILED`, `VISA_PROVISION_FAILED` | We couldn't add this card. Try again or use a different card. | Payment attempts |
+| `BIN_COUNTRY_NOT_ALLOWED` | Cards from this country are not supported. Try a card issued in a supported country. | Both |
+| `BIN_ISSUER_NOT_ALLOWED` | This card issuer is not currently supported. Please try a card from a different bank. | Both |
+| `AUTH_CANCELLED` | Verification was cancelled. Start a new session to continue. | Both |
+| `AUTH_INCOMPLETE` | Verification could not be completed. Try again to continue. | Both |
+| `DEVICE_BINDING_FAILED` | Secure verification could not be completed. Try again. | Both |
+| `MANDATE_SETUP_FAILED` | Mandate setup could not be completed. Check the setup status before trying again. | Mandate setup |
+| `PAYMENT_INSTRUCTION_FAILED`, `VIC_SETUP_ERROR`, `VIC_SETUP_RETRY_ERROR`, `VIC_SETUP_RETRY_FAILED`, `VIC_NO_INSTRUCTION_ID` | Payment setup could not be completed. Check the setup status before trying again. | Both |
+| `SESSION_CANCELLED` | The session was cancelled. | Mandate setup |
+| `SESSION_EXPIRED` | The session expired. | Mandate setup |
+| `PAYMENT_CREDS_FAILED`, `VIC_FETCH_CREDS_ERROR` | Payment credentials could not be obtained. Check the payment status before trying again. | Both |
+| `MANDATE_CHARGE_FAILED`, `NO_TOKEN` | The mandate charge could not start. Check the mandate and payment status before trying again. | Both |
+| `MANDATE_TOKEN_UNAVAILABLE` | The saved card is unavailable for this mandate. Check the mandate's card before trying again. | Both |
+| `MANDATE_CREDENTIAL_CONTEXT_UNAVAILABLE` | Payment configuration is temporarily unavailable. Check the charge status before trying again. | Both |
+| `MANDATE_LINE_ITEMS_UNAVAILABLE` | Mandate details are temporarily unavailable. Check the charge status before trying again. | Both |
+| `MANDATE_LINE_ITEMS_MISSING` | Required mandate details are missing. Create a new mandate before trying again. | Both |
+| `CHARGE_CONTEXT_INVALID` | The charge details could not be used. Request a new quote before trying again. | Both |
+| `CHARGE_VISA_START_NOT_SENT` | The charge could not start. Request a new quote before trying again. | Both |
+| `MANDATE_CHARGE_DECLINED` | The mandate charge was declined before payment credentials were issued. Check the mandate's limits or use another payment method. | Both |
+| `PAYMENT_DECLINED` | The merchant reported that the payment was declined. Check the payment status before trying again. | Both |
+| `USER_CANCELLED` | The payment was cancelled by the shopper. Start a new session to continue. | Both |
+| `DECLINED` | Payment credentials were declined. Check the payment limits or use another payment method. | Both |
+| `CHARGE_READINESS_UNAVAILABLE` | The checkout could not start. Check the charge status and request a new quote. | Payment attempts |
+| `MANDATE_NOT_ACTIVE` | The mandate is not active. Check its status or create a new mandate before trying again. | Payment attempts |
+| `VISA_SERVICE_ERROR`, `VISA_SERVICE_NETWORK_ERROR`, `VISA_NETWORK_ERROR`, `FETCH_AGENTIC_CREDS_ERROR`, `INVALID_JWS_FORMAT`, `PAYLOAD_NOT_PRESENT`, `PENDING`, `UNKNOWN_STATUS` | Payment credentials could not be confirmed. Check the payment status before trying again. | Both |
+| `VISA_PROVISION_TIMEOUT` | Payment setup could not be confirmed in time. Check the payment status before trying again. | Both |
+
+### Full card enrollment
+
+| Code | Message |
+| --- | --- |
+| `ENROLLMENT_FAILED`, `VIC_ENROLL_ERROR` | Card enrollment could not be completed. Try again or start a new enrollment session. |
+| `CARD_PROVISIONING_FAILED`, `VISA_PROVISION_FAILED` | We couldn't add this card. Try again or use a different card. |
+| `BIN_COUNTRY_NOT_ALLOWED` | Cards from this country are not supported. Try a card issued in a supported country. |
+| `BIN_ISSUER_NOT_ALLOWED` | This card issuer is not currently supported. Please try a card from a different bank. |
+| `PASSKEY_NOT_SUPPORTED` | Passkeys are not supported on this device. Try a device that supports passkeys. |
+| `OTP_ATTEMPTS_EXHAUSTED` | Too many incorrect verification attempts. Start a new enrollment session to try again. |
+| `PASSKEY_RETRIES_EXHAUSTED` | Too many passkey attempts. Start a new enrollment session to try again. |
+| `ENROLLMENT_RETRIES_EXHAUSTED`, `VIC_ENROLL_RETRIES_EXHAUSTED` | Card enrollment attempts have been exhausted. Start a new enrollment session to try again. |
+| `AUTH_CANCELLED` | Verification was cancelled. Start a new session to continue. |
+| `AUTH_INCOMPLETE` | Verification could not be completed. Try again to continue. |
+| `DEVICE_BINDING_FAILED` | Secure verification could not be completed. Try again. |
+| `ENROLLMENT_UNAVAILABLE`, `VIC_ENROLL_UNAVAILABLE` | Card enrollment is temporarily unavailable. Try again later. |
+| `ENROLLMENT_FINALIZATION_FAILED` | We couldn't finish adding your card. Start a new enrollment session and try again. |
+| `SESSION_CANCELLED` | The session was cancelled. |
+| `SESSION_EXPIRED` | The session expired. |
+| `USER_CANCELLED` | The payment was cancelled by the shopper. Start a new session to continue. |
+| `VISA_PROVISION_TIMEOUT` | Payment setup could not be confirmed in time. Check the payment status before trying again. |
+
+### Quote requests
+
+| Code | Message |
+| --- | --- |
+| `QUOTE_EXPIRED` | The quote has expired. Please request a new quote. |
+| `QUOTE_REQUEST_FAILED` | The quote request could not be completed. Try again shortly. |
+| `MERCHANT_CHECKOUT_FAILED` | Merchant checkout is temporarily unavailable. Please try again later. |
+| `MERCHANT_RATE_LIMITED` | The merchant is temporarily limiting checkout requests. Please try again later. |
+| `DEPARTMENT_STORE_PILOT_DISABLED` | Department-store product quotes are not enabled. |
+| `VARIANT_UNAVAILABLE` | The selected item is sold out. Choose another variant or product. |
+| `CHECKOUT_EXPIRED` | The checkout link has expired. Request a new checkout link. |
+| `CHECKOUT_NOT_FOUND` | The checkout link was not found. Verify the link or request a new one. |
+| `CHECKOUT_INVALID` | The checkout link cannot be used. Request a new checkout link. |
+| `QUOTE_CHECKOUT_UNAVAILABLE` | This quote's checkout is no longer available for a new payment. Check any existing payment outcome before requesting a new quote. |
+| `INSTANT_QUOTE_UNAVAILABLE` | An instant quote is unavailable for this checkout. Request a browser quote. |
+| `MERCHANT_CHECKOUT_UNAVAILABLE`, `CHECKOUT_UNAVAILABLE` | The merchant checkout is temporarily unavailable. Please try again. |
+| `QUOTE_TOTAL_CHANGED` | The checkout total changed. Please request a new quote. |
+| `QUOTE_UPGRADE_NOT_ALLOWED` | This quote already has a browser checkout. |
+| `QUOTE_LOCKED` | This quote is being updated. Please try again shortly. |
+| `QUOTE_BROWSER_CHECKOUT_REQUIRED` | Open the browser checkout for this quote before starting payment. |
+| `OFFER_CODE_UNSUPPORTED` | Offer codes are unavailable for this quote. |
+| `QUOTE_NOT_READY` | Complete the requested product choice or address confirmation before creating a session. |
+| `INVALID_SHIPPING_OPTION` | The selected shipping option is not available for this quote. |
+| `QUOTE_SESSION_CONTEXT_INCOMPLETE` | Checkout is unavailable because required merchant details are missing. Please choose another product or try again later. |
+| `CARD_PAYMENT_UNAVAILABLE` | Card payment is unavailable for this merchant checkout. |
+| `INVALID_PHONE_NUMBER` | The shipping phone number is invalid for the destination country. |
+| `INVALID_POSTAL_CODE` | The shipping postal code is invalid for the destination address. |
+| `INVALID_SHIPPING_REGION` | The shipping region is not available for this merchant checkout. |
+| `BROWSER_CAPACITY_EXHAUSTED` | Browser capacity is temporarily unavailable. Please try again. |
+| `QUOTE_TIMEOUT` | The merchant checkout did not respond in time. Please try again. |
+| `QUOTE_PRICING_EVIDENCE_UNAVAILABLE` | We couldn't confirm the item prices at the merchant's checkout. Please retry the quote. |
+| `QUOTE_CURRENCY_PRECISION_UNSUPPORTED` | This quote has an amount with more decimal places than payment sessions support |
