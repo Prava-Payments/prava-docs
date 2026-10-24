@@ -6,6 +6,140 @@ rss: true
 ---
 
 <Update
+  label="October 24, 2026 - Webhooks"
+  tags={["New", "API", "Dashboard"]}
+  rss={{
+    title: "Prava webhooks are live: stay in sync with payments and mandates",
+    description: "Applications with webhooks enabled can subscribe to signed payment-attempt, card-enrollment, and mandate events. Configure and test endpoints in the dashboard, inspect delivery failures, and recover retained events."
+  }}
+>
+  ## Prava webhooks are live: stay in sync with payments and mandates
+
+  Receive signed updates when payment attempts, card enrollment, or mandates change, so your
+  application can react without polling every session.
+
+  - **Follow outcomes:** Subscribe to payment, card-setup, and mandate events, including
+    mandate pause, resume, cancellation, and expiry. Failure events include stable, buyer-safe
+    codes and distinguish a failed payment from a definite credential-issuance failure.
+  - **Set up your receiver:** Choose events in the dashboard or API, save the signing secret,
+    verify the destination, send a test event, and activate delivery.
+  - **Recover delivery:** Inspect delivery history and endpoint health. If a receiver keeps
+    failing, Prava pauses it; fix the receiver, resume delivery, and replay retained events.
+
+  A payment event describes the payment attempt, not final merchant order fulfillment.
+  Subscriptions, signing secrets, and event history are separate for sandbox and production.
+  Webhooks must be enabled for the selected environment.
+
+  [Set up webhooks →](/webhooks/overview) · [Review events and delivery →](/webhooks/events)
+</Update>
+
+<Update
+  label="October 24, 2026 - Passkey recovery"
+  tags={["Fixes"]}
+  rss={{
+    title: "Retry interrupted passkey verification with a fresh session",
+    description: "A closed or failed passkey window now leads to a clear checkout recovery path. An explicit retry confirms the previous attempt's status before starting fresh verification, without retrying the payment automatically."
+  }}
+>
+  ## Retry interrupted passkey verification with a fresh session
+
+  If a passkey window closes before verification finishes, checkout now shows a clear result
+  and offers an explicit retry. Prava confirms the interrupted attempt's status before starting
+  fresh verification, so a stale window cannot silently restart payment. If saving that status
+  fails temporarily, the shopper can retry the status check from the recovery screen.
+</Update>
+
+<Update
+  label="October 24, 2026 - Cancellation"
+  tags={["Fixes"]}
+  rss={{
+    title: "Cancel card setup and checkout with a clear result",
+    description: "Cancel now closes the active checkout or card-enrollment session. Card setup shows a confirmation, and a failed cancellation offers a visible retry instead of leaving the iframe blank."
+  }}
+>
+  ## Cancel card setup and checkout with a clear result
+
+  Cancelling from the hosted checkout or card-setup flow now closes the active session.
+  During card setup, the shopper sees a confirmation instead of a blank screen. If the
+  cancellation cannot be saved, the screen offers a retry or a return to card setup.
+</Update>
+
+<Update
+  label="October 23, 2026 - Order review"
+  tags={["Improvements", "Fixes"]}
+  rss={{
+    title: "Review item quantities and discounts before paying",
+    description: "Supported merchant checkouts now show a clearer breakdown when verified item data is available, including quantities, product discounts, free gifts, shipping, tax, and the final amount."
+  }}
+>
+  ## Review item quantities and discounts before paying
+
+  In supported merchant checkouts, shoppers can review each item's quantity and price
+  alongside verified discounts and free gifts before payment. When that item data is
+  available, one- and two-item orders show the breakdown directly; larger orders offer an
+  item-details view. Cart discounts stay separate from product discounts, and the final
+  amount remains the amount to pay. This also improves pricing for multi-buy offers and
+  gift items so the checkout summary reflects the verified cart.
+</Update>
+
+<Update
+  label="October 22, 2026 - Failure reasons"
+  tags={["Improvements", "Fixes", "API"]}
+  rss={{
+    title: "Use clearer payment and card-setup failure reasons",
+    description: "Payment results, full card-enrollment status, and mandate charge responses now use stable public codes and safe, consistent messages. Match error codes rather than message text when handling failures."
+  }}
+>
+  ## Use clearer payment and card-setup failure reasons
+
+  Detailed payment results and full card-enrollment status now use consistent, buyer-safe
+  messages for known failures instead of exposing provider diagnostics. Expired card setup
+  reports `SESSION_EXPIRED`; cancelled setup remains `status: cancelled` with no error.
+  Mandate charge responses retain their known `errorCode` values while returning fixed,
+  safe `errorMessage` text. Integrations should match codes rather than parse messages.
+</Update>
+
+<Update
+  label="October 21, 2026 - Sandbox mandate testing"
+  tags={["Improvements", "API"]}
+  rss={{
+    title: "Test completed mandate charges after more sandbox payment failures",
+    description: "Opted-in sandbox quote-backed mandate charges can simulate a completed test outcome after eligible confirmed payment failures, including some generic failures. The response preserves the actual failed outcome for test assertions."
+  }}
+>
+  ## Test completed mandate charges after more sandbox payment failures
+
+  In sandbox, an application can opt in to a completed test outcome for a quote-backed mandate
+  charge even when an eligible merchant payment fails. This now covers confirmed terminal
+  payment failures that previously returned only a generic error. The charge response marks
+  the simulation with `simulation_applied: true` and keeps the actual failure in
+  `observed_result`, so developers can test success handling while still seeing what happened.
+  The simulation does not mark the merchant order as paid or trigger fulfillment.
+</Update>
+
+<Update
+  label="October 21, 2026 - Checkout pricing"
+  tags={["Improvements", "Fixes"]}
+  rss={{
+    title: "Reconcile checkout totals with a verified item breakdown",
+    description: "Supported merchant checkouts now keep current item quantities, line totals, product discounts, and free gifts together through payment preparation. This makes subtotal and final-amount differences easier to explain; rejected offer codes leave checkout usable."
+  }}
+>
+  ## Reconcile checkout totals with a verified item breakdown
+
+  Supported merchant checkouts now keep an item-level breakdown from the merchant's verified
+  cart instead of relying on catalog prices. Each item's quantity and line total stay with its
+  product discounts or free gifts, while cart-wide discounts remain separate. This gives
+  applications a clearer basis for reconciling the subtotal, promotions, shipping, tax, and
+  final amount before payment, especially for multi-buy offers. If pricing cannot be verified,
+  Prava avoids presenting a misleading item breakdown.
+
+  Invalid or expired offer codes leave the original pricing and checkout usable with a specific
+  warning. If a later checkout update fails, the application can request a fresh checkout
+  instead of remaining stuck on the unfinished update.
+</Update>
+
+<Update
   label="October 19, 2026 - Spending approvals"
   tags={["New", "API"]}
   rss={{
