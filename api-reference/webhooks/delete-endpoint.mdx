@@ -1,0 +1,11 @@
+---
+title: 'Delete an Endpoint'
+description: 'Stop sending events to an endpoint and remove it.'
+icon: 'trash'
+openapi: '/api-reference/openapi.json DELETE /v1/webhook-endpoints/{endpointId}'
+playground: 'interactive'
+---
+
+Deletes the endpoint and returns `{ "deleted": true }`. Pending deliveries to it are cancelled, and it receives no further events. Its past events stay available through [List events](/api-reference/webhooks/list-events) for 30 days.
+
+This request has no body, so omit `Content-Type: application/json`.

@@ -882,9 +882,16 @@
               "application/json": {
                 "schema": {
                   "type": "object",
+                  "required": [
+                    "schema_version",
+                    "events"
+                  ],
                   "properties": {
                     "schema_version": {
-                      "type": "string"
+                      "type": "string",
+                      "examples": [
+                        "2026-10-08"
+                      ]
                     },
                     "events": {
                       "type": "array",
@@ -921,7 +928,35 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful operation; endpoints never include stored signing secrets."
+            "description": "Successful operation; endpoints never include stored signing secrets.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "endpoints",
+                    "catalog"
+                  ],
+                  "properties": {
+                    "endpoints": {
+                      "type": "array",
+                      "maxItems": 5,
+                      "items": {
+                        "$ref": "#/components/schemas/WebhookEndpoint"
+                      },
+                      "description": "Oldest first. Not paginated: an environment has at most five endpoints."
+                    },
+                    "catalog": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/WebhookEventCatalogItem"
+                      },
+                      "description": "The event type catalog, as returned by List event types."
+                    }
+                  }
+                }
+              }
+            }
           },
           "400": {
             "description": "Invalid input or cursor"
@@ -944,8 +979,55 @@
           "Webhooks"
         ],
         "responses": {
+          "201": {
+            "description": "Paused endpoint and one-time signing_secret. Idempotent retry returns 200 without signing_secret.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "endpoint",
+                    "signing_secret"
+                  ],
+                  "properties": {
+                    "endpoint": {
+                      "$ref": "#/components/schemas/WebhookEndpoint"
+                    },
+                    "signing_secret": {
+                      "type": "string",
+                      "description": "Returned only on this response. Store it securely.",
+                      "examples": [
+                        "whsec_…"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
           "200": {
-            "description": "Successful operation; endpoints never include stored signing secrets."
+            "description": "Successful operation; endpoints never include stored signing secrets.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "endpoint",
+                    "replayed"
+                  ],
+                  "properties": {
+                    "endpoint": {
+                      "$ref": "#/components/schemas/WebhookEndpoint"
+                    },
+                    "replayed": {
+                      "type": "boolean",
+                      "const": true,
+                      "description": "A retry with the same `Idempotency-Key`. The secret isn't returned again."
+                    }
+                  }
+                }
+              }
+            }
           },
           "400": {
             "description": "Invalid input or cursor"
@@ -958,9 +1040,6 @@
           },
           "503": {
             "description": "Preview disabled or temporarily unavailable"
-          },
-          "201": {
-            "description": "Paused endpoint and one-time signing_secret. Idempotent retry returns 200 without signing_secret."
           }
         },
         "parameters": [
@@ -995,7 +1074,39 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful operation; endpoints never include stored signing secrets."
+            "description": "Successful operation; endpoints never include stored signing secrets.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "endpoint",
+                    "incidents",
+                    "catalog"
+                  ],
+                  "properties": {
+                    "endpoint": {
+                      "$ref": "#/components/schemas/WebhookEndpoint"
+                    },
+                    "incidents": {
+                      "type": "array",
+                      "maxItems": 20,
+                      "items": {
+                        "$ref": "#/components/schemas/WebhookIncident"
+                      },
+                      "description": "Recent health incidents, newest first."
+                    },
+                    "catalog": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/WebhookEventCatalogItem"
+                      },
+                      "description": "The event type catalog, as returned by List event types."
+                    }
+                  }
+                }
+              }
+            }
           },
           "400": {
             "description": "Invalid input or cursor"
@@ -1029,7 +1140,22 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful operation; endpoints never include stored signing secrets."
+            "description": "Successful operation; endpoints never include stored signing secrets.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "endpoint"
+                  ],
+                  "properties": {
+                    "endpoint": {
+                      "$ref": "#/components/schemas/WebhookEndpoint"
+                    }
+                  }
+                }
+              }
+            }
           },
           "400": {
             "description": "Invalid input or cursor"
@@ -1073,7 +1199,23 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful operation; endpoints never include stored signing secrets."
+            "description": "Successful operation; endpoints never include stored signing secrets.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "deleted"
+                  ],
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  }
+                }
+              }
+            }
           },
           "400": {
             "description": "Invalid input or cursor"
@@ -1109,7 +1251,22 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful operation; endpoints never include stored signing secrets."
+            "description": "Successful operation; endpoints never include stored signing secrets.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "endpoint"
+                  ],
+                  "properties": {
+                    "endpoint": {
+                      "$ref": "#/components/schemas/WebhookEndpoint"
+                    }
+                  }
+                }
+              }
+            }
           },
           "400": {
             "description": "Invalid input or cursor"
@@ -1148,7 +1305,51 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful operation; endpoints never include stored signing secrets."
+            "description": "Successful operation; endpoints never include stored signing secrets.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "title": "Sent now",
+                      "type": "object",
+                      "required": [
+                        "http_status",
+                        "accepted"
+                      ],
+                      "properties": {
+                        "http_status": {
+                          "type": "integer",
+                          "description": "Your receiver's HTTP status."
+                        },
+                        "accepted": {
+                          "type": "boolean",
+                          "description": "`true` when the status was 2xx."
+                        }
+                      }
+                    },
+                    {
+                      "title": "Queued",
+                      "type": "object",
+                      "required": [
+                        "queued",
+                        "event_id"
+                      ],
+                      "properties": {
+                        "queued": {
+                          "type": "boolean",
+                          "const": true
+                        },
+                        "event_id": {
+                          "type": "string",
+                          "description": "The test event's ID. Track it in List deliveries."
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
           },
           "400": {
             "description": "Invalid input or cursor"
@@ -1211,7 +1412,7 @@
                   "queued": {
                     "type": "boolean",
                     "default": false,
-                    "description": "Use the durable worker on an active endpoint; synthetic, non-financial data"
+                    "description": "Use queued delivery on an active endpoint; synthetic, non-financial data"
                   }
                 }
               }
@@ -1229,7 +1430,52 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful operation; endpoints never include stored signing secrets."
+            "description": "Successful operation; endpoints never include stored signing secrets.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "title": "Rotated",
+                      "type": "object",
+                      "required": [
+                        "signing_secret",
+                        "overlap_hours"
+                      ],
+                      "properties": {
+                        "signing_secret": {
+                          "type": "string",
+                          "description": "The new secret. Returned only on this response."
+                        },
+                        "overlap_hours": {
+                          "type": "integer",
+                          "const": 24,
+                          "description": "Hours the previous secret stays valid."
+                        }
+                      }
+                    },
+                    {
+                      "title": "Retry",
+                      "type": "object",
+                      "required": [
+                        "replayed",
+                        "overlap_hours"
+                      ],
+                      "properties": {
+                        "replayed": {
+                          "type": "boolean",
+                          "const": true
+                        },
+                        "overlap_hours": {
+                          "type": "integer",
+                          "const": 24
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
           },
           "400": {
             "description": "Invalid input or cursor"
@@ -1274,7 +1520,48 @@
         ],
         "responses": {
           "200": {
-            "description": "Retained delivery history with public endpoint status and scoped incident summaries; no signing or encrypted secret material."
+            "description": "Retained delivery history with public endpoint status and scoped incident summaries; no signing or encrypted secret material.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "endpoint",
+                    "incidents",
+                    "deliveries",
+                    "next_cursor"
+                  ],
+                  "properties": {
+                    "endpoint": {
+                      "$ref": "#/components/schemas/WebhookEndpoint"
+                    },
+                    "incidents": {
+                      "type": "array",
+                      "maxItems": 20,
+                      "items": {
+                        "$ref": "#/components/schemas/WebhookIncident"
+                      },
+                      "description": "Recent health incidents, newest first."
+                    },
+                    "deliveries": {
+                      "type": "array",
+                      "maxItems": 50,
+                      "items": {
+                        "$ref": "#/components/schemas/WebhookDeliverySummary"
+                      },
+                      "description": "Newest first."
+                    },
+                    "next_cursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "Pass as `cursor` for the next page. `null` on the last page."
+                    }
+                  }
+                }
+              }
+            }
           },
           "400": {
             "description": "Invalid input or cursor"
@@ -1318,7 +1605,14 @@
         ],
         "responses": {
           "200": {
-            "description": "Retained delivery history with public endpoint status and scoped incident summaries; no signing or encrypted secret material."
+            "description": "Retained delivery history with public endpoint status and scoped incident summaries; no signing or encrypted secret material.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDelivery"
+                }
+              }
+            }
           },
           "400": {
             "description": "Invalid input or cursor"
@@ -1354,7 +1648,31 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful operation; endpoints never include stored signing secrets."
+            "description": "Successful operation; endpoints never include stored signing secrets.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "delivery"
+                  ],
+                  "properties": {
+                    "delivery": {
+                      "type": "object",
+                      "required": [
+                        "id"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "description": "The new delivery's ID. A retry with the same `Idempotency-Key` returns the same ID."
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "400": {
             "description": "Invalid input or cursor"
@@ -1399,7 +1717,35 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful operation; endpoints never include stored signing secrets."
+            "description": "Successful operation; endpoints never include stored signing secrets.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "events",
+                    "next_cursor"
+                  ],
+                  "properties": {
+                    "events": {
+                      "type": "array",
+                      "maxItems": 50,
+                      "items": {
+                        "$ref": "#/components/schemas/WebhookEvent"
+                      },
+                      "description": "In the order Prava recorded them, oldest first."
+                    },
+                    "next_cursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "Pass as `cursor` for the next page. `null` on the last page."
+                    }
+                  }
+                }
+              }
+            }
           },
           "400": {
             "description": "Invalid input or cursor"
@@ -1489,7 +1835,14 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful operation; endpoints never include stored signing secrets."
+            "description": "Successful operation; endpoints never include stored signing secrets.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookEvent"
+                }
+              }
+            }
           },
           "400": {
             "description": "Invalid input or cursor"
@@ -3005,6 +3358,474 @@
           "example": {
             "type": "object",
             "additionalProperties": true
+          }
+        }
+      },
+      "WebhookEventType": {
+        "type": "string",
+        "enum": [
+          "payment.credentials_ready",
+          "payment.succeeded",
+          "payment.failed",
+          "card_enrollment.completed",
+          "card_enrollment.failed",
+          "card_enrollment.cancelled",
+          "card_enrollment.expired",
+          "mandate.created",
+          "mandate.creation_failed",
+          "mandate.creation_cancelled",
+          "mandate.creation_expired",
+          "mandate.paused",
+          "mandate.resumed",
+          "mandate.cancelled",
+          "mandate.expired",
+          "quote.request_failed"
+        ],
+        "description": "A webhook event type."
+      },
+      "WebhookEndpoint": {
+        "type": "object",
+        "required": [
+          "id",
+          "owner_id",
+          "environment",
+          "name",
+          "url",
+          "events",
+          "revision",
+          "enabled",
+          "verified_at",
+          "deleted_at",
+          "created_at",
+          "schema_version",
+          "consecutive_failures",
+          "circuit_until",
+          "blocked_reason"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Endpoint ID, starting with `whe_`.",
+            "examples": [
+              "whe_0123456789abcdef0123456789abcdef"
+            ]
+          },
+          "owner_id": {
+            "type": "string",
+            "description": "Your application's account ID, starting with `ma_`."
+          },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "sandbox",
+              "production"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "The HTTPS URL that receives events."
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebhookEventType"
+            },
+            "description": "Event types sent to this endpoint."
+          },
+          "revision": {
+            "type": "string",
+            "description": "Increases by one each time the URL changes. Returned as a string."
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether new events are delivered. New endpoints start with `false`."
+          },
+          "verified_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When verification succeeded. Cleared when the URL changes."
+          },
+          "deleted_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "`null` for active endpoints.",
+            "examples": [
+              null
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "schema_version": {
+            "type": "string",
+            "description": "Payload schema version sent to this endpoint.",
+            "examples": [
+              "2026-10-08"
+            ]
+          },
+          "consecutive_failures": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Failed deliveries in a row. Resets after a delivery is accepted.",
+            "examples": [
+              0
+            ]
+          },
+          "circuit_until": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Deliveries are held until this time after repeated failures.",
+            "examples": [
+              null
+            ]
+          },
+          "blocked_reason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "RECEIVER_UNACKNOWLEDGED",
+              "DELIVERY_FAILURE_LIMIT",
+              "HTTP_GONE",
+              "DESTINATION_BLOCKED",
+              null
+            ],
+            "description": "Why Prava paused deliveries, or `null`. See [Endpoint health reasons](/webhooks/delivery#endpoint-health-reasons).",
+            "examples": [
+              null
+            ]
+          }
+        }
+      },
+      "WebhookIncident": {
+        "type": "object",
+        "required": [
+          "id",
+          "reason",
+          "delivery_id",
+          "opened_at",
+          "resolved_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Incident ID, starting with `whi_`."
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "RECEIVER_UNACKNOWLEDGED",
+              "ENDPOINT_UNHEALTHY",
+              "HTTP_GONE",
+              "DESTINATION_BLOCKED",
+              "DELIVERY_EXHAUSTED"
+            ]
+          },
+          "delivery_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The delivery that ran out of retries, for `DELIVERY_EXHAUSTED`."
+          },
+          "opened_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "resolved_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "WebhookEvent": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "schema_version",
+          "occurred_at",
+          "environment",
+          "account_id",
+          "resource",
+          "data"
+        ],
+        "description": "The event envelope, exactly as delivered to your endpoints.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Event ID, starting with `evt_`."
+          },
+          "type": {
+            "$ref": "#/components/schemas/WebhookEventType"
+          },
+          "schema_version": {
+            "type": "string",
+            "examples": [
+              "2026-10-08"
+            ]
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "sandbox",
+              "production"
+            ]
+          },
+          "account_id": {
+            "type": "string",
+            "description": "Your application's account ID, starting with `ma_`."
+          },
+          "test": {
+            "type": "boolean",
+            "description": "`true` on test events. Absent otherwise."
+          },
+          "resource": {
+            "type": "object",
+            "required": [
+              "type",
+              "id",
+              "version"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "examples": [
+                  "payment"
+                ]
+              },
+              "id": {
+                "type": "string",
+                "examples": [
+                  "txn_example"
+                ]
+              },
+              "version": {
+                "type": "integer",
+                "description": "Increases with each event for this resource."
+              }
+            }
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Event-specific fields. See [Event types](/webhooks/events)."
+          }
+        }
+      },
+      "WebhookDeliverySummary": {
+        "type": "object",
+        "required": [
+          "id",
+          "event_id",
+          "type",
+          "status",
+          "attempt_count",
+          "next_attempt_at",
+          "accepted_at",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Delivery ID, starting with `whd_`."
+          },
+          "event_id": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/WebhookEventType"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "in_flight",
+              "accepted",
+              "exhausted",
+              "cancelled"
+            ],
+            "description": "`exhausted` means every retry failed; `cancelled` means the endpoint was deleted before delivery."
+          },
+          "attempt_count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9
+          },
+          "next_attempt_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "accepted_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "WebhookDeliveryAttempt": {
+        "type": "object",
+        "required": [
+          "attempt_number",
+          "started_at",
+          "finished_at",
+          "http_status",
+          "error_category",
+          "latency_ms"
+        ],
+        "properties": {
+          "attempt_number": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finished_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "http_status": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Your receiver's HTTP status. `0` when it returned no status."
+          },
+          "error_category": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Why the attempt failed, or `null` when it was accepted. See [Delivery and retries](/webhooks/delivery).",
+            "examples": [
+              "HTTP_REJECTED"
+            ]
+          },
+          "latency_ms": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        }
+      },
+      "WebhookDelivery": {
+        "type": "object",
+        "required": [
+          "id",
+          "event_id",
+          "endpoint_id",
+          "type",
+          "status",
+          "attempt_count",
+          "created_at",
+          "accepted_at",
+          "next_attempt_at",
+          "payload_text",
+          "attempts",
+          "endpoint",
+          "incidents"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Delivery ID, starting with `whd_`."
+          },
+          "event_id": {
+            "type": "string"
+          },
+          "endpoint_id": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/WebhookEventType"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "in_flight",
+              "accepted",
+              "exhausted",
+              "cancelled"
+            ],
+            "description": "`exhausted` means every retry failed; `cancelled` means the endpoint was deleted before delivery."
+          },
+          "attempt_count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "accepted_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "next_attempt_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "payload_text": {
+            "type": "string",
+            "description": "The event exactly as sent, as a JSON string."
+          },
+          "attempts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebhookDeliveryAttempt"
+            },
+            "description": "Attempts in order. They don't include your receiver's response body."
+          },
+          "endpoint": {
+            "$ref": "#/components/schemas/WebhookEndpoint"
+          },
+          "incidents": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/WebhookIncident"
+            }
           }
         }
       }

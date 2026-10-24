@@ -1,0 +1,19 @@
+---
+title: 'List Deliveries'
+description: 'See the delivery history for an endpoint, newest first.'
+icon: 'clock-rotate-left'
+openapi: '/api-reference/openapi.json GET /v1/webhook-endpoints/{endpointId}/deliveries'
+playground: 'interactive'
+---
+
+Returns the endpoint, its recent health `incidents` and up to 50 deliveries, newest first.
+
+| Delivery `status` | Meaning |
+| --- | --- |
+| `pending` | Waiting for its next attempt. |
+| `in_flight` | Being sent now. |
+| `accepted` | Your receiver returned `2xx`. |
+| `exhausted` | Every retry failed. You can [replay it](/api-reference/webhooks/replay-delivery). |
+| `cancelled` | The endpoint was deleted before delivery. |
+
+To get the next page, pass `next_cursor` as `cursor`. Treat it as opaque and URL-encode it. It's `null` on the last page. Use [Retrieve a delivery](/api-reference/webhooks/get-delivery) for one delivery's attempts.

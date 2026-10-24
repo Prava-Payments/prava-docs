@@ -1,0 +1,27 @@
+---
+title: 'Create an Endpoint'
+description: 'Register an HTTPS URL to receive the events you choose.'
+icon: 'plus'
+openapi: '/api-reference/openapi.json POST /v1/webhook-endpoints'
+playground: 'interactive'
+---
+
+Creates an endpoint and returns it with a one-time `signing_secret` (`whsec_…`) and status `201`. Store the secret right away: a retry with the same `Idempotency-Key` returns `200` with `"replayed": true` and doesn't return the secret again.
+
+New endpoints start **paused and unverified**. Before Prava delivers events:
+
+1. [Verify the endpoint](/api-reference/webhooks/verify-endpoint) so Prava knows your receiver controls the URL.
+2. [Update it](/api-reference/webhooks/update-endpoint) with `"enabled": true`.
+
+```bash
+curl https://sandbox.api.prava.space/v1/webhook-endpoints \
+  -H 'Authorization: Bearer YOUR_SECRET_KEY' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: register-receiver-0001' \
+  -d '{"name":"Payments","url":"https://api.example.com/prava/webhooks","events":["payment.succeeded","payment.failed"]}'
+```
+
+| Error | Meaning |
+| --- | --- |
+| `409 IDEMPOTENCY_CONFLICT` | The `Idempotency-Key` was already used with a different request body. |
+| `409 WEBHOOK_ENDPOINT_LIMIT` | This environment already has five endpoints. Delete one first. |

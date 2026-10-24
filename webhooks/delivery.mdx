@@ -1,59 +1,149 @@
 ---
 title: "Delivery and recovery"
-description: "Handle retries, inspect attempts, and recover missed events."
+description: "How Prava delivers and retries events, pauses failing endpoints, and how to recover what you missed."
 ---
 
-Delivery is **at least once**. Events can be duplicated or arrive out of order. A 2xx response means your receiver accepted the request. Every other status, redirect, DNS/TLS error, or timeout is an unacknowledged attempt. Prava does not follow redirects. HTTP 410 disables the destination; a destination resolving to private or reserved addresses is also disabled.
+Prava delivers each event **at least once**. The same event can arrive more than once, and events can arrive out of order. Deduplicate by event `id` and don't depend on delivery order.
 
-Automatic delivery allows at most nine network attempts over 72 hours. Known failures while preparing a request, such as a signing-key or database outage, delay delivery and alert Prava without consuming a receiver attempt or opening a receiver-failure incident. An unknown outcome after dispatch begins still counts because the receiver may have accepted it. Retries use increasing delays with jitter; `Retry-After` is bounded to six hours and the remaining retry window. Each request has a three-second connect budget and ten-second total budget. Request bodies are limited to 64 KiB. Prava reads at most 4 KiB of response body; a received 2xx remains accepted even if the body is larger or closes early. Verification requires a complete JSON nonce echo within 4 KiB. Return a small 2xx response after durable acceptance.
+## Responding to an event
 
-Use **Delivery history** to inspect endpoint pause/circuit reasons, open incidents, status, attempt times, HTTP status, safe error category, and the original event body. Ordinary event, delivery and attempt history is retained for 30 days. A fresh replay near that cutoff retains delivery inspection and immutable payload through its 72-hour generation window and any live lease, allowing about 33 days total plus a live lease; it does not receive another 30-day window. New replay eligibility and Events API retention remain 30 days. No raw customer response bodies are shown or logged. Administrators can resolve endpoint problems; developers can replay a retained delivery after verifying and enabling an endpoint subscribed to that event. Replays preserve the event ID/body and create a new delivery generation. Retrying the same delivery and idempotency key returns that original generation even if the endpoint URL has since changed; use a new key for a deliberate replay to a newly verified destination. Expired history cannot be replayed. They cancel pending sibling work, but already transmitted requests cannot be recalled.
+Store the event, return a `2xx` status, then process it asynchronously. Prava treats anything else as a failed attempt:
 
-To recover events in your own system, call `GET /v1/events?cursor=0` using your application secret key. Process each page durably before saving `next_cursor`. When `next_cursor` is null, that scan is caught up. For later scans, retain the most recent non-null cursor; replaying the last partial page is safe when you deduplicate by event ID. The cursor follows committed capture order within the environment; gaps from other accounts are normal. Recovery does not expose events from another application. Authenticated retained-event and delivery-history reads remain available while Prava delivery is disabled; configuration and replay mutations are paused.
+- a non-`2xx` status
+- a redirect (Prava doesn't follow redirects)
+- a DNS, TLS or connection error
+- a timeout
 
-You can retrieve a retained event with `GET /v1/events/{eventId}`. Events may exist even when no endpoint was active; newly created endpoints do not automatically receive past events. Beyond the 30-day window, reconcile your payment records through the relevant API.
+| Limit | Value |
+| --- | --- |
+| Connect timeout | 3 seconds |
+| Total request timeout | 10 seconds |
+| Request body | Up to 64 KiB |
+| Response body | Prava reads the first 4 KiB. A `2xx` still counts if the body is longer or the connection closes early. |
+| Verification response | A complete JSON body echoing `challenge`, within 4 KiB |
+| Concurrency | One request at a time per endpoint, and at most two at a time (five per second) across your application |
 
-Pausing prevents new delivery claims. URL changes clear verification, pause delivery, increment the destination revision, and cancel old queued deliveries. The final recheck cannot recall a request already in transit. Deleting cancels outstanding work and removes the endpoint from the active list.
+## Retries
 
-Five consecutive receiver failures start a five-minute cooldown. A recovery attempt can run after that cooldown. After **eight consecutive receiver-health failures**, the endpoint becomes **Unhealthy · paused** and automatic attempts stop until you explicitly resume it. HTTP 410 and a blocked destination pause it immediately. Receiver-health failures include non-2xx HTTP responses, an explicitly refused connection, supported peer-certificate/protocol errors, and confirmed missing DNS address records. Examples include expired or mismatched certificates and nonexistent domains. DNS confirmation requires negative answers for both IPv4 and IPv6 within the existing DNS budget; an OS lookup failure alone is inconclusive. Resolver failures/timeouts, unreachable networks, connect/response timeouts, connection resets, unknown errors and local trust/configuration failures remain uncertain and do not advance the health streak. Platform preparation failures do not count either. An individual event exhausting its retry limit does not independently pause a healthy receiver. Only one request is in flight per endpoint. Pending deliveries retain the 72-hour and nine-attempt limits; pausing does not extend either window. Shared limits allow at most two concurrent requests and five claims per second per application across workers, with fair account scheduling.
+A failed delivery gets up to **9 attempts over 72 hours**. Each attempt is scheduled from when the delivery was created, plus up to 5 seconds of jitter:
 
-The Dashboard shows safe incident reasons, next-attempt and acceptance times. Exhaustion incidents identify the failed delivery; an unrelated successful request does not clear them. Successfully replaying that event resolves its exhaustion incident, including after a verified destination replacement. The visible operational view refreshes after 30 seconds and backs off to two minutes while unchanged, with jitter; hidden tabs and one-time secret views do not refresh. Incident notices use current authorized developer/admin contacts with verified primary email addresses; retries recheck access and address. We send **one pause email per endpoint outage** to each eligible contact, identifying the endpoint name, application and environment with a link to its settings. Individual exhausted events do not each trigger an email. There are no reminder or recovery emails. An explicit resume/activation closes the previous pause period and resets the health streak. A later pause after eight new consecutive receiver-health failures can send one fresh notice. Editing the URL alone does not start a new notice period. Notices use the transactional email outbox and never go through the failed webhook. Access, verified email and current incident/endpoint state are checked again before sending; outdated queued emails are suppressed. Provider send failures retry the same outbox message with backoff, rather than creating new notices. Queue acknowledgement does not mean an email has been sent.
+| Attempt | Earliest send time |
+| --- | --- |
+| 1 | Immediately |
+| 2 | 30 seconds |
+| 3 | 2 minutes |
+| 4 | 10 minutes |
+| 5 | 1 hour |
+| 6 | 6 hours |
+| 7 | 24 hours |
+| 8 | 48 hours |
+| 9 | About 72 hours |
 
-## Resume an unhealthy endpoint
+- **`Retry-After`:** if your receiver sends it, Prava waits at least that long, up to 6 hours and never past the 72-hour window.
+- **Problems on Prava's side** delay delivery without using one of your attempts.
+- **Unknown outcomes** after a request was sent still use an attempt, because your receiver may have accepted it.
 
-1. Open **Webhooks** in the developer dashboard and select the environment named in the email. Resellers open **Reseller → Merchants → the application → Webhooks**.
-2. Select the named endpoint. Restore the receiver or update its URL, then choose **Verify destination** and the Dashboard’s direct **Send test event**. Direct tests can run while verified delivery is paused.
-3. Choose **Resume delivery**. For a replacement URL, the equivalent control is **Activate delivery** after verification. Activation also releases eligible buffered deliveries. To test worker retries, activate first and then send an API test with `queued: true`.
-4. Inspect delivery history. Pending deliveries can retry within their original window; replay retained exhausted deliveries as needed. A current-revision queued delivery returning 2xx, including a signed test event, establishes receiver health. It does not prove business processing or automatically resume a manually paused endpoint. Explicit Resume starts a new monitoring period.
-
-For a verified endpoint automatically paused by health or security policy, Prava continues recording new subscribed events as pending deliveries. No request is sent while paused. After explicit resume they can retry within their original nine-attempt/72-hour window; pausing never extends that window. Explicit manual pause opts out of new recipient capture. Replacement URLs require re-verification and cancel old queued work; removed subscriptions, deleted endpoints and periods of globally disabled capture are not backfilled. Use delivery history and the [Events API](/webhooks/api) for retained gaps, and deduplicate by event ID. A stopped development tunnel is a common sandbox cause: restore the tunnel or keep the endpoint paused when it is not in use.
-
+When the last attempt fails, the delivery becomes `exhausted`. You can [replay it](#replay-a-delivery) for 30 days.
 
 ## Endpoint health reasons
 
-The endpoint's `blocked_reason` is nullable:
+Prava counts consecutive failures for each endpoint and pauses one that keeps failing. The endpoint's `blocked_reason` tells you why:
 
-| Value | Meaning |
-| --- | --- |
-| `RECEIVER_UNACKNOWLEDGED` | Five consecutive receiver-health failures triggered a five-minute cooldown. |
-| `DELIVERY_FAILURE_LIMIT` | Eight consecutive receiver-health failures triggered an automatic pause. Fix and test the receiver, then explicitly resume. |
-| `HTTP_GONE` | The receiver returned HTTP 410; delivery is paused. |
-| `DESTINATION_BLOCKED` | The destination failed the public-address security check; delivery is paused. |
-
-A null reason does not by itself mean an endpoint is enabled. Check `enabled` and verification state too. Network uncertainty remains visible in delivery history, without being classified as a receiver-health failure.
-
-
-## Transport failure categories
-
-Delivery history records bounded categories with no raw DNS, certificate or receiver response details:
-
-| Attempt category | Advances endpoint health? | Meaning |
+| Trigger | What happens | `blocked_reason` |
 | --- | --- | --- |
-| `HTTP_REJECTED`, `REDIRECT_REFUSED` | Yes | A non-2xx HTTP response or redirect. |
-| `RECEIVER_CONNECTION_REFUSED` | Yes | The connection was explicitly refused. |
-| `RECEIVER_TLS_REJECTED` | Yes | An allowlisted peer certificate or protocol failure, such as expiry, hostname mismatch or a self-signed certificate. |
-| `RECEIVER_PROTOCOL_REJECTED` | Yes | An allowlisted malformed HTTP response. |
-| `RECEIVER_DNS_NOT_FOUND` | Yes | Both A and AAAA queries confirmed no address records. |
-| `DELIVERY_UNACKNOWLEDGED` | No | An ambiguous network/resolver/timeout, local trust/configuration or unknown failure. Normal retry limits still apply. |
+| 5 failures in a row | Deliveries pause for 5 minutes, then a recovery attempt runs. | `RECEIVER_UNACKNOWLEDGED` |
+| 8 failures in a row | The endpoint is paused (**Unhealthy · paused** in the Dashboard) until you [resume it](#resume-a-paused-endpoint). | `DELIVERY_FAILURE_LIMIT` |
+| Your receiver returns `410 Gone` | Paused immediately. | `HTTP_GONE` |
+| The URL resolves to a private or reserved address | Paused immediately. | `DESTINATION_BLOCKED` |
 
-These categories guide endpoint health; they do not prove which party caused an outage. A successful 2xx delivery resets the receiver-health failure streak. Ambiguous failures neither advance nor reset it. HTTP 410 and blocked destinations still pause immediately. Requests that already received a 2xx remain accepted even if the connection later closes.
+A `2xx` resets the failure count. One event running out of retries doesn't pause an otherwise healthy endpoint.
+
+`blocked_reason` is `null` when nothing is blocking the endpoint, but that alone doesn't mean it's delivering. Check `enabled` and `verified_at` too.
+
+### Which failures count
+
+Every attempt in delivery history has an error category. Only clear receiver failures count toward a pause:
+
+| Category | Counts toward a pause | Meaning |
+| --- | --- | --- |
+| `HTTP_REJECTED` | Yes | A non-`2xx` response. |
+| `REDIRECT_REFUSED` | Yes | A redirect response. |
+| `RECEIVER_CONNECTION_REFUSED` | Yes | The connection was refused. |
+| `RECEIVER_TLS_REJECTED` | Yes | A certificate or TLS problem, such as an expired, mismatched or self-signed certificate. |
+| `RECEIVER_PROTOCOL_REJECTED` | Yes | A malformed HTTP response. |
+| `RECEIVER_DNS_NOT_FOUND` | Yes | The domain has no A or AAAA records. |
+| `DELIVERY_UNACKNOWLEDGED` | No | A timeout, network or resolver error, or another uncertain failure. Normal retries still apply. |
+
+Uncertain failures neither count toward a pause nor reset the count. Categories describe what Prava observed; they don't prove which side caused an outage. Delivery history never includes raw DNS, certificate or response details.
+
+## Pauses, URL changes and deletes
+
+| Action | Effect on deliveries |
+| --- | --- |
+| Automatic pause (health or security) | New subscribed events are still queued, but nothing is sent. After you resume, they retry within their original 72-hour window. A pause never extends it. |
+| Manual pause (`enabled: false`) | New events aren't queued for the endpoint. |
+| URL change | Verification is cleared, the endpoint is paused, and deliveries queued for the old URL are cancelled. Verify the new URL, then enable it. |
+| Delete | Outstanding deliveries are cancelled and the endpoint is removed. |
+
+A request already in transit can't be recalled. Events from removed subscriptions, deleted endpoints and periods when webhooks were disabled aren't backfilled, and new endpoints don't receive past events. Use the [events feed](#recover-missed-events) to fill gaps.
+
+<Tip>In sandbox, a stopped development tunnel is a common cause of pauses. Restart the tunnel, or pause the endpoint while you're not using it.</Tip>
+
+## Pause emails
+
+When an endpoint is paused automatically, Prava emails every developer and administrator on the application who has a verified email address. The email names the endpoint, application and environment, and links to its settings.
+
+- You get one email per outage. Individual exhausted events don't send email, and there are no reminder or recovery emails.
+- After you resume, a new pause (eight new failures in a row) sends a new email. Changing the URL alone doesn't.
+
+## Resume a paused endpoint
+
+<Steps>
+<Step title="Open the endpoint">
+Open **Webhooks** in the developer dashboard and select the environment named in the email. In a multi-app workspace, open **Webhooks**, find the application and select **Manage webhooks**.
+</Step>
+<Step title="Fix and test the receiver">
+Restore the receiver or update its URL. Choose **Verify destination**, then **Send test event**. Direct tests work while delivery is paused.
+</Step>
+<Step title="Resume delivery">
+Choose **Resume delivery**. For a new URL, choose **Activate delivery** after verification. Either one releases the deliveries held during the pause. To test the retry path, activate first, then send an API test with `queued: true`.
+</Step>
+<Step title="Check delivery history">
+Held deliveries retry within their original window. Replay any exhausted deliveries you still need.
+</Step>
+</Steps>
+
+A queued delivery that returns `2xx`, including a test event, shows the receiver is healthy again. It doesn't confirm your own processing, and it doesn't resume an endpoint you paused manually. Resuming starts a new monitoring period.
+
+## Delivery history
+
+**Delivery history** in the Dashboard and the [deliveries API](/api-reference/webhooks/list-deliveries) show each delivery's status, attempt times, HTTP status, error category and original event body, along with the endpoint's pause reason and open incidents. Your receiver's response bodies are never shown or logged.
+
+Events, deliveries and attempts are kept for **30 days**. A replay made near the end of that window stays visible through its own 72-hour delivery window.
+
+An exhaustion incident names the failed delivery. It closes when that event is replayed successfully, not when another delivery succeeds.
+
+## Replay a delivery
+
+Developers can replay a retained delivery to an endpoint that is verified, enabled and subscribed to the event. Administrators can also resolve endpoint problems. In the API, use [Replay a delivery](/api-reference/webhooks/replay-delivery).
+
+- The replay keeps the event `id` and body and creates a new delivery. It cancels that delivery's pending retries; a request already sent can't be recalled.
+- Retrying with the same idempotency key returns the original replay, even if the URL has changed since. Use a new key to replay to a newly verified URL.
+- Deliveries older than 30 days can't be replayed.
+
+## Recover missed events
+
+To catch up from your own system, read the events feed with your secret key:
+
+1. Call `GET /v1/events?cursor=0`.
+2. Process each page durably, then save its `next_cursor`.
+3. Repeat with that cursor until `next_cursor` is `null`. You're caught up.
+4. On later runs, start from the last non-null cursor you saved. Reprocessing the last partial page is safe when you deduplicate by event `id`.
+
+- The cursor follows the order in which Prava recorded events in the environment. Gaps in the sequence are normal.
+- Only your application's events are returned.
+- Fetch one event with `GET /v1/events/{eventId}`.
+- Events are recorded even when no endpoint is active, and kept for 30 days. For anything older, reconcile with the relevant API.
+- These reads keep working while webhook delivery is disabled.
+
+See [List events](/api-reference/webhooks/list-events) for filters.

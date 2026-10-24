@@ -1,0 +1,11 @@
+---
+title: 'Retrieve a Delivery'
+description: 'Get one delivery and its attempts.'
+icon: 'magnifying-glass'
+openapi: '/api-reference/openapi.json GET /v1/webhook-deliveries/{deliveryId}'
+playground: 'interactive'
+---
+
+Returns one delivery with the event as sent (`payload_text`), each attempt's HTTP status, error category and latency, and the endpoint's recent health `incidents`. Attempts don't include your receiver's response body.
+
+See [Delivery and retries](/webhooks/delivery) for the retry schedule and error categories.

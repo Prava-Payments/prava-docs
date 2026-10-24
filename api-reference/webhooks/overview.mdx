@@ -1,0 +1,63 @@
+---
+title: 'Webhooks API'
+description: 'Register webhook endpoints, inspect deliveries and recover events with your secret key.'
+icon: 'bell'
+---
+
+The Webhooks API manages where Prava sends event notifications and lets you recover anything your receiver missed. For how events are signed, retried and ordered, see the [Webhooks guide](/webhooks/overview).
+
+## Base URLs and authentication
+
+| Environment | Base URL |
+| --- | --- |
+| Sandbox | `https://sandbox.api.prava.space` |
+| Production | `https://api.prava.space` |
+
+Authenticate every request with your application's secret key:
+
+```bash
+Authorization: Bearer YOUR_SECRET_KEY
+```
+
+The key determines the application and environment. You can't act on another application's endpoints or events, and request bodies never take an owner. A secret key controls the application's webhook configuration, so don't share it with read-only team members.
+
+## Resources
+
+| Resource | What it is |
+| --- | --- |
+| [Event types](/api-reference/webhooks/list-event-types) | The events you can subscribe to, with schemas and examples |
+| [Endpoints](/api-reference/webhooks/create-endpoint) | An HTTPS URL that receives the event types you choose |
+| [Deliveries](/api-reference/webhooks/list-deliveries) | One event sent to one endpoint, with its attempts |
+| [Events](/api-reference/webhooks/list-events) | Retained events in recorded order, for recovery |
+
+## Conventions
+
+**Idempotency.** Create endpoint, rotate signing secret and replay delivery require an `Idempotency-Key` header of 8–120 letters, digits, underscores or hyphens. Reuse the same key when you retry the same request. Reusing a key with different input returns a conflict.
+
+**Signing secrets.** A `whsec_…` secret is returned only in the original successful create or rotate response. A retried request reports completion without returning the secret again, so store it when you first receive it.
+
+**Pagination.** List deliveries and List events return up to 50 items and a `next_cursor`. Pass it unchanged as `cursor`, URL-encoded, to get the next page, keeping the same filters. It's `null` on the last page.
+
+**Requests without a body.** For operations that take no payload, omit `Content-Type: application/json`. Send that header only when you send a JSON body.
+
+**Errors.** Errors use `{ "error": { "code": "...", "message": "..." } }`.
+
+| Status | Meaning |
+| --- | --- |
+| `400` | `WEBHOOK_REQUEST_INVALID`: the request is invalid. The message says what to fix. |
+| `404` | `WEBHOOK_NOT_FOUND`: the endpoint, delivery or event doesn't exist for this application, or is older than 30 days. |
+| `409` | The request conflicts with the endpoint's state or an earlier request, for example `WEBHOOK_NOT_VERIFIED`, `IDEMPOTENCY_CONFLICT` or `WEBHOOK_ENDPOINT_LIMIT`. Each operation lists its codes. |
+| `422` | `WEBHOOK_RECEIVER_UNAVAILABLE`: Verify or Send test event couldn't reach your receiver securely. Check its public DNS, HTTPS certificate and availability, then retry. |
+| `429` | Too many requests. Slow down and retry. |
+| `503` | `WEBHOOKS_DISABLED`: webhooks are turned off in this environment. Reads keep working; other requests return this until they're back. |
+
+## Limits
+
+| Limit | Value |
+| --- | --- |
+| Endpoints per environment | 5 |
+| Requests | 120 per minute for reads, 20 per minute for other requests |
+| Event retention | 30 days |
+| Delivery retries | Up to 9 attempts over 72 hours |
+
+See [Webhook errors](/webhooks/errors) for the `error` objects inside event payloads.

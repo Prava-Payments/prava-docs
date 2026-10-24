@@ -3,39 +3,71 @@ title: "Webhooks"
 description: "Receive signed payment, card-enrollment, mandate-setup and quote-request failure notifications."
 ---
 
-<Info>Webhooks must be enabled for your environment before you can configure endpoints and receive events. If webhooks are disabled, you can still view existing event and delivery history, but configuration, tests and replay are unavailable.</Info>
+<Info>Webhooks must be enabled for your environment before you can configure endpoints and receive events. While they're disabled, you can still read event and delivery history, but you can't change configuration, send tests or replay.</Info>
 
-Webhooks notify your server about full card-enrollment results, mandate-setup results, payment credential issuance and recorded outcomes of credentialed payment attempts. Sandbox and production have separate endpoints, event histories, and signing secrets.
+Webhooks notify your server about card-enrollment results, mandate-setup results, payment credential issuance, and the recorded outcomes of credentialed payment attempts. Sandbox and production are separate: each has its own endpoints, event history and signing secrets.
 
-See the [webhook event catalog](/webhooks/events) for all supported event types, what each means, and the data it includes.
+See the [event catalog](/webhooks/events) for every event type, what it means and the data it includes.
+
+## Set up an endpoint
 
 <Steps>
 <Step title="Create an endpoint">
-Open **Webhooks** in the developer dashboard. Enter a public HTTPS receiver URL on port 443 and choose the event types you need. Query parameters, credentials in URLs, IP literals, private destinations, and redirects are rejected. You can have up to five endpoints per application and environment.
+Open **Webhooks** in the developer dashboard. Enter a public HTTPS URL on port 443 and choose the event types you need. URLs with query parameters, credentials, IP addresses, private destinations or redirects are rejected. You can have up to five endpoints per application and environment.
 </Step>
 <Step title="Save the signing secret">
-The endpoint secret is displayed once after creation. Store it in your server's secret manager. Each endpoint uses its own secret; your legacy account webhook secret is not used.
+The secret is shown once, right after creation. Store it in your server's secret manager. Each endpoint has its own secret; your legacy account webhook secret isn't used.
 </Step>
 <Step title="Verify your destination">
-Click **Verify destination**. Verify the signature on the raw request body. For the `webhook.endpoint_verification` request, return a 2xx JSON response containing the exact `challenge` value received. The challenge is a control message rather than a subscribable payment event.
+Click **Verify destination**. Prava sends a signed `webhook.endpoint_verification` request. Verify the signature against the raw request body, then return a `2xx` JSON response containing the exact `challenge` value you received. This is a control message, not an event you subscribe to.
 </Step>
 <Step title="Test and activate">
-Send a signed test event and confirm your receiver accepts it. Test events have `test: true` and synthetic IDs. Activate delivery only after your receiver is ready. Changing a URL pauses delivery and requires verification again.
+Send a signed test event and confirm your receiver accepts it. Test events have `test: true` and synthetic IDs. Activate delivery once your receiver is ready. Changing the URL later pauses delivery until you verify again.
 </Step>
 </Steps>
 
-Developers can configure, verify, test, activate, pause, and replay. Administrators can also delete endpoints and rotate signing secrets. Readonly users can inspect configuration and delivery history. Dashboard access remains bound to the selected application and environment. Reseller owners can manage their ready child applications using their existing delegated credential-management access; direct agent-account subscriptions and reseller-owned aggregate feeds remain outside this preview.
+## Roles
 
-## Reseller management
+| Role | Can |
+| --- | --- |
+| Developer | Configure, verify, test, activate, pause and replay |
+| Administrator | Everything a developer can, plus delete endpoints and rotate signing secrets |
+| Read-only | View configuration and delivery history |
 
-Open **Webhooks** in the reseller dashboard to find a ready application and select **Manage webhooks**. The application Integration screen also links to its webhook configuration. Existing reseller access, environment, credential-management module and user-role permissions apply; no additional approval from each child application is required.
+Dashboard access is limited to the selected application and environment.
 
-To use one receiving server for several applications, select up to ten applications on the current page, enter the destination and choose events. Bulk setup creates an independent, paused endpoint for each application. Save each application-labelled signing secret, then open **Verify and configure** for each result to verify, test and activate delivery. Each application retains its own five-endpoint quota, signing secrets, subscriptions and delivery history. For a shared URL, parse `account_id` and `environment` only as untrusted hints for selecting the configured candidate secrets. Verify the signature against the unchanged raw body first, then check that the authenticated account and environment match the selected configuration before processing any event.
+## Multi-app setups
 
-Bulk results are independent: one failure does not roll back successful applications. **Retry same batch** reuses the original application-scoped idempotency key and configuration, so successful creations are not duplicated. A response lost after creation cannot reveal that application's original secret on retry; an administrator must rotate it if it was not saved. Secrets already visible in the current screen remain until hidden or navigation. Future applications are not automatically subscribed.
+If you manage several applications from one workspace, you can configure webhooks for each ready application from there. Webhook management needs credential generation enabled for your workspace. Your existing workspace access, environment and roles apply, and each application doesn't need to approve it separately.
 
-Removing a reseller user's access or reassigning an application blocks subsequent reseller management. Endpoints remain owned by the application and continue their configured lifecycle until an authorized application operator pauses or deletes them.
+To open one application's webhooks, select **Webhooks** in your workspace, find the application and choose **Manage webhooks**. The application's **Integration** view also links there.
 
-The same workflow is available with your application's server-side secret API key through the [Webhook API](/webhooks/api). Keep API keys and signing secrets out of browser SDKs.
+### Use one receiver for several applications
+
+<Steps>
+<Step title="Create the endpoints">
+On **Webhooks**, select up to ten applications on the current page, enter the receiver URL and choose events. Prava creates a separate, paused endpoint for each application.
+</Step>
+<Step title="Save each signing secret">
+Each secret is labelled with its application. Save every one before you leave the page.
+</Step>
+<Step title="Verify and activate each endpoint">
+Open **Verify and configure** for each result to verify, test and activate delivery.
+</Step>
+</Steps>
+
+Each application keeps its own five-endpoint limit, signing secrets, subscriptions and delivery history. Applications you add later aren't subscribed automatically.
+
+<Warning>With one URL for several applications, use `account_id` and `environment` from the payload only to choose which signing secret to try. Verify the signature against the unchanged raw body first, then check that the verified account and environment match the endpoint you configured before you process the event.</Warning>
+
+**If a bulk setup partly fails.** Each application succeeds or fails on its own, so one failure doesn't undo the others. **Retry same batch** reuses each application's original idempotency key and settings, so it doesn't create duplicates. If a response was lost after an endpoint was created, its secret can't be shown again; an administrator must rotate it. Secrets on screen stay visible until you hide them or leave the page.
+
+**If access changes.** When a user loses workspace access or an application moves out of the workspace, its webhooks can no longer be managed from the workspace. Existing endpoints stay with the application and keep running until someone authorized for that application pauses or deletes them.
+
+Not available yet: subscriptions for agent accounts, and a single combined event feed across your applications.
+
+## Use the API
+
+Everything on this page also works through the [Webhooks API](/api-reference/webhooks/overview) with your application's server-side secret key. Keep API keys and signing secrets out of browser code.
 
 [Event catalog](/webhooks/events) · [Verify signatures](/webhooks/security) · [Delivery and recovery](/webhooks/delivery)

@@ -1,0 +1,17 @@
+---
+title: 'Verify an Endpoint'
+description: 'Prove that your receiver controls the endpoint URL.'
+icon: 'circle-check'
+openapi: '/api-reference/openapi.json POST /v1/webhook-endpoints/{endpointId}/verify'
+playground: 'interactive'
+---
+
+Prava sends a signed challenge to the endpoint URL. Your receiver should check the signature and respond with a `2xx` JSON body that echoes the exact `challenge` value. On success, the response returns the endpoint with `verified_at` set, and you can enable it.
+
+| Error | Meaning |
+| --- | --- |
+| `409 WEBHOOK_CHALLENGE_FAILED` | The response didn't echo the `challenge` value in a complete JSON body. |
+| `409 WEBHOOK_DESTINATION_CHANGED` | The endpoint URL changed while verification was running. Verify again. |
+| `422 WEBHOOK_RECEIVER_UNAVAILABLE` | Prava couldn't reach the receiver securely. Check its public DNS, HTTPS certificate and availability. |
+
+See [Security](/webhooks/security) for signature verification and [Receiver examples](/webhooks/receiver-examples) for working handlers.

@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased] — 2026-10-24-1
+
+### Added
+
+- Add a Webhooks API reference with one page per webhook operation and response schemas.
+
+### Changed
+
+- Reorganize the webhook guides into shorter sections and tables.
+
 ## [Unreleased] — 2026-10-22-1
 
 ### Fixed

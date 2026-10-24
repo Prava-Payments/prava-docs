@@ -172,6 +172,44 @@
             ]
           },
           {
+            "group": "Webhooks API",
+            "pages": [
+              "api-reference/webhooks/overview",
+              "api-reference/webhooks/list-event-types",
+              {
+                "group": "Endpoints",
+                "expanded": true,
+                "pages": [
+                  "api-reference/webhooks/create-endpoint",
+                  "api-reference/webhooks/list-endpoints",
+                  "api-reference/webhooks/get-endpoint",
+                  "api-reference/webhooks/update-endpoint",
+                  "api-reference/webhooks/delete-endpoint",
+                  "api-reference/webhooks/verify-endpoint",
+                  "api-reference/webhooks/send-test-event",
+                  "api-reference/webhooks/rotate-signing-secret"
+                ]
+              },
+              {
+                "group": "Deliveries",
+                "expanded": true,
+                "pages": [
+                  "api-reference/webhooks/list-deliveries",
+                  "api-reference/webhooks/get-delivery",
+                  "api-reference/webhooks/replay-delivery"
+                ]
+              },
+              {
+                "group": "Events",
+                "expanded": true,
+                "pages": [
+                  "api-reference/webhooks/list-events",
+                  "api-reference/webhooks/get-event"
+                ]
+              }
+            ]
+          },
+          {
             "group": "Reference",
             "pages": [
               "api-reference/errors",

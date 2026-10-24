@@ -1,0 +1,17 @@
+---
+title: 'Send a Test Event'
+description: 'Send a synthetic event to check your receiver.'
+icon: 'paper-plane'
+openapi: '/api-reference/openapi.json POST /v1/webhook-endpoints/{endpointId}/test'
+playground: 'interactive'
+---
+
+The endpoint must be verified and subscribed to the event type, or the request returns `409 WEBHOOK_TEST_BLOCKED`.
+
+**Send now.** `{ "type": "payment.succeeded" }` sends a signed example payload right away and returns your receiver's `http_status`, with `accepted: true` for a `2xx` response. Nothing is stored.
+
+**Queue.** `{ "type": "card_enrollment.completed", "queued": true }` checks the queued delivery path. The endpoint must also be enabled. The response is `{ "queued": true, "event_id": "evt_…" }`. The test event then appears in [List deliveries](/api-reference/webhooks/list-deliveries) and [List events](/api-reference/webhooks/list-events).
+
+Test payloads have `"test": true` and example data. They check delivery to your receiver, not enrollment or payment behavior.
+
+Returns `422 WEBHOOK_RECEIVER_UNAVAILABLE` when the receiver can't be reached securely. See [Testing webhooks](/webhooks/testing).
