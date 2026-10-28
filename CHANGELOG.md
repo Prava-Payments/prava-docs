@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — 2026-10-28-1
+
+### Changed
+
+- Clarify that payment webhook `card_id` is currently `null` for both regular and quote-backed mandate charges, with mandate/transaction correlation guidance in the event guide, API description and public release notes.
+
 ## [Unreleased] — 2026-10-24-1
 
 ### Added

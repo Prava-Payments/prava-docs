@@ -66,7 +66,33 @@ Run the supported sandbox payment, full card-enrollment or mandate-setup flow wi
 - Test completion, failure, cancellation and expiry as separate cases.
 - Check that removing a subscription stops new automatic deliveries for that event type.
 - Creating a session alone doesn't necessarily produce an event.
-- Synthetic financial sandbox simulations don't produce lifecycle events.
+- Explicit sandbox payment-success simulation produces the payment events described below.
+
+### Test payment simulation
+
+Use the existing request option on a sandbox checkout or supported quote-backed
+mandate charge:
+
+```json
+{"sandbox_simulation":{"stage":"payment","outcome":"success"}}
+```
+
+1. Subscribe the verified receiver to `payment.credentials_ready` and `payment.succeeded`.
+2. Complete the supported payment flow. For checkout recovery, start with a stale
+   saved card, retry with a new card, and complete verification.
+3. Check `payment.credentials_ready`: it uses `outcome_source: "prava_issued"`
+   and includes the actual attempt's `data.card_id` when an owned card is bound.
+4. Check `payment.succeeded`: it uses `outcome_source: "sandbox_simulated"` and
+   `environment: "sandbox"`. It does not establish a merchant charge.
+5. Match receiver events with delivery history using the event ID. Group payment
+   attempts by `resource.id`, with `session_id`, `order_id` or `mandate_id` for correlation.
+
+These are lifecycle events from the test flow, so they are not marked `test: true`.
+The endpoint's **Send test** action creates synthetic catalog events instead; it
+checks delivery without exercising checkout or simulation capture. Before testing,
+refresh pinned event schemas or enum validators for `sandbox_simulated` under
+schema version `2026-10-08`. Earlier missing events are not reconstructed; start
+a fresh flow after the update is deployed.
 
 ## Advanced: automated sandbox receiver
 

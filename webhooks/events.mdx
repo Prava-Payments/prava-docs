@@ -25,7 +25,10 @@ V1 excludes:
 - provision-only synchronous card enrollment
 - unrelated card lifecycle operations
 - failures before a durable payment attempt exists
-- synthetic financial sandbox simulations
+
+Explicit payment-success simulation is supported for sandbox checkout and
+quote-backed mandate charges. Genuine credential issuance and simulated success
+produce payment events with distinct [outcome sources](#outcome-sources).
 
 ### Who receives an event
 
@@ -56,6 +59,7 @@ Every event shares this envelope. This example is a `payment.succeeded` event:
     "session_id": "ses_example",
     "mandate_id": null,
     "order_id": "ord_example",
+    "card_id": "card_example",
     "status": "succeeded",
     "amount": { "value": "100.00", "currency": "INR" },
     "outcome_source": "merchant_observed",
@@ -86,14 +90,20 @@ Every event shares this envelope. This example is a `payment.succeeded` event:
 
 `GET /v1/webhook-event-types` returns descriptions, supported flows, JSON schemas and safe examples for every type.
 
-Payloads omit payment credentials, network tokens, dynamic CVV, full card numbers, stored card references, addresses, email, and raw metadata.
+The schema version remains `2026-10-08`. New payment events add `data.card_id`,
+and sandbox simulated success adds the `sandbox_simulated` outcome source.
+Refresh any pinned catalog schemas or strict outcome-source enums before testing
+these sandbox events. Older retained event bytes are unchanged and can omit
+`card_id`.
+
+Payloads omit payment credentials, network tokens, dynamic CVV, full card numbers, provider/vault references, addresses, email, and raw metadata. A Prava `card_id` is an opaque application-scoped identifier.
 
 ## Payment events
 
 | Event | Meaning |
 | --- | --- |
 | `payment.credentials_ready` | Prava issued credentials for this payment attempt. It does **not** mean the merchant charged successfully. |
-| `payment.succeeded` | A credentialed payment attempt was confirmed successful. |
+| `payment.succeeded` | An issued payment attempt was recorded successful. Explicit sandbox simulation uses `sandbox_simulated`; it does not confirm a merchant charge. |
 | `payment.failed` | An issued payment attempt failed, or Prava recorded a definite failure before issuing credentials. Inspect `failure_stage` and `error` for the cause. |
 
 Mandate charges use these same events. See [Mandate charges](#mandate-charges).
@@ -106,9 +116,10 @@ The [envelope example](#event-envelope) shows a full payment payload.
 
 | Field | Description |
 | --- | --- |
-| `session_id` | Session ID, such as `ses_example`. |
+| `session_id` | Session ID, such as `ses_example`, or `null` for a charge without a session. |
 | `mandate_id` | The mandate ID for an owned mandate charge, or `null` for other payment flows. See [Mandate charges](#mandate-charges). |
 | `order_id` | Order ID, such as `ord_example`. |
+| `card_id` | The card bound to this payment attempt, checked against its application and customer. It can differ from the session's original preselected card after a retry. `null` when no owned card can be resolved; older retained payloads can omit it. |
 | `status` | Status, such as `succeeded`. |
 | `amount` | Amounts are decimal strings in the payment's currency. |
 | `outcome_source` | One of the [outcome sources](#outcome-sources). |
@@ -121,6 +132,18 @@ The [envelope example](#event-envelope) shows a full payment payload.
 - The payment transaction ID identifies the attempt. Each new attempt has its own ID.
 - `resource.version` increases for each recorded change to that attempt.
 
+For a session-based checkout, `resource.id` corresponds to
+`transactions[].txn_id` in [Get Payment Result](/api-reference/get-payment-result),
+and `data.card_id` identifies that attempt's card. Keep separate attempt records
+when a shopper switches cards. Associate the replacement card when receiving
+`payment.credentials_ready`; it does not require a standalone enrollment event.
+
+Webhook statuses `credentials_ready`, `succeeded` and `failed` correspond to
+transaction statuses `awaiting_result`, `completed` and `failed`. Webhooks cover
+eligible lifecycle changes, not every verification attempt. Use Payment Result
+for the complete session attempt list, including failures before credentials
+were issued. Cards added inside checkout do not emit `card_enrollment.completed`.
+
 ### Outcome sources
 
 | `outcome_source` | Used for |
@@ -129,6 +152,7 @@ The [envelope example](#event-envelope) shows a full payment payload.
 | `merchant_observed` | Quote-backed results reconciled by Prava |
 | `merchant_reported` | Supported non-quote results |
 | `prava_observed` | A definite failure Prava records before credential issuance |
+| `sandbox_simulated` | A successful explicit sandbox payment simulation. This does not confirm a merchant charge and is never used for production events. |
 
 ### Failed payments
 
@@ -155,6 +179,8 @@ An API rejection before a transaction exists remains API-only.
 ### Mandate charges
 
 Mandate charges use `payment.credentials_ready`, `payment.succeeded` and `payment.failed`.
+
+Both regular and quote-backed mandate charges currently return `data.card_id: null` because neither charge path binds a stored card to the charge transaction; correlate them using `data.mandate_id` and the transaction's `resource.id`.
 
 - Newly created payment events include `data.mandate_id` for an owned mandate charge, or `null` for other payment flows.
 - Older retained payloads may omit this additive field.
