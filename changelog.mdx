@@ -16,6 +16,8 @@ rss: true
   - New payment events include `data.card_id`, allowing applications to associate
     a replacement card added during checkout. Older retained events can omit it;
     unresolved owned card references are `null`.
+  - Both regular and quote-backed mandate charges currently return `card_id: null`;
+    correlate those charges using `mandate_id` and the transaction's `resource.id`.
   - Explicit sandbox payment-success simulation emits genuine credentials-ready
     and simulated success through the webhook delivery/history pipeline, including
     supported quote-backed mandate charges. Simulated success uses

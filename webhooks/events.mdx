@@ -180,6 +180,8 @@ An API rejection before a transaction exists remains API-only.
 
 Mandate charges use `payment.credentials_ready`, `payment.succeeded` and `payment.failed`.
 
+Both regular and quote-backed mandate charges currently return `data.card_id: null` because neither charge path binds a stored card to the charge transaction; correlate them using `data.mandate_id` and the transaction's `resource.id`.
+
 - Newly created payment events include `data.mandate_id` for an owned mandate charge, or `null` for other payment flows.
 - Older retained payloads may omit this additive field.
 - Use the mandate ID to correlate charges without another API request.
