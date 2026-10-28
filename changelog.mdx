@@ -6,6 +6,28 @@ rss: true
 ---
 
 <Update
+  label="October 28, 2026 - Payment webhook card identity"
+  tags={["Fixes", "API"]}
+  rss={{
+    title: "Associate cards used during checkout through payment webhooks",
+    description: "Payment events include the actual attempt's card ID. Explicit sandbox payment-success simulation now emits credentials-ready and clearly labelled simulated success events."
+  }}
+>
+  - New payment events include `data.card_id`, allowing applications to associate
+    a replacement card added during checkout. Older retained events can omit it;
+    unresolved owned card references are `null`.
+  - Explicit sandbox payment-success simulation emits genuine credentials-ready
+    and simulated success through the webhook delivery/history pipeline, including
+    supported quote-backed mandate charges. Simulated success uses
+    `outcome_source: "sandbox_simulated"`; it does not confirm a merchant charge.
+  - `schema_version` remains `2026-10-08`. Refresh pinned JSON schemas or strict
+    outcome-source enums for the new sandbox value. Retained event bytes remain
+    unchanged, and earlier missing events are not backfilled.
+
+  [Review payment events →](/webhooks/events) · [Test simulation →](/webhooks/testing#test-payment-simulation)
+</Update>
+
+<Update
   label="October 24, 2026 - Webhooks"
   tags={["New", "API", "Dashboard"]}
   rss={{

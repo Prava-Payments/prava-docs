@@ -3633,7 +3633,7 @@
           "data": {
             "type": "object",
             "additionalProperties": true,
-            "description": "Event-specific fields. See [Event types](/webhooks/events)."
+            "description": "Event-specific fields. New payment events include nullable card_id for the actual attempt's application/customer-owned card; older retained events may omit it. Explicit sandbox payment-success simulation uses outcome_source sandbox_simulated, while actual credentials-ready uses prava_issued. Schema version remains 2026-10-08; refresh pinned catalog/enum validators. See [Event types](/webhooks/events)."
           }
         }
       },
