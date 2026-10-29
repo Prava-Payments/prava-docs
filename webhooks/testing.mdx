@@ -94,6 +94,24 @@ refresh pinned event schemas or enum validators for `sandbox_simulated` under
 schema version `2026-10-08`. Earlier missing events are not reconstructed; start
 a fresh flow after the update is deployed.
 
+## Test card lifecycle events
+
+1. Explicitly subscribe your verified sandbox endpoint to `card.saved` and `card.deleted`, preserving its other selected events.
+2. Save a new card during checkout, standalone enrollment or a supported API flow. Check that `card.saved` identifies the new card and your original `user_id`, with an owned session when one already exists. Also test a save before its session exists: `session_id` is null and `user_id` still identifies your user.
+3. Reuse the card for another payment. This should not create another `card.saved` event.
+4. Delete it using the [Delete Card API](/api-reference/delete-card), supplying your original external user identifier and the Card ID. Check `card.deleted` for the same card with `resource.version: 2`.
+5. Replay a retained event to verify event-ID deduplication. Your receiver must also ignore a late version `1` save after processing version `2` deletion.
+
+These events describe stored-card state, independently of payment or full-enrollment results. Synthetic **Send test** events have `test: true` and do not save or delete a card. Historical card saves are not reconstructed.
+
+## Test mandate charge card identity
+
+1. Create a mandate using a known saved card, then issue a fresh regular or quote-backed charge.
+2. Check that its payment events share the charge transaction ID and identify the authorized card in `data.card_id`.
+3. Retry the same charge with the same idempotency anchor. It should retain the same transaction. Replaying a captured event preserves its original Card ID.
+
+Missing or ambiguous legacy setup links can still produce `card_id: null`. This update does not rewrite charge transactions or backfill earlier retained events.
+
 ## Advanced: automated sandbox receiver
 
 <Accordion title="Optional test-runner controls">
