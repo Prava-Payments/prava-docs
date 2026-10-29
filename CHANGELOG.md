@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased] — 2026-10-29-1
+
+### Added
+
+- Document card-saved and card-deleted webhooks, user correlation, explicit subscriptions and event version ordering.
+
+### Changed
+
+- Explain delayed deletion notifications and mandate-charge card identifiers, including null handling when a card cannot be determined.
+
 ## [Unreleased] — 2026-10-28-1
 
 ### Changed

@@ -10,6 +10,8 @@ Delete an enrolled card. Deletion also retires the card's network token (the tok
 
 `POST /v1/deleteCard` · Authenticated with your secret key.
 
+Subscribe to [`card.deleted`](/webhooks/events#card-lifecycle) to reconcile card deletions. The event identifies the card, its Prava customer and your original `user_id`. Repeated deletion requests do not create another logical event.
+
 ## Body
 
 <ParamField body="customer_id" type="string" required>
