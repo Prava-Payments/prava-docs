@@ -12,7 +12,7 @@ Events come in six families. Every event uses the same [envelope](#event-envelop
 | [Payments](#payment-events) | `payment.credentials_ready`<br />`payment.succeeded`<br />`payment.failed` | `payment`, the payment transaction ID (such as `txn_example`) |
 | [Cards](#card-lifecycle) | `card.saved`<br />`card.deleted` | `card`, `card_...` |
 | [Mandate lifecycle](#lifecycle-events) | `mandate.paused`<br />`mandate.resumed`<br />`mandate.cancelled`<br />`mandate.expired` | `mandate`, `mdt_...` |
-| [Card enrollment](#enrollment-and-mandate-setup) | `card_enrollment.completed`<br />`card_enrollment.failed`<br />`card_enrollment.cancelled`<br />`card_enrollment.expired` | `card_enrollment`, `ses_...` |
+| [Card enrollment](#enrollment-and-mandate-setup) | `card_enrollment.completed`<br />`card_enrollment.failed`<br />`card_enrollment.cancelled`<br />`card_enrollment.expired` | `card_enrollment`, `ses_...` (standalone) or `sa_...` (checkout completion) |
 | [Mandate setup](#enrollment-and-mandate-setup) | `mandate.created`<br />`mandate.creation_failed`<br />`mandate.creation_cancelled`<br />`mandate.creation_expired` | `mandate_setup`, `ses_...` |
 | [Quote request failures](#quote-request-failures) | `quote.request_failed` | `quote_request`, `qreq_...` |
 
@@ -143,7 +143,8 @@ Webhook statuses `credentials_ready`, `succeeded` and `failed` correspond to
 transaction statuses `awaiting_result`, `completed` and `failed`. Webhooks cover
 eligible lifecycle changes, not every verification attempt. Use Payment Result
 for the complete session attempt list, including failures before credentials
-were issued. Cards added inside checkout do not emit `card_enrollment.completed`.
+were issued. A newly added checkout card also emits `card_enrollment.completed`
+when full enrollment finishes; payment success is a separate milestone.
 
 ### Outcome sources
 
@@ -184,7 +185,7 @@ Subscribe explicitly to these events to reconcile the cards saved for your appli
 | `card.saved` | A new stored-card record is committed during checkout, replacement-card retry, standalone enrollment or a supported card-saving API flow. | `1` |
 | `card.deleted` | A card is deleted through the [Delete Card API](/api-reference/delete-card) or checkout card-removal flow. | `2` |
 
-Saving a card does not establish successful payment or completed passkey enrollment. A later failed or cancelled payment does not undo `card.saved`. A standalone full-enrollment flow can produce both `card.saved` and `card_enrollment.completed`.
+Saving a card does not establish successful payment or completed passkey enrollment. A later failed or cancelled payment does not undo `card.saved`. Both standalone full enrollment and a new-card checkout can produce `card.saved` followed by `card_enrollment.completed`.
 
 Reusing an existing card, duplicate recovery and display/default-card updates do not emit another save event. A rejected deletion that leaves the card intact emits no delete event. If the deletion can't be recorded as a notification right away, the card stays deleted and Prava sends `card.deleted` once it is recorded. List Cards reflects the deletion immediately. Repeated deletion requests do not create another logical deletion event.
 
@@ -309,7 +310,7 @@ Prava detects clock-driven expiry automatically. You don't need to call the stat
 
 | Event | Meaning |
 | --- | --- |
-| `card_enrollment.completed` | Stored card and passkey readiness were persisted. Includes `card_id`, last four digits, normalized brand and expiry, passkey result and consent state. |
+| `card_enrollment.completed` | A stored card, VIC enrollment and the confirmed passkey result were persisted during standalone enrollment or checkout. Includes `card_id`, last four digits, normalized brand and expiry, passkey result and consent state. |
 | `card_enrollment.failed` | Enrollment failed; `outcome` distinguishes `not_started` from `card_provisioned`. |
 | `card_enrollment.cancelled` | The action or session was cancelled. |
 | `card_enrollment.expired` | The unfinished session expired. |
@@ -318,7 +319,11 @@ Prava detects clock-driven expiry automatically. You don't need to call the stat
 | `mandate.creation_cancelled` | The unfinished setup session was dismissed. |
 | `mandate.creation_expired` | The unfinished setup session expired. |
 
-- These resources are `card_enrollment` or `mandate_setup`, identified by `ses_...`.
+- Standalone enrollment and mandate-setup resources keep their `ses_...` IDs.
+- A new card enrolled during checkout uses the enrollment action's `sa_...` resource ID. `data.session_id` is the original checkout session, including when another card was tried first. Use `data.card_id` to identify the enrolled card.
+- Two newly enrolled cards in the same checkout have separate enrollment resources. Reusing an already saved card does not create another enrollment event.
+- Checkout completion uses the same full-enrollment milestone as standalone enrollment: provisioning alone is insufficient. The event can arrive before the payment succeeds, fails or is cancelled.
+- `card_enrollment.failed`, `.cancelled` and `.expired` continue to describe standalone enrollment sessions. Existing retained events are unchanged; historical checkout enrollments are not backfilled.
 - `card_enrollment.cancelled` preserves its existing `failure_category: null`. The additive `error.code` is `SESSION_CANCELLED`.
 - `mandate.created` preserves the stored approved frequency. Current recurring mandates use `weekly`, `monthly` or `yearly`; older records may use uppercase values. New mandate lifecycle events use lowercase values.
 - These events describe setup. Later charges use the [payment event family](#payment-events) with a mandate ID. Later pause, resume, cancellation and expiry use the [mandate lifecycle events](#lifecycle-events).
