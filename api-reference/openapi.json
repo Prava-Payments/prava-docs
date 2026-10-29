@@ -1805,7 +1805,7 @@
             "description": "Filter by resource ID",
             "schema": {
               "type": "string",
-              "pattern": "^(txn|ses|qreq|mdt|card)_[A-Za-z0-9_]+$",
+              "pattern": "^(txn|ses|sa|qreq|mdt|card)_[A-Za-z0-9_]+$",
               "maxLength": 120
             }
           },
@@ -3645,7 +3645,7 @@
           "data": {
             "type": "object",
             "additionalProperties": true,
-            "description": "Event-specific fields. card.saved and card.deleted use resource.type card and carry card_id, internal Prava customer_id (cus_...), your original user_id (or null when unavailable), and nullable session_id. Use user_id to associate a card with your user even without a session. A saved card does not imply full enrollment or payment success; card.deleted records card deletion. New payment events include nullable card_id for the card used; older retained events may omit it. Mandate charges report the card the mandate was set up with, or null when it cannot be determined safely. Previously captured events and delivery retries remain unchanged. Correlate charges using mandate_id and resource.id. Explicit sandbox payment-success simulation uses outcome_source sandbox_simulated, while actual credentials-ready uses prava_issued. Schema version remains 2026-10-08; refresh pinned catalog/enum validators. See [Event types](/webhooks/events)."
+            "description": "Event-specific fields. card_enrollment.completed is emitted at full enrollment (stored card, VIC enrollment and confirmed passkey result) in standalone enrollment or a new-card checkout. Its resource.id is ses_... for standalone enrollment or sa_... for the checkout enrollment action; data.session_id remains the original Prava session. Existing saved-card reuse does not emit another enrollment. Other card_enrollment outcomes remain standalone-only. card.saved and card.deleted use resource.type card and carry card_id, internal Prava customer_id (cus_...), your original user_id (or null when unavailable), and nullable session_id. Use user_id to associate a card with your user even without a session. A saved card does not imply full enrollment or payment success; card.deleted records card deletion. New payment events include nullable card_id for the card used; older retained events may omit it. Mandate charges report the card the mandate was set up with, or null when it cannot be determined safely. Previously captured events and delivery retries remain unchanged. Correlate charges using mandate_id and resource.id. Explicit sandbox payment-success simulation uses outcome_source sandbox_simulated, while actual credentials-ready uses prava_issued. Schema version remains 2026-10-08; refresh pinned catalog/enum validators. See [Event types](/webhooks/events)."
           }
         }
       },

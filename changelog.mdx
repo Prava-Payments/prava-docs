@@ -5,6 +5,14 @@ icon: 'clock-rotate-left'
 rss: true
 ---
 
+<Update label="October 29, 2026" description="Checkout enrollment completion">
+  Newly added checkout cards now emit `card_enrollment.completed` after full
+  enrollment, including VIC enrollment and the confirmed passkey result. The
+  event identifies the new card and original session independently of payment
+  success. Checkout enrollment resources use `sa_...`; standalone enrollment
+  keeps `ses_...`. Reusing a saved card does not emit another enrollment.
+</Update>
+
 <Update label="October 29, 2026 - Card lifecycle webhooks" tags={["API", "New"]}>
   Applications can subscribe to `card.saved` when a new card is durably stored
   and `card.deleted` when it is deleted. Events identify the card and

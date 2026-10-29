@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — 2026-10-29-2
+
+### Changed
+
+- Document full-enrollment completion for new cards added during checkout, including replacement-card retries, and its enrollment action resource ID. Payment outcomes and standalone enrollment identifiers remain unchanged.
+
 ## [Unreleased] — 2026-10-29-1
 
 ### Added
