@@ -524,6 +524,70 @@
         }
       }
     },
+    "/v1/cards/{id}/default": {
+      "patch": {
+        "summary": "Set Default Card",
+        "description": "Set one of a customer's saved cards as their default. The card identifies the customer, so only the card ID is sent. The default is listed first in List Cards and preselected in the payment iframe's saved-card list.",
+        "operationId": "setDefaultCard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The card to make the default (card_id from List Cards). Must be an active card saved through your merchant account."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default card set",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "default_card_id": {
+                      "type": "string",
+                      "description": "The card that is now the customer's default"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing API key (AUTH_1001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Card not found, deleted, or not saved through your merchant account (NOT_FOUND)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/mandates/{id}/charge": {
       "post": {
         "summary": "Charge a Mandate",
