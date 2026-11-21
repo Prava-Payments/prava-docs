@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — 2026-11-22-1
+
+### Changed
+
+- `VARIANT_UNAVAILABLE` now documents both causes: sold out, and requested quantity unavailable. `quote.request_failed` can carry a second fixed message for the quantity case.
+
 ## [Unreleased] — 2026-11-10-2
 
 ### Fixed

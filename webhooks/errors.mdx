@@ -52,7 +52,7 @@ Some outcomes have limited or no webhook coverage.
 | --- | --- |
 | Quote lifecycle | Ready, pricing/shipping updates, automatic expiry and asynchronous quote updates don't have lifecycle webhook events yet. `quote.request_failed` covers only the admitted quote API request. |
 | Merchant preparation | A standalone checkout preparation failure or human-verification state that hasn't become a persisted payment failure has no separate webhook. A timeout or uncertain payment outcome must not be treated as `payment.failed`. |
-| More specific merchant causes | Some APIs return a broad checkout code plus a buyer-safe correction message. Webhooks use the fixed canonical text for that code and can be less specific. Shipping and stock details are included only when the merchant supplies a supported structured code. Prava doesn't infer them from text. |
+| More specific merchant causes | Some APIs return a broad checkout code plus a buyer-safe correction message. Webhooks use the code's fixed text and can be less specific. `VARIANT_UNAVAILABLE` has a second fixed text for a quantity limit, used only when the merchant reports that cause in a supported structured form; otherwise the webhook carries the code's default text. Shipping and stock details are included only when the merchant supplies a supported structured code. Prava doesn't infer them from text. |
 | Before credentials are issued | A definite failure recorded by Prava can emit `payment.failed`. See [Before credentials are issued](#before-credentials-are-issued). |
 | Before a durable attempt | Authentication, request validation, eligibility/budget checks, unknown resource IDs and errors before a durable payment attempt are returned by the API. They aren't financial lifecycle events. |
 | Other resources | Standalone provision-only card flows, later card lifecycle changes, mandate budget/consumption/terms changes, refunds/reversals/disputes, inventory/fulfillment after checkout and agent-account resources don't have these merchant webhook families. Don't infer any order-fulfillment claim from payment success. |
@@ -161,7 +161,7 @@ Unknown codes use the safe family fallback.
 
 ## Error codes
 
-Each table lists codes with their fixed messages. Keep these limits in mind:
+Each table lists codes with their fixed messages. A code can have more than one fixed message; its row lists each. Keep these limits in mind:
 
 - A code is emitted only when its reason was actually persisted or returned at the supported request boundary.
 - These tables also cover detailed API errors. A code being listed doesn't by itself make an outcome eligible for a webhook.
@@ -249,7 +249,7 @@ Payment attempts and mandate setup share most codes. **Used by** shows whether a
 | `MERCHANT_CHECKOUT_FAILED` | Merchant checkout is temporarily unavailable. Please try again later. |
 | `MERCHANT_RATE_LIMITED` | The merchant is temporarily limiting checkout requests. Please try again later. |
 | `DEPARTMENT_STORE_PILOT_DISABLED` | Department-store product quotes are not enabled. |
-| `VARIANT_UNAVAILABLE` | The selected item is sold out. Choose another variant or product. |
+| `VARIANT_UNAVAILABLE` | The selected item is sold out. Choose another variant or product.<br />When the merchant reports that the requested quantity isn't available: This item isn't available in that quantity. Try a smaller quantity or choose another variant. |
 | `CHECKOUT_EXPIRED` | The checkout link has expired. Request a new checkout link. |
 | `CHECKOUT_NOT_FOUND` | The checkout link was not found. Verify the link or request a new one. |
 | `CHECKOUT_INVALID` | The checkout link cannot be used. Request a new checkout link. |
