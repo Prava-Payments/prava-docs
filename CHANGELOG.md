@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — 2026-11-24-1
+
+### Added
+
+- Add public changelog entries for setting a default card by card ID (November 12), faster checkout and new sandbox test cards (November 13), branded customer emails (November 17), and dashboard time zones (November 23).
+
 ## [Unreleased] — 2026-11-22-1
 
 ### Changed
