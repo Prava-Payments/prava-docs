@@ -6,6 +6,93 @@ rss: true
 ---
 
 <Update
+  label="November 23, 2026 - Time zones"
+  tags={["Improvements", "Dashboard"]}
+  rss={{
+    title: "See dashboard times in your own time zone",
+    description: "Times, date filters and charts in the developer dashboard now follow your browser's time zone, with a one-click switch to UTC."
+  }}
+>
+  ## See dashboard times in your own time zone
+
+  Times in the developer dashboard now match your clock. Orders, order details, webhooks, API
+  keys and every other page that shows a time use your browser's time zone, and a one-click
+  **Local | UTC** switch changes every page at once. Date filters and charts count days in the
+  same zone, so "23 Nov" means 23 November where you are. Each time shows its zone, and hovering
+  it shows the other one.
+
+  [Open the dashboard →](/dashboard)
+</Update>
+
+<Update
+  label="November 17, 2026 - Branded emails"
+  tags={["New", "Dashboard"]}
+  rss={{
+    title: "Customer emails now carry your brand",
+    description: "Payment approved and mandate created emails to your customers now show your logo and name, come from your brand name, and send replies to your support address. Set it up on the Branding page's Emails tab, with a preview and a test email."
+  }}
+>
+  ## Customer emails now carry your brand
+
+  When your customers approve a payment or set up a mandate, the email they get now looks like
+  it came from you. It shows the logo and name from your checkout appearance, arrives from your
+  brand name, and sends replies to your own support address. Prava's name moves to a small
+  "Powered by Prava" footer.
+
+  - **Replies reach your team:** add your support email under **Branding → Emails** in the
+    developer dashboard. Until you do, replies go to Prava support.
+  - **Check it before customers see it:** preview both emails with sample data, and send
+    yourself a test email from Production.
+  - **No extra setup:** emails reuse the logo and brand name you set for checkout. Set a brand
+    name on the **Checkout** tab to send from your name instead of Prava's.
+
+  Resellers can manage the same settings for each of their applications.
+
+  [Open the dashboard →](/dashboard)
+</Update>
+
+<Update
+  label="November 13, 2026 - Faster checkout"
+  tags={["Improvements", "Docs"]}
+  rss={{
+    title: "Checkout opens faster, plus new sandbox test cards",
+    description: "Hosted checkout pages now open faster, so shoppers wait less before they can pay. The sandbox test card list has 15 new cards valid until December 2030."
+  }}
+>
+  ## Checkout opens faster, plus new sandbox test cards
+
+  - **Less waiting before shoppers can pay:** payment, add-card and approval pages now open
+    faster, with no change to your integration.
+  - **New sandbox test cards:** the test card list now has 15 cards that expire in December
+    2030. Use them for new sandbox tests.
+
+  [Sandbox test cards →](/api-reference/test-cards)
+</Update>
+
+<Update
+  label="November 12, 2026 - Default card"
+  tags={["Improvements", "API"]}
+  rss={{
+    title: "Let shoppers pay with their default card in one tap",
+    description: "Set a customer's default card with just the card ID. Full checkout now preselects it, as embedded checkout already did, so shoppers can pay in one tap. Set Default Card has its own API reference page."
+  }}
+>
+  ## Let shoppers pay with their default card in one tap
+
+  Choose which saved card checkout puts first, and shoppers can pay with it straight away.
+  Set it with `PATCH /v1/cards/{id}/default` using just the card ID, which you get from List
+  Cards or the `card.saved` webhook.
+
+  - **One tap to pay:** full checkout now preselects the default card, as embedded checkout
+    already did, so **Pay Now** is ready when the page opens. After a failed payment, the
+    default is selected again for the retry.
+  - **Always a sensible default:** if you haven't set one, or the default card is deleted, the
+    customer's oldest active card is preselected.
+
+  [Set Default Card →](/api-reference/set-default-card)
+</Update>
+
+<Update
   label="November 9, 2026 - Mandate setup"
   tags={["Fixes"]}
   rss={{
